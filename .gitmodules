@@ -1,0 +1,3 @@
+[submodule "luau"]
+	path = luau
+	url = git@github.com:luau-lang/luau.git
