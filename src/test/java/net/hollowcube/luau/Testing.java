@@ -2,8 +2,6 @@ package net.hollowcube.luau;
 
 import net.hollowcube.luau.compiler.LuauCompiler;
 
-import java.lang.foreign.Arena;
-
 @SuppressWarnings("preview")
 public class Testing {
 
@@ -12,53 +10,59 @@ public class Testing {
 
         System.load("/Users/matt/dev/projects/hollowcube/luau-java/libLuau.VM.dylib");
 
-        try (Arena arena = Arena.ofShared()) {
-            var source = """
-                    print('hello from lua')
-                                        
-                    -- print(add(1, 2))
-                    """;
-            var bytecode = LuauCompiler.DEFAULT.compile(source);
+        var source = """
+                print('hello from lua')
+                                
+                print(add(1, 2))
+                print(sub(1, 2))
+                """;
+        var bytecode = LuauCompiler.DEFAULT.compile(source);
 
-            LuaState state = Luau.newState();
-            state.openLibs();
+        try (LuaState global = Luau.newState()) {
+            global.openLibs();
 
-            state.load("main.lua", bytecode);
-            state.pcall();
+            global.defineGlobalFunction("add", state -> {
+                int left = state.checkInt(1);
+                int right = state.checkInt(2);
+                state.pushInt(left + right);
+                return 1;
+            });
 
-            state.close();
+            global.defineGlobalFunction("sub", state -> {
+                int left = state.checkInt(1);
+                int right = state.checkInt(2);
+                state.pushInt(left - right);
+                return 1;
+            });
 
-            // OLD OLD OLD OLD OLD
+            // After this point it is invalid to do any setglobal calls.
+            // We should check this in java land because it segfaults.
+            global.sandbox();
 
+            try (LuaState thread = global.newThread()) {
 
-//            MemorySegment L = lualib_h.luaL_newstate();
-//            lualib_h.luaL_openlibs(L);
-//
-//            // Load the add function from java
-//
-//            var addFn = lua_CFunction.allocate(L2 -> {
-//                int left = lualib_h.luaL_checkinteger(L2, 1);  // Get the first argument
-//                int right = lualib_h.luaL_checkinteger(L2, 2); // Get the second argument
-//                lua_h.lua_pushinteger(L2, left + right);            // Push the result (arg * 2)
-//                return 1;
-//            }, arena);
-//
-//            // lua_pushcfunction(L, my_c_function);
-//            var addFunctionName = arena.allocateUtf8String("add");
-//            lua_h.lua_pushcclosurek(L, addFn, addFunctionName, 0, MemorySegment.NULL);
-//
-//            // lua_setglobal(L, "my_c_function");
-//            lua_h.lua_setfield(L, lua_h.LUA_GLOBALSINDEX(), addFunctionName);
-//
-//            // Load the bytecode and execute it
-//
-//            var namecstr = arena.allocateUtf8String("main.lua");
-//            var bytecodeWrapped = arena.allocateArray(ValueLayout.JAVA_BYTE, bytecode);
-//            lua_h.luau_load(L, namecstr, bytecodeWrapped, bytecode.length, 0);
-//
-//            lua_h.lua_pcall(L, 0, 0, 0);
-//
-//            lua_h.lua_close(L);
+//                MemorySegment interruptFunc = lua_Callbacks.interrupt.allocate((L, gc) -> {
+//                    System.out.println("interrupt called!");
+//                }, Arena.global());
+
+//                MemorySegment panicFunc = lua_Callbacks.panic.allocate((L, errcode) -> {
+//                    System.out.println("PANIC: " + errcode);
+//                }, Arena.global());
+
+//                MemorySegment callbacks = lua_h.lua_callbacks(thread.L());
+//                lua_Callbacks.interrupt(callbacks, interruptFunc);
+//                lua_Callbacks.panic(callbacks, panicFunc);
+
+                thread.sandboxThread();
+
+                // Now ready for running untrusted code.
+
+                thread.load("main.lua", bytecode);
+                thread.pcall();
+            }
+
+            global.pop(1); // the thread was added to the stack, remove it.
+
         }
     }
 

@@ -15,7 +15,11 @@
   --target-package "net.hollowcube.luau.internal.vm" \
   --include-function luaL_newstate \
   --include-function luaL_openlibs \
-  --include-function luaL_checkinteger
+  --include-function luaL_checkinteger \
+  --include-function luaL_sandbox \
+  --include-function luaL_sandboxthread \
+  --include-function luaL_checklstring
+
 
 # lua.h
 /Users/matt/Downloads/jextract-22/bin/jextract \
@@ -30,4 +34,7 @@
   --include-function lua_pushcclosurek \
   --include-constant LUA_GLOBALSINDEX \
   --include-function lua_pushinteger \
-  --include-struct lua_Callbacks
+  --include-struct lua_Callbacks \
+  --include-function lua_newthread \
+  --include-function lua_settop \
+  --include-function lua_callbacks
