@@ -69,6 +69,303 @@ public class lualib_h {
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
     public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
 
+    private static class luaL_register {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_register");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_register(lua_State *L, const char *libname, const luaL_Reg *l)
+     * }
+     */
+    public static FunctionDescriptor luaL_register$descriptor() {
+        return luaL_register.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_register(lua_State *L, const char *libname, const luaL_Reg *l)
+     * }
+     */
+    public static MethodHandle luaL_register$handle() {
+        return luaL_register.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_register(lua_State *L, const char *libname, const luaL_Reg *l)
+     * }
+     */
+    public static MemorySegment luaL_register$address() {
+        return luaL_register.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_register(lua_State *L, const char *libname, const luaL_Reg *l)
+     * }
+     */
+    public static void luaL_register(MemorySegment L, MemorySegment libname, MemorySegment l) {
+        var mh$ = luaL_register.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_register", L, libname, l);
+            }
+            mh$.invokeExact(L, libname, l);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_getmetafield {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_getmetafield");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_getmetafield(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static FunctionDescriptor luaL_getmetafield$descriptor() {
+        return luaL_getmetafield.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_getmetafield(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static MethodHandle luaL_getmetafield$handle() {
+        return luaL_getmetafield.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_getmetafield(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static MemorySegment luaL_getmetafield$address() {
+        return luaL_getmetafield.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_getmetafield(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static int luaL_getmetafield(MemorySegment L, int obj, MemorySegment e) {
+        var mh$ = luaL_getmetafield.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_getmetafield", L, obj, e);
+            }
+            return (int)mh$.invokeExact(L, obj, e);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_callmeta {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_callmeta");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_callmeta(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static FunctionDescriptor luaL_callmeta$descriptor() {
+        return luaL_callmeta.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_callmeta(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static MethodHandle luaL_callmeta$handle() {
+        return luaL_callmeta.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_callmeta(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static MemorySegment luaL_callmeta$address() {
+        return luaL_callmeta.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_callmeta(lua_State *L, int obj, const char *e)
+     * }
+     */
+    public static int luaL_callmeta(MemorySegment L, int obj, MemorySegment e) {
+        var mh$ = luaL_callmeta.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_callmeta", L, obj, e);
+            }
+            return (int)mh$.invokeExact(L, obj, e);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_typeerrorL {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_typeerrorL");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_typeerrorL(lua_State *L, int narg, const char *tname)
+     * }
+     */
+    public static FunctionDescriptor luaL_typeerrorL$descriptor() {
+        return luaL_typeerrorL.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_typeerrorL(lua_State *L, int narg, const char *tname)
+     * }
+     */
+    public static MethodHandle luaL_typeerrorL$handle() {
+        return luaL_typeerrorL.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_typeerrorL(lua_State *L, int narg, const char *tname)
+     * }
+     */
+    public static MemorySegment luaL_typeerrorL$address() {
+        return luaL_typeerrorL.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_typeerrorL(lua_State *L, int narg, const char *tname)
+     * }
+     */
+    public static void luaL_typeerrorL(MemorySegment L, int narg, MemorySegment tname) {
+        var mh$ = luaL_typeerrorL.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_typeerrorL", L, narg, tname);
+            }
+            mh$.invokeExact(L, narg, tname);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_argerrorL {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_argerrorL");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_argerrorL(lua_State *L, int narg, const char *extramsg)
+     * }
+     */
+    public static FunctionDescriptor luaL_argerrorL$descriptor() {
+        return luaL_argerrorL.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_argerrorL(lua_State *L, int narg, const char *extramsg)
+     * }
+     */
+    public static MethodHandle luaL_argerrorL$handle() {
+        return luaL_argerrorL.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_argerrorL(lua_State *L, int narg, const char *extramsg)
+     * }
+     */
+    public static MemorySegment luaL_argerrorL$address() {
+        return luaL_argerrorL.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_argerrorL(lua_State *L, int narg, const char *extramsg)
+     * }
+     */
+    public static void luaL_argerrorL(MemorySegment L, int narg, MemorySegment extramsg) {
+        var mh$ = luaL_argerrorL.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_argerrorL", L, narg, extramsg);
+            }
+            mh$.invokeExact(L, narg, extramsg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaL_checklstring {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             lualib_h.C_POINTER,
@@ -124,6 +421,305 @@ public class lualib_h {
                 traceDowncall("luaL_checklstring", L, numArg, l);
             }
             return (MemorySegment)mh$.invokeExact(L, numArg, l);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_optlstring {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optlstring");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const char *luaL_optlstring(lua_State *L, int numArg, const char *def, size_t *l)
+     * }
+     */
+    public static FunctionDescriptor luaL_optlstring$descriptor() {
+        return luaL_optlstring.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const char *luaL_optlstring(lua_State *L, int numArg, const char *def, size_t *l)
+     * }
+     */
+    public static MethodHandle luaL_optlstring$handle() {
+        return luaL_optlstring.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const char *luaL_optlstring(lua_State *L, int numArg, const char *def, size_t *l)
+     * }
+     */
+    public static MemorySegment luaL_optlstring$address() {
+        return luaL_optlstring.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const char *luaL_optlstring(lua_State *L, int numArg, const char *def, size_t *l)
+     * }
+     */
+    public static MemorySegment luaL_optlstring(MemorySegment L, int numArg, MemorySegment def, MemorySegment l) {
+        var mh$ = luaL_optlstring.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_optlstring", L, numArg, def, l);
+            }
+            return (MemorySegment)mh$.invokeExact(L, numArg, def, l);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checknumber {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_DOUBLE,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checknumber");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern double luaL_checknumber(lua_State *L, int numArg)
+     * }
+     */
+    public static FunctionDescriptor luaL_checknumber$descriptor() {
+        return luaL_checknumber.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern double luaL_checknumber(lua_State *L, int numArg)
+     * }
+     */
+    public static MethodHandle luaL_checknumber$handle() {
+        return luaL_checknumber.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern double luaL_checknumber(lua_State *L, int numArg)
+     * }
+     */
+    public static MemorySegment luaL_checknumber$address() {
+        return luaL_checknumber.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern double luaL_checknumber(lua_State *L, int numArg)
+     * }
+     */
+    public static double luaL_checknumber(MemorySegment L, int numArg) {
+        var mh$ = luaL_checknumber.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checknumber", L, numArg);
+            }
+            return (double)mh$.invokeExact(L, numArg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_optnumber {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_DOUBLE,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_DOUBLE
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optnumber");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern double luaL_optnumber(lua_State *L, int nArg, double def)
+     * }
+     */
+    public static FunctionDescriptor luaL_optnumber$descriptor() {
+        return luaL_optnumber.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern double luaL_optnumber(lua_State *L, int nArg, double def)
+     * }
+     */
+    public static MethodHandle luaL_optnumber$handle() {
+        return luaL_optnumber.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern double luaL_optnumber(lua_State *L, int nArg, double def)
+     * }
+     */
+    public static MemorySegment luaL_optnumber$address() {
+        return luaL_optnumber.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern double luaL_optnumber(lua_State *L, int nArg, double def)
+     * }
+     */
+    public static double luaL_optnumber(MemorySegment L, int nArg, double def) {
+        var mh$ = luaL_optnumber.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_optnumber", L, nArg, def);
+            }
+            return (double)mh$.invokeExact(L, nArg, def);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkboolean {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkboolean");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_checkboolean(lua_State *L, int narg)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkboolean$descriptor() {
+        return luaL_checkboolean.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_checkboolean(lua_State *L, int narg)
+     * }
+     */
+    public static MethodHandle luaL_checkboolean$handle() {
+        return luaL_checkboolean.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_checkboolean(lua_State *L, int narg)
+     * }
+     */
+    public static MemorySegment luaL_checkboolean$address() {
+        return luaL_checkboolean.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_checkboolean(lua_State *L, int narg)
+     * }
+     */
+    public static int luaL_checkboolean(MemorySegment L, int narg) {
+        var mh$ = luaL_checkboolean.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkboolean", L, narg);
+            }
+            return (int)mh$.invokeExact(L, narg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_optboolean {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optboolean");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_optboolean(lua_State *L, int narg, int def)
+     * }
+     */
+    public static FunctionDescriptor luaL_optboolean$descriptor() {
+        return luaL_optboolean.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_optboolean(lua_State *L, int narg, int def)
+     * }
+     */
+    public static MethodHandle luaL_optboolean$handle() {
+        return luaL_optboolean.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_optboolean(lua_State *L, int narg, int def)
+     * }
+     */
+    public static MemorySegment luaL_optboolean$address() {
+        return luaL_optboolean.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_optboolean(lua_State *L, int narg, int def)
+     * }
+     */
+    public static int luaL_optboolean(MemorySegment L, int narg, int def) {
+        var mh$ = luaL_optboolean.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_optboolean", L, narg, def);
+            }
+            return (int)mh$.invokeExact(L, narg, def);
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -188,6 +784,778 @@ public class lualib_h {
         }
     }
 
+    private static class luaL_optinteger {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optinteger");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_optinteger(lua_State *L, int nArg, int def)
+     * }
+     */
+    public static FunctionDescriptor luaL_optinteger$descriptor() {
+        return luaL_optinteger.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_optinteger(lua_State *L, int nArg, int def)
+     * }
+     */
+    public static MethodHandle luaL_optinteger$handle() {
+        return luaL_optinteger.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_optinteger(lua_State *L, int nArg, int def)
+     * }
+     */
+    public static MemorySegment luaL_optinteger$address() {
+        return luaL_optinteger.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_optinteger(lua_State *L, int nArg, int def)
+     * }
+     */
+    public static int luaL_optinteger(MemorySegment L, int nArg, int def) {
+        var mh$ = luaL_optinteger.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_optinteger", L, nArg, def);
+            }
+            return (int)mh$.invokeExact(L, nArg, def);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkunsigned {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkunsigned");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern unsigned int luaL_checkunsigned(lua_State *L, int numArg)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkunsigned$descriptor() {
+        return luaL_checkunsigned.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern unsigned int luaL_checkunsigned(lua_State *L, int numArg)
+     * }
+     */
+    public static MethodHandle luaL_checkunsigned$handle() {
+        return luaL_checkunsigned.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern unsigned int luaL_checkunsigned(lua_State *L, int numArg)
+     * }
+     */
+    public static MemorySegment luaL_checkunsigned$address() {
+        return luaL_checkunsigned.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern unsigned int luaL_checkunsigned(lua_State *L, int numArg)
+     * }
+     */
+    public static int luaL_checkunsigned(MemorySegment L, int numArg) {
+        var mh$ = luaL_checkunsigned.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkunsigned", L, numArg);
+            }
+            return (int)mh$.invokeExact(L, numArg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_optunsigned {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optunsigned");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern unsigned int luaL_optunsigned(lua_State *L, int numArg, unsigned int def)
+     * }
+     */
+    public static FunctionDescriptor luaL_optunsigned$descriptor() {
+        return luaL_optunsigned.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern unsigned int luaL_optunsigned(lua_State *L, int numArg, unsigned int def)
+     * }
+     */
+    public static MethodHandle luaL_optunsigned$handle() {
+        return luaL_optunsigned.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern unsigned int luaL_optunsigned(lua_State *L, int numArg, unsigned int def)
+     * }
+     */
+    public static MemorySegment luaL_optunsigned$address() {
+        return luaL_optunsigned.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern unsigned int luaL_optunsigned(lua_State *L, int numArg, unsigned int def)
+     * }
+     */
+    public static int luaL_optunsigned(MemorySegment L, int numArg, int def) {
+        var mh$ = luaL_optunsigned.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_optunsigned", L, numArg, def);
+            }
+            return (int)mh$.invokeExact(L, numArg, def);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkvector {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkvector");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const float *luaL_checkvector(lua_State *L, int narg)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkvector$descriptor() {
+        return luaL_checkvector.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const float *luaL_checkvector(lua_State *L, int narg)
+     * }
+     */
+    public static MethodHandle luaL_checkvector$handle() {
+        return luaL_checkvector.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const float *luaL_checkvector(lua_State *L, int narg)
+     * }
+     */
+    public static MemorySegment luaL_checkvector$address() {
+        return luaL_checkvector.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const float *luaL_checkvector(lua_State *L, int narg)
+     * }
+     */
+    public static MemorySegment luaL_checkvector(MemorySegment L, int narg) {
+        var mh$ = luaL_checkvector.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkvector", L, narg);
+            }
+            return (MemorySegment)mh$.invokeExact(L, narg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_optvector {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optvector");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const float *luaL_optvector(lua_State *L, int narg, const float *def)
+     * }
+     */
+    public static FunctionDescriptor luaL_optvector$descriptor() {
+        return luaL_optvector.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const float *luaL_optvector(lua_State *L, int narg, const float *def)
+     * }
+     */
+    public static MethodHandle luaL_optvector$handle() {
+        return luaL_optvector.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const float *luaL_optvector(lua_State *L, int narg, const float *def)
+     * }
+     */
+    public static MemorySegment luaL_optvector$address() {
+        return luaL_optvector.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const float *luaL_optvector(lua_State *L, int narg, const float *def)
+     * }
+     */
+    public static MemorySegment luaL_optvector(MemorySegment L, int narg, MemorySegment def) {
+        var mh$ = luaL_optvector.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_optvector", L, narg, def);
+            }
+            return (MemorySegment)mh$.invokeExact(L, narg, def);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkstack {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkstack");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_checkstack(lua_State *L, int sz, const char *msg)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkstack$descriptor() {
+        return luaL_checkstack.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_checkstack(lua_State *L, int sz, const char *msg)
+     * }
+     */
+    public static MethodHandle luaL_checkstack$handle() {
+        return luaL_checkstack.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_checkstack(lua_State *L, int sz, const char *msg)
+     * }
+     */
+    public static MemorySegment luaL_checkstack$address() {
+        return luaL_checkstack.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_checkstack(lua_State *L, int sz, const char *msg)
+     * }
+     */
+    public static void luaL_checkstack(MemorySegment L, int sz, MemorySegment msg) {
+        var mh$ = luaL_checkstack.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkstack", L, sz, msg);
+            }
+            mh$.invokeExact(L, sz, msg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checktype {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checktype");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_checktype(lua_State *L, int narg, int t)
+     * }
+     */
+    public static FunctionDescriptor luaL_checktype$descriptor() {
+        return luaL_checktype.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_checktype(lua_State *L, int narg, int t)
+     * }
+     */
+    public static MethodHandle luaL_checktype$handle() {
+        return luaL_checktype.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_checktype(lua_State *L, int narg, int t)
+     * }
+     */
+    public static MemorySegment luaL_checktype$address() {
+        return luaL_checktype.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_checktype(lua_State *L, int narg, int t)
+     * }
+     */
+    public static void luaL_checktype(MemorySegment L, int narg, int t) {
+        var mh$ = luaL_checktype.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checktype", L, narg, t);
+            }
+            mh$.invokeExact(L, narg, t);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkany {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkany");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_checkany(lua_State *L, int narg)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkany$descriptor() {
+        return luaL_checkany.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_checkany(lua_State *L, int narg)
+     * }
+     */
+    public static MethodHandle luaL_checkany$handle() {
+        return luaL_checkany.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_checkany(lua_State *L, int narg)
+     * }
+     */
+    public static MemorySegment luaL_checkany$address() {
+        return luaL_checkany.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_checkany(lua_State *L, int narg)
+     * }
+     */
+    public static void luaL_checkany(MemorySegment L, int narg) {
+        var mh$ = luaL_checkany.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkany", L, narg);
+            }
+            mh$.invokeExact(L, narg);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_newmetatable {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_newmetatable");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_newmetatable(lua_State *L, const char *tname)
+     * }
+     */
+    public static FunctionDescriptor luaL_newmetatable$descriptor() {
+        return luaL_newmetatable.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_newmetatable(lua_State *L, const char *tname)
+     * }
+     */
+    public static MethodHandle luaL_newmetatable$handle() {
+        return luaL_newmetatable.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_newmetatable(lua_State *L, const char *tname)
+     * }
+     */
+    public static MemorySegment luaL_newmetatable$address() {
+        return luaL_newmetatable.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_newmetatable(lua_State *L, const char *tname)
+     * }
+     */
+    public static int luaL_newmetatable(MemorySegment L, MemorySegment tname) {
+        var mh$ = luaL_newmetatable.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_newmetatable", L, tname);
+            }
+            return (int)mh$.invokeExact(L, tname);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkudata {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkudata");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void *luaL_checkudata(lua_State *L, int ud, const char *tname)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkudata$descriptor() {
+        return luaL_checkudata.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void *luaL_checkudata(lua_State *L, int ud, const char *tname)
+     * }
+     */
+    public static MethodHandle luaL_checkudata$handle() {
+        return luaL_checkudata.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void *luaL_checkudata(lua_State *L, int ud, const char *tname)
+     * }
+     */
+    public static MemorySegment luaL_checkudata$address() {
+        return luaL_checkudata.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void *luaL_checkudata(lua_State *L, int ud, const char *tname)
+     * }
+     */
+    public static MemorySegment luaL_checkudata(MemorySegment L, int ud, MemorySegment tname) {
+        var mh$ = luaL_checkudata.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkudata", L, ud, tname);
+            }
+            return (MemorySegment)mh$.invokeExact(L, ud, tname);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkbuffer {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkbuffer");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void *luaL_checkbuffer(lua_State *L, int narg, size_t *len)
+     * }
+     */
+    public static FunctionDescriptor luaL_checkbuffer$descriptor() {
+        return luaL_checkbuffer.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void *luaL_checkbuffer(lua_State *L, int narg, size_t *len)
+     * }
+     */
+    public static MethodHandle luaL_checkbuffer$handle() {
+        return luaL_checkbuffer.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void *luaL_checkbuffer(lua_State *L, int narg, size_t *len)
+     * }
+     */
+    public static MemorySegment luaL_checkbuffer$address() {
+        return luaL_checkbuffer.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void *luaL_checkbuffer(lua_State *L, int narg, size_t *len)
+     * }
+     */
+    public static MemorySegment luaL_checkbuffer(MemorySegment L, int narg, MemorySegment len) {
+        var mh$ = luaL_checkbuffer.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkbuffer", L, narg, len);
+            }
+            return (MemorySegment)mh$.invokeExact(L, narg, len);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_where {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lualib_h.C_POINTER,
+            lualib_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_where");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaL_where(lua_State *L, int lvl)
+     * }
+     */
+    public static FunctionDescriptor luaL_where$descriptor() {
+        return luaL_where.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaL_where(lua_State *L, int lvl)
+     * }
+     */
+    public static MethodHandle luaL_where$handle() {
+        return luaL_where.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaL_where(lua_State *L, int lvl)
+     * }
+     */
+    public static MemorySegment luaL_where$address() {
+        return luaL_where.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaL_where(lua_State *L, int lvl)
+     * }
+     */
+    public static void luaL_where(MemorySegment L, int lvl) {
+        var mh$ = luaL_where.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_where", L, lvl);
+            }
+            mh$.invokeExact(L, lvl);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaL_checkoption {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_checkoption");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaL_checkoption(lua_State *L, int narg, const char *def, const char *const lst[])
+     * }
+     */
+    public static FunctionDescriptor luaL_checkoption$descriptor() {
+        return luaL_checkoption.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaL_checkoption(lua_State *L, int narg, const char *def, const char *const lst[])
+     * }
+     */
+    public static MethodHandle luaL_checkoption$handle() {
+        return luaL_checkoption.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaL_checkoption(lua_State *L, int narg, const char *def, const char *const lst[])
+     * }
+     */
+    public static MemorySegment luaL_checkoption$address() {
+        return luaL_checkoption.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaL_checkoption(lua_State *L, int narg, const char *def, const char *const lst[])
+     * }
+     */
+    public static int luaL_checkoption(MemorySegment L, int narg, MemorySegment def, MemorySegment lst) {
+        var mh$ = luaL_checkoption.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_checkoption", L, narg, def, lst);
+            }
+            return (int)mh$.invokeExact(L, narg, def, lst);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaL_newstate {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             lualib_h.C_POINTER    );
@@ -239,6 +1607,586 @@ public class lualib_h {
                 traceDowncall("luaL_newstate");
             }
             return (MemorySegment)mh$.invokeExact();
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_base {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_base");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_base(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_base$descriptor() {
+        return luaopen_base.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_base(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_base$handle() {
+        return luaopen_base.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_base(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_base$address() {
+        return luaopen_base.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_base(lua_State *L)
+     * }
+     */
+    public static int luaopen_base(MemorySegment L) {
+        var mh$ = luaopen_base.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_base", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_coroutine {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_coroutine");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_coroutine(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_coroutine$descriptor() {
+        return luaopen_coroutine.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_coroutine(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_coroutine$handle() {
+        return luaopen_coroutine.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_coroutine(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_coroutine$address() {
+        return luaopen_coroutine.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_coroutine(lua_State *L)
+     * }
+     */
+    public static int luaopen_coroutine(MemorySegment L) {
+        var mh$ = luaopen_coroutine.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_coroutine", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_table {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_table");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_table(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_table$descriptor() {
+        return luaopen_table.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_table(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_table$handle() {
+        return luaopen_table.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_table(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_table$address() {
+        return luaopen_table.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_table(lua_State *L)
+     * }
+     */
+    public static int luaopen_table(MemorySegment L) {
+        var mh$ = luaopen_table.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_table", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_os {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_os");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_os(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_os$descriptor() {
+        return luaopen_os.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_os(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_os$handle() {
+        return luaopen_os.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_os(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_os$address() {
+        return luaopen_os.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_os(lua_State *L)
+     * }
+     */
+    public static int luaopen_os(MemorySegment L) {
+        var mh$ = luaopen_os.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_os", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_string {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_string");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_string(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_string$descriptor() {
+        return luaopen_string.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_string(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_string$handle() {
+        return luaopen_string.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_string(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_string$address() {
+        return luaopen_string.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_string(lua_State *L)
+     * }
+     */
+    public static int luaopen_string(MemorySegment L) {
+        var mh$ = luaopen_string.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_string", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_bit32 {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_bit32");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_bit32(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_bit32$descriptor() {
+        return luaopen_bit32.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_bit32(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_bit32$handle() {
+        return luaopen_bit32.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_bit32(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_bit32$address() {
+        return luaopen_bit32.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_bit32(lua_State *L)
+     * }
+     */
+    public static int luaopen_bit32(MemorySegment L) {
+        var mh$ = luaopen_bit32.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_bit32", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_buffer {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_buffer");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_buffer(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_buffer$descriptor() {
+        return luaopen_buffer.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_buffer(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_buffer$handle() {
+        return luaopen_buffer.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_buffer(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_buffer$address() {
+        return luaopen_buffer.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_buffer(lua_State *L)
+     * }
+     */
+    public static int luaopen_buffer(MemorySegment L) {
+        var mh$ = luaopen_buffer.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_buffer", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_utf8 {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_utf8");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_utf8(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_utf8$descriptor() {
+        return luaopen_utf8.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_utf8(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_utf8$handle() {
+        return luaopen_utf8.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_utf8(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_utf8$address() {
+        return luaopen_utf8.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_utf8(lua_State *L)
+     * }
+     */
+    public static int luaopen_utf8(MemorySegment L) {
+        var mh$ = luaopen_utf8.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_utf8", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_math {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_math");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_math(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_math$descriptor() {
+        return luaopen_math.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_math(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_math$handle() {
+        return luaopen_math.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_math(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_math$address() {
+        return luaopen_math.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_math(lua_State *L)
+     * }
+     */
+    public static int luaopen_math(MemorySegment L) {
+        var mh$ = luaopen_math.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_math", L);
+            }
+            return (int)mh$.invokeExact(L);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaopen_debug {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_debug");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaopen_debug(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor luaopen_debug$descriptor() {
+        return luaopen_debug.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaopen_debug(lua_State *L)
+     * }
+     */
+    public static MethodHandle luaopen_debug$handle() {
+        return luaopen_debug.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaopen_debug(lua_State *L)
+     * }
+     */
+    public static MemorySegment luaopen_debug$address() {
+        return luaopen_debug.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaopen_debug(lua_State *L)
+     * }
+     */
+    public static int luaopen_debug(MemorySegment L) {
+        var mh$ = luaopen_debug.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaopen_debug", L);
+            }
+            return (int)mh$.invokeExact(L);
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }

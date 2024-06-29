@@ -2,6 +2,8 @@ package net.hollowcube.luau;
 
 import net.hollowcube.luau.compiler.LuauCompiler;
 
+import java.util.Map;
+
 @SuppressWarnings("preview")
 public class Testing {
 
@@ -13,27 +15,36 @@ public class Testing {
         var source = """
                 print('hello from lua')
                                 
-                print(add(1, 2))
-                print(sub(1, 2))
+                print(m2.add(1, 2))
+                print(m2.sub(1, 2))
+                abc()
                 """;
         var bytecode = LuauCompiler.DEFAULT.compile(source);
 
         try (LuaState global = Luau.newState()) {
             global.openLibs();
 
-            global.defineGlobalFunction("add", state -> {
-                int left = state.checkInt(1);
-                int right = state.checkInt(2);
-                state.pushInt(left + right);
-                return 1;
-            });
+            global.registerLib("m2", Map.of(
+                    "add", state -> {
+                        int left = state.checkIntegerArg(1);
+                        int right = state.checkIntegerArg(2);
+                        state.pushInteger(left + right);
+                        return 1;
+                    },
+                    "sub", state -> {
+                        int left = state.checkIntegerArg(1);
+                        int right = state.checkIntegerArg(2);
+                        state.pushInteger(left - right);
 
-            global.defineGlobalFunction("sub", state -> {
-                int left = state.checkInt(1);
-                int right = state.checkInt(2);
-                state.pushInt(left - right);
-                return 1;
-            });
+//                        state.error("error from java");
+                        return 1;
+                    }
+            ));
+            global.pushCFunction(state -> {
+                System.out.println("hello from java");
+                return 0;
+            }, "abc");
+            global.setGlobal("abc");
 
             // After this point it is invalid to do any setglobal calls.
             // We should check this in java land because it segfaults.
@@ -58,7 +69,7 @@ public class Testing {
                 // Now ready for running untrusted code.
 
                 thread.load("main.lua", bytecode);
-                thread.pcall();
+                thread.pcall(0, 0);
             }
 
             global.pop(1); // the thread was added to the stack, remove it.
