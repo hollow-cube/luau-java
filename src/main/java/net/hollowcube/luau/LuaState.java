@@ -11,7 +11,11 @@ import java.util.Map;
 
 // https://pgl.yoyo.org/luai/i/lua_typename
 //todo read here: https://github.com/luau-lang/luau/issues/251
-public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
+public sealed interface LuaState permits LuaStateImpl {
+
+    //todo we should probably configure longjmp
+    int USERDATA_TAG_LIMIT = LuaStateImpl.UTAG_LIMIT;
+    int LIGHTUSERDATA_TAG_LIMIT = LuaStateImpl.LUTAG_LIMIT;
 
     /*
     State Manipulation
@@ -21,11 +25,6 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
         throw new UnsupportedOperationException();
     }
 
-    static double clock() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     void close();
 
     @NotNull LuaState newThread();
@@ -124,9 +123,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
 
     void pushLightUserData(Object p); //todo type
     void pushLightUserDataTagged(Object p, int tag); //todo type
-    Object newUserData(long size); //todo type
-    Object newUserDataTagged(long size, int tag); //todo tag type
-    Object newUserDataDestructor(long size, Object destructor); //todo type
+    void newUserData(@NotNull Object userdata);
+    Object newUserDataTagged(long size, int tag); //todo
 
     @NotNull ByteBuffer newBuffer(long size);
 
@@ -179,15 +177,15 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     @NotNull LuaStatus resumeError(@NotNull LuaState from);
     @NotNull LuaStatus status();
     boolean isYieldable();
-    Object getThreadData(); //todo type
-    void setThreadData(Object data); //todo type
+    @Nullable Object getThreadData();
+    void setThreadData(@Nullable Object data);
     @NotNull LuaCoroutineStatus coroutineStatus(@NotNull LuaState coroutine);
 
     /*
     Garbage Collection
      */
 
-    int gc(int what, int data); //todo idk what these are or if they should have nicer types
+    int gc(@NotNull LuaGCOp op, int data);
 
     /*
     Memory Statistics
@@ -209,6 +207,10 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     int rawIter(int tableIndex, int iter);
 
     void concat(int n);
+
+    static double clock() {
+        return LuaStateImpl.clock();
+    }
 
     //todo encodepointer
 
@@ -269,6 +271,7 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     boolean getMetaField(int obj, @NotNull String e); //todo what are these fields
     boolean callMeta(int obj, @NotNull String e); //todo what are these fields
     boolean newMetaTable(@NotNull String typeName);
+    void getMetaTable(@NotNull String typeName);
 
     void where();
     void where(int level);
@@ -289,7 +292,7 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     @NotNull String optStringArg(int argIndex, @NotNull String defaultValue);
     @NotNull ByteBuffer checkBufferArg(int argIndex);
     //todo checkOptionArg
-    //todo checkUserDataArg
+    @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName);
     void checkStack(int size, @NotNull String message);
     void checkType(int argIndex, @NotNull LuaType type);
     void checkAny(int argIndex);

@@ -38,6 +38,8 @@
   --include-constant LUA_ENVIRONINDEX \
   --include-constant LUA_GLOBALSINDEX \
   \
+  --include-constant LUA_UTAG_LIMIT \
+  --include-constant LUA_LUTAG_LIMIT \
   --include-constant LUA_MEMORY_CATEGORIES \
   \
   --include-function lua_newstate \

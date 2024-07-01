@@ -1,9 +1,7 @@
 package net.hollowcube.luau;
 
-import net.hollowcube.luau.internal.vm.luaL_Reg;
-import net.hollowcube.luau.internal.vm.lua_CFunction;
-import net.hollowcube.luau.internal.vm.lua_h;
-import net.hollowcube.luau.internal.vm.lualib_h;
+import net.hollowcube.luau.internal.vm.*;
+import net.hollowcube.luau.util.JNIRefTest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -23,6 +21,17 @@ import static net.hollowcube.luau.internal.vm.lualib_h.*;
 @SuppressWarnings("preview")
 final class LuaStateImpl implements LuaState {
 
+    /*
+        // isSandboxed call required
+    // assertNotSandboxed() before any setglobal
+    //todo if global.sandbox() prevents any globals in that state from being changed
+    // then what does sandboxthread actually do?
+    // would stop modification of anything present, so i believe i could eval some code and then sandboxthread and it couldnt be touched.
+     */
+
+    static final int UTAG_LIMIT = LUA_UTAG_LIMIT();
+    static final int LUTAG_LIMIT = LUA_LUTAG_LIMIT();
+
     static double clock() {
         class H {
             static final lua_clock invoker = lua_clock.makeInvoker();
@@ -30,24 +39,59 @@ final class LuaStateImpl implements LuaState {
         return H.invoker.apply();
     }
 
-    private final @NotNull MemorySegment L;
-    private final @Nullable Arena arena;
+    private static final MemorySegment UNTAGGED_UDATA_DTOR = lua_newuserdatadtor$dtor.allocate(
+            ud -> JNIRefTest.unref(ud.get(ValueLayout.JAVA_LONG, 0)), Arena.global());
+
+    private final MemorySegment L;
+    private final Arena arena;
     private final boolean isThread;
 
-    public LuaStateImpl(@NotNull MemorySegment L, @Nullable Arena arena, boolean isThread) {
+    private long ref; // JNI global reference which needs to be freed.
+
+    // Holds the thread data set by the user, rather than actually sending it to lua.
+    private Object threadData = null;
+
+    public LuaStateImpl(@NotNull MemorySegment L, @NotNull Arena arena, boolean isThread) {
         this.L = L;
         this.arena = arena;
         this.isThread = isThread;
+
+        // Create a JNI global reference and store it in the userdata of this state.
+        // We implement the user data setter/getter in plain java so this is fine.
+        this.ref = JNIRefTest.newref(this);
+        lua_setthreaddata(L, MemorySegment.ofAddress(this.ref));
     }
 
     public LuaStateImpl() {
         this(lualib_h.luaL_newstate(), Arena.ofConfined(), false);
+
+        // If this is a root state, setup the thread close callback to clean them up.
+        final MemorySegment callbacks = lua_callbacks(L);
+        final MemorySegment userthread = lua_Callbacks.userthread.allocate(LuaStateImpl::threadChange, arena);
+        lua_Callbacks.userthread(callbacks, userthread);
     }
 
     @Override
     public void close() {
-        if (!isThread) lua_h.lua_close(L);
-        if (arena != null) arena.close();
+        if (isThread)
+            throw new IllegalStateException("cannot close a thread directly, it will be closed when lua garbage collects it.");
+        lua_h.lua_close(L);
+        closeInternal();
+    }
+
+    private static void threadChange(@NotNull MemorySegment LP, @NotNull MemorySegment L) {
+        // We don't need to do anything on start currently
+        if (LP != MemorySegment.NULL) return;
+
+        deref(L).closeInternal();
+    }
+
+    private void closeInternal() {
+        arena.close();
+
+        if (ref == 0) throw new IllegalStateException("LuaState was double closed.");
+        JNIRefTest.unref(ref);
+        ref = 0;
     }
 
     @Override
@@ -320,7 +364,8 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public Object toUserData(int index) {
-        throw new UnsupportedOperationException("todo");
+        final MemorySegment ud = lua_touserdata(L, index);
+        return JNIRefTest.get(ud.get(ValueLayout.JAVA_LONG, 0));
     }
 
     @Override
@@ -340,7 +385,7 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public @NotNull LuaState toThread(int index) {
-        return new LuaStateImpl(lua_tothread(L, index), null, true);
+        return deref(lua_tothread(L, index));
     }
 
     @Override
@@ -416,17 +461,15 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public Object newUserData(long size) {
-        throw new UnsupportedOperationException("todo");
+    public void newUserData(@NotNull Object userdata) {
+        // Our userdata fields always contain a single long holding a jni global reference. It is freed in the
+        // destructor.
+        final MemorySegment ud = lua_newuserdatadtor(L, ValueLayout.JAVA_LONG.byteSize(), UNTAGGED_UDATA_DTOR);
+        ud.set(ValueLayout.JAVA_LONG, 0, JNIRefTest.newref(userdata));
     }
 
     @Override
     public Object newUserDataTagged(long size, int tag) {
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
-    public Object newUserDataDestructor(long size, Object destructor) {
         throw new UnsupportedOperationException("todo");
     }
 
@@ -547,8 +590,11 @@ final class LuaStateImpl implements LuaState {
             final MemorySegment bytecodeArr = arena.allocateArray(ValueLayout.JAVA_BYTE, bytecode);
 
             int result = lua_h.luau_load(L, nameStr, bytecodeArr, bytecode.length, 0);
-            // todo if there is an error we should extract it properly.
-            if (result != 0) throw new RuntimeException("Failed to load bytecode: " + result);
+            if (result != 0) {
+                final String error = toString(-1);
+                pop(1);
+                throw new RuntimeException(error);
+            }
         }
     }
 
@@ -607,13 +653,13 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public Object getThreadData() {
-        throw new UnsupportedOperationException("todo");
+    public @Nullable Object getThreadData() {
+        return this.threadData;
     }
 
     @Override
-    public void setThreadData(Object data) {
-        throw new UnsupportedOperationException("todo");
+    public void setThreadData(@Nullable Object data) {
+        this.threadData = data;
     }
 
     @Override
@@ -622,8 +668,8 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public int gc(int what, int data) {
-        throw new UnsupportedOperationException("todo");
+    public int gc(@NotNull LuaGCOp op, int data) {
+        return lua_gc(L, op.id(), data);
     }
 
     @Override
@@ -792,6 +838,14 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public void getMetaTable(@NotNull String typeName) {
+        try (Arena arena = Arena.ofConfined()) {
+            final LuaType type = getField(LUA_REGISTRYINDEX(), typeName);
+            assert type == LuaType.TABLE : "expected table";
+        }
+    }
+
+    @Override
     public void where() {
         where(0);
     }
@@ -871,6 +925,14 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateUtf8String(typeName));
+            return JNIRefTest.get(ud.get(ValueLayout.JAVA_LONG, 0));
+        }
+    }
+
+    @Override
     public void checkStack(int size, @NotNull String message) {
         try (Arena arena = Arena.ofConfined()) {
             luaL_checkstack(L, size, arena.allocateUtf8String(message));
@@ -911,17 +973,13 @@ final class LuaStateImpl implements LuaState {
         }
     }
 
-    private @NotNull Arena assertDirect() {
-        if (arena == null) throw new IllegalStateException("Cannot call this method on an indirect state reference");
-        return arena;
+    private static @NotNull LuaStateImpl deref(@NotNull MemorySegment L) {
+        return (LuaStateImpl) JNIRefTest.get(lua_getthreaddata(L).address());
     }
 
     private @NotNull MemorySegment wrapLuaFunc(@NotNull LuaFunc func) {
-        // We call the callback with an indirect LuaStateImpl reference which is fine for most calls, just not allocations.
-        //todo how to check if the state is a thread? also it would be nice to just solve once and for all
-        // if its worth trying to get the java object back (eg with some java map to the address)
-        final lua_CFunction.Function fi = L -> func.call(new LuaStateImpl(L, null, true));
-        return lua_CFunction.allocate(fi, assertDirect());
+        final lua_CFunction.Function fi = L -> func.call(deref(L));
+        return lua_CFunction.allocate(fi, arena);
     }
 
     private float[] unpackVector(@NotNull MemorySegment floats) {
@@ -962,100 +1020,4 @@ final class LuaStateImpl implements LuaState {
             return sizedPtr.asByteBuffer();
         }
     }
-
-
-    /*
-        // isSandboxed call required
-    // assertNotSandboxed() before any setglobal
-    //todo if global.sandbox() prevents any globals in that state from being changed
-    // then what does sandboxthread actually do?
-
-    public LuaStateImpl(
-            @NotNull MemorySegment L,
-            @Nullable Arena arena,
-            boolean isThread
-    ) {
-        this.L = L;
-        this.arena = arena;
-        this.isThread = isThread;
-    }
-
-    public LuaStateImpl() {
-        this(lualib_h.luaL_newstate(), Arena.ofConfined(), false);
-    }
-
-    @Override
-    public @NotNull MemorySegment L() {
-        return L;
-    }
-
-    @Override
-    public void openLibs() {
-        lualib_h.luaL_openlibs(L);
-    }
-
-    @Override
-    public void defineGlobalFunction(@NotNull String name, @NotNull ToIntFunction<LuaState> function) {
-        final MemorySegment funcPtr = lua_CFunction.allocate(L -> {
-            try (LuaState localState = new LuaStateImpl(L, null, true);) {
-                return function.applyAsInt(localState);
-            }
-        }, Objects.requireNonNull(arena, "anonymous state"));
-
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateUtf8String(name);
-            lua_h.lua_pushcclosurek(L, funcPtr, nameStr, 0, MemorySegment.NULL);
-
-            lua_h.lua_setfield(L, lua_h.LUA_GLOBALSINDEX(), nameStr);
-        }
-    }
-
-    @Override
-    public void load(@NotNull String fileName, byte[] bytecode) {
-        try (final Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateUtf8String(fileName);
-            final MemorySegment bytecodeArr = arena.allocateArray(ValueLayout.JAVA_BYTE, bytecode);
-
-            int result = lua_h.luau_load(L, nameStr, bytecodeArr, bytecode.length, 0);
-            // todo if there is an error we should extract it properly.
-            if (result != 0) throw new RuntimeException("Failed to load bytecode: " + result);
-        }
-    }
-
-    @Override
-    public void pcall() {
-        int result = lua_h.lua_pcall(L, 0, 0, 0);
-        if (result != 0) {
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment len = arena.allocate(ValueLayout.JAVA_LONG);
-                MemorySegment raw = lualib_h.luaL_checklstring(L, 1, len);
-
-                long msgLen = len.get(ValueLayout.JAVA_LONG, 0);
-                byte[] msg = raw.asSlice(0, msgLen).toArray(ValueLayout.JAVA_BYTE);
-                throw new RuntimeException("pcall error: " + new String(msg, StandardCharsets.UTF_8));
-            }
-
-        }
-    }
-
-
-    // Stack manipulation
-
-
-    @Override
-    public int checkInt(int index) {
-        return lualib_h.luaL_checkinteger(L, index);
-    }
-
-    // Threads
-
-    @Override
-    public @NotNull LuaState newThread() {
-        return new LuaStateImpl(lua_h.lua_newthread(L),
-                Arena.ofConfined(),
-                true);
-    }
-
-
-     */
 }

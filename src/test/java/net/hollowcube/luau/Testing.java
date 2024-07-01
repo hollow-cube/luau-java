@@ -2,28 +2,38 @@ package net.hollowcube.luau;
 
 import net.hollowcube.luau.compiler.LuauCompiler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("preview")
 public class Testing {
 
-    public static void main(String[] args) throws Exception {
-        System.setProperty("jextract.trace.downcalls", "false");
+    //todo NEED TO COME UP WITH SOME WAY TO MAKE SURE A PROGRAM DOESNT LEAK REFERENCES.
+    // some env var which adds them all to a list to check would probably work.
 
+    public static void main(String[] args) throws Exception {
         System.load("/Users/matt/dev/projects/hollowcube/luau-java/libLuau.VM.dylib");
 
         var source = """
                 print('hello from lua')
                                 
+                local arr = m2.newarray()
+                m2.push(arr, 1)
+                m2.push(arr, 2)
+                m2.show(arr)
+
                 print(m2.add(1, 2))
                 print(m2.sub(1, 2))
                 abc()
                 """;
         var bytecode = LuauCompiler.DEFAULT.compile(source);
 
-        try (LuaState global = Luau.newState()) {
+        LuaState global = Luau.newState();
+        try {
             global.openLibs();
 
+            global.newMetaTable("myarray");
             global.registerLib("m2", Map.of(
                     "add", state -> {
                         int left = state.checkIntegerArg(1);
@@ -35,12 +45,33 @@ public class Testing {
                         int left = state.checkIntegerArg(1);
                         int right = state.checkIntegerArg(2);
                         state.pushInteger(left - right);
-
 //                        state.error("error from java");
                         return 1;
+                    },
+                    "newarray", state -> {
+
+                        List<Integer> arr = new ArrayList<>();
+                        state.newUserData(arr);
+
+                        // Assign the metatable. todo: the library should just handle this IMO
+                        state.getMetaTable("myarray");
+                        state.setMetaTable(-2);
+
+                        return 1;
+                    },
+                    "push", state -> {
+                        List<Integer> arr = (List<Integer>) state.checkUserDataArg(1, "myarray");
+                        int value = state.checkIntegerArg(2);
+                        arr.add(value);
+                        return 0;
+                    },
+                    "show", state -> {
+                        List<Integer> arr = (List<Integer>) state.checkUserDataArg(1, "myarray");
+                        System.out.println("array: " + arr);
+                        return 0;
                     }
             ));
-            global.pushCFunction(state -> {
+            global.pushCFunction(_ -> {
                 System.out.println("hello from java");
                 return 0;
             }, "abc");
@@ -50,30 +81,16 @@ public class Testing {
             // We should check this in java land because it segfaults.
             global.sandbox();
 
-            try (LuaState thread = global.newThread()) {
+            LuaState thread = global.newThread();
+            thread.sandboxThread();
+            // Now ready for running untrusted code.
+            thread.load("main.lua", bytecode);
+            thread.pcall(0, 0);
 
-//                MemorySegment interruptFunc = lua_Callbacks.interrupt.allocate((L, gc) -> {
-//                    System.out.println("interrupt called!");
-//                }, Arena.global());
+            global.pop(1); // the thread was added to the stack, remove it so that it can be garbage collected.
 
-//                MemorySegment panicFunc = lua_Callbacks.panic.allocate((L, errcode) -> {
-//                    System.out.println("PANIC: " + errcode);
-//                }, Arena.global());
-
-//                MemorySegment callbacks = lua_h.lua_callbacks(thread.L());
-//                lua_Callbacks.interrupt(callbacks, interruptFunc);
-//                lua_Callbacks.panic(callbacks, panicFunc);
-
-                thread.sandboxThread();
-
-                // Now ready for running untrusted code.
-
-                thread.load("main.lua", bytecode);
-                thread.pcall(0, 0);
-            }
-
-            global.pop(1); // the thread was added to the stack, remove it.
-
+        } finally {
+            global.close();
         }
     }
 

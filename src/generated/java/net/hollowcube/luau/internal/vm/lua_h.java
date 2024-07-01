@@ -68,6 +68,24 @@ public class lua_h {
     public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
     public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
+    private static final int LUA_UTAG_LIMIT = (int)128L;
+    /**
+     * {@snippet lang=c :
+     * #define LUA_UTAG_LIMIT 128
+     * }
+     */
+    public static int LUA_UTAG_LIMIT() {
+        return LUA_UTAG_LIMIT;
+    }
+    private static final int LUA_LUTAG_LIMIT = (int)128L;
+    /**
+     * {@snippet lang=c :
+     * #define LUA_LUTAG_LIMIT 128
+     * }
+     */
+    public static int LUA_LUTAG_LIMIT() {
+        return LUA_LUTAG_LIMIT;
+    }
     private static final int LUA_MEMORY_CATEGORIES = (int)256L;
     /**
      * {@snippet lang=c :
