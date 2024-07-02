@@ -39,7 +39,7 @@ jobs:
         env:
           TAG_VERSION: ${{ github.ref_name }}
         run: |
-          ./gradlew :native:publishNativePublicationToSonatype --info
+          ./gradlew :native:publishNativePublicationToSonatype :closeAndReleaseSonatypeStagingRepository --info
       - name: artifact
         uses: actions/upload-artifact@v4
         with:
