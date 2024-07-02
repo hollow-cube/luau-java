@@ -18,8 +18,7 @@ val buildProjectDir = file(layout.buildDirectory.file("root").get())
 task<Copy>("copyForModification") {
     description = "Copy project to the build directory for modification"
     from(layout.projectDirectory)
-    include("luau", "src", "CMakeLists.txt")
-//    exclude("build", "cmake-build-debug", "build.gradle.kts")
+    include("luau/**", "src/**", "CMakeLists.txt")
     into(buildProjectDir)
 }
 
@@ -45,7 +44,7 @@ task("luauStaticToShared") {
 
 task<Exec>("prepNative") {
     dependsOn("luauStaticToShared")
-    workingDir = file(layout.buildDirectory)
+    workingDir = file(layout.buildDirectory).resolve("cmake")
     standardOutput = System.out
 
     inputs.dir(buildProjectDir)
@@ -67,11 +66,11 @@ task<Exec>("prepNative") {
 
 task<Exec>("buildNative") {
     dependsOn("prepNative")
-    workingDir = file(layout.buildDirectory)
+    workingDir = file(layout.buildDirectory).resolve("cmake")
     standardOutput = System.out
 
-    inputs.file(file(layout.buildDirectory).resolve("CMakeCache.txt"))
-    outputs.dir(file(layout.buildDirectory).resolve("lib"))
+    inputs.dir(workingDir)
+    outputs.dir(workingDir.resolve("lib"))
 
     val cmake: String? by project.extra
     commandLine(
@@ -83,7 +82,7 @@ task<Exec>("buildNative") {
 task<Copy>("copyNative") {
     dependsOn("buildNative")
 
-    from(file(layout.buildDirectory).resolve("lib"))
+    from(file(layout.buildDirectory).resolve("cmake/lib"))
     into(file(layout.buildDirectory).resolve("nres/net/hollowcube/luau/${getOsName()}/${getArchName()}"))
 }
 
