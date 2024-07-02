@@ -18,7 +18,8 @@ val buildProjectDir = file(layout.buildDirectory.file("root").get())
 task<Copy>("copyForModification") {
     description = "Copy project to the build directory for modification"
     from(layout.projectDirectory)
-    exclude("build", "cmake-build-debug", "build.gradle.kts")
+    include("luau", "src", "CMakeLists.txt")
+//    exclude("build", "cmake-build-debug", "build.gradle.kts")
     into(buildProjectDir)
 }
 
@@ -26,13 +27,19 @@ task("luauStaticToShared") {
     description = "Make Luau.Compiler and Luau.VM compile as shared libraries"
     dependsOn("copyForModification")
 
+    val targetFile = buildProjectDir.resolve("luau/CMakeLists.txt")
+    inputs.file(targetFile)
+    outputs.file(targetFile)
+
     doLast {
-        val target = buildProjectDir.resolve("luau/CMakeLists.txt")
-        target.writeText(
-            target.readText()
-                .replace("add_library(Luau.Compiler STATIC)", "add_library(Luau.Compiler SHARED)")
-                .replace("add_library(Luau.VM STATIC)", "add_library(Luau.VM SHARED)")
-        )
+        val originalText = targetFile.readText()
+        val modifiedText = originalText
+            .replace("add_library(Luau.Compiler STATIC)", "add_library(Luau.Compiler SHARED)")
+            .replace("add_library(Luau.VM STATIC)", "add_library(Luau.VM SHARED)")
+
+        if (originalText != modifiedText) {
+            targetFile.writeText(modifiedText)
+        }
     }
 }
 
@@ -40,12 +47,15 @@ task<Exec>("prepNative") {
     dependsOn("luauStaticToShared")
     workingDir = file(layout.buildDirectory)
     standardOutput = System.out
-    logging.captureStandardOutput(LogLevel.INFO)
-    logging.captureStandardError(LogLevel.ERROR)
 
-    mkdir(workingDir)
+    inputs.dir(buildProjectDir)
+    outputs.dir(file(layout.buildDirectory))
+
+    doFirst { mkdir(workingDir) }
+
+    val cmake: String? by project.extra
     commandLine(
-        "cmake",
+        cmake ?: throw IllegalStateException("cmake not found on path"),
         "-DLUAU_EXTERN_C=ON",
         "-DLUAU_BUILD_CLI=OFF",
         "-DLUAU_BUILD_TESTS=OFF",
@@ -56,13 +66,18 @@ task<Exec>("prepNative") {
 }
 
 task<Exec>("buildNative") {
+    dependsOn("prepNative")
     workingDir = file(layout.buildDirectory)
     standardOutput = System.out
-    logging.captureStandardOutput(LogLevel.INFO)
-    logging.captureStandardError(LogLevel.ERROR)
 
-    dependsOn("prepNative")
-    commandLine("cmake", "--build", ".")
+    inputs.file(file(layout.buildDirectory).resolve("CMakeCache.txt"))
+    outputs.dir(file(layout.buildDirectory).resolve("lib"))
+
+    val cmake: String? by project.extra
+    commandLine(
+        cmake ?: throw IllegalStateException("cmake not found on path"),
+        "--build", "."
+    )
 }
 
 task<Copy>("copyNative") {

@@ -2,6 +2,7 @@ package net.hollowcube.luau.compiler;
 
 import net.hollowcube.luau.internal.compiler.lua_CompileOptions;
 import net.hollowcube.luau.internal.compiler.luacode_h;
+import net.hollowcube.luau.util.NativeLibraryLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.foreign.*;
@@ -16,9 +17,7 @@ record LuauCompilerImpl(
         @NotNull CoverageLevel coverageLevel
 ) implements LuauCompiler {
     static {
-        //todo multi-platform library loader
-        System.load("/Users/matt/dev/projects/hollowcube/luau-java/cmake/lib/libLuau.Compiler.a");
-//        System.load("/Users/matt/dev/projects/hollowcube/luau-java/libLuau.Compiler.dylib");
+        NativeLibraryLoader.loadLibrary("compiler");
     }
 
     private static final MethodHandle FREE_HANDLE;

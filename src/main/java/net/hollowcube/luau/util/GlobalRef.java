@@ -1,9 +1,12 @@
 package net.hollowcube.luau.util;
 
-public class JNIRefTest {
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
+public class GlobalRef {
 
     static {
-        System.loadLibrary("jnitest");
+        NativeLibraryLoader.loadLibrary("globalref");
     }
 
     public static native long newref(Object obj);

@@ -1,7 +1,8 @@
 package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.vm.*;
-import net.hollowcube.luau.util.JNIRefTest;
+import net.hollowcube.luau.util.GlobalRef;
+import net.hollowcube.luau.util.NativeLibraryLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -20,6 +21,10 @@ import static net.hollowcube.luau.internal.vm.lualib_h.*;
 
 @SuppressWarnings("preview")
 final class LuaStateImpl implements LuaState {
+
+    static {
+        NativeLibraryLoader.loadLibrary("vm");
+    }
 
     /*
         // isSandboxed call required
@@ -40,7 +45,7 @@ final class LuaStateImpl implements LuaState {
     }
 
     private static final MemorySegment UNTAGGED_UDATA_DTOR = lua_newuserdatadtor$dtor.allocate(
-            ud -> JNIRefTest.unref(ud.get(ValueLayout.JAVA_LONG, 0)), Arena.global());
+            ud -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)), Arena.global());
 
     private final MemorySegment L;
     private final Arena arena;
@@ -58,7 +63,7 @@ final class LuaStateImpl implements LuaState {
 
         // Create a JNI global reference and store it in the userdata of this state.
         // We implement the user data setter/getter in plain java so this is fine.
-        this.ref = JNIRefTest.newref(this);
+        this.ref = GlobalRef.newref(this);
         lua_setthreaddata(L, MemorySegment.ofAddress(this.ref));
     }
 
@@ -90,7 +95,7 @@ final class LuaStateImpl implements LuaState {
         arena.close();
 
         if (ref == 0) throw new IllegalStateException("LuaState was double closed.");
-        JNIRefTest.unref(ref);
+        GlobalRef.unref(ref);
         ref = 0;
     }
 
@@ -365,7 +370,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public Object toUserData(int index) {
         final MemorySegment ud = lua_touserdata(L, index);
-        return JNIRefTest.get(ud.get(ValueLayout.JAVA_LONG, 0));
+        return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
     }
 
     @Override
@@ -465,7 +470,7 @@ final class LuaStateImpl implements LuaState {
         // Our userdata fields always contain a single long holding a jni global reference. It is freed in the
         // destructor.
         final MemorySegment ud = lua_newuserdatadtor(L, ValueLayout.JAVA_LONG.byteSize(), UNTAGGED_UDATA_DTOR);
-        ud.set(ValueLayout.JAVA_LONG, 0, JNIRefTest.newref(userdata));
+        ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(userdata));
     }
 
     @Override
@@ -928,7 +933,7 @@ final class LuaStateImpl implements LuaState {
     public @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName) {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateUtf8String(typeName));
-            return JNIRefTest.get(ud.get(ValueLayout.JAVA_LONG, 0));
+            return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
         }
     }
 
@@ -974,7 +979,7 @@ final class LuaStateImpl implements LuaState {
     }
 
     private static @NotNull LuaStateImpl deref(@NotNull MemorySegment L) {
-        return (LuaStateImpl) JNIRefTest.get(lua_getthreaddata(L).address());
+        return (LuaStateImpl) GlobalRef.get(lua_getthreaddata(L).address());
     }
 
     private @NotNull MemorySegment wrapLuaFunc(@NotNull LuaFunc func) {

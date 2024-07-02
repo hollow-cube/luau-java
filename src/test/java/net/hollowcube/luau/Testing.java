@@ -13,7 +13,6 @@ public class Testing {
     // some env var which adds them all to a list to check would probably work.
 
     public static void main(String[] args) throws Exception {
-        System.load("/Users/matt/dev/projects/hollowcube/luau-java/libLuau.VM.dylib");
 
         var source = """
                 print('hello from lua')
