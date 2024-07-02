@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: luau-natives-${{ matrix.name }}-1.0.0.jar
-          path: native/build/libs/native-${{ matrix.name }}-1.0.0.jar
+          path: native/build/libs/luau-natives-${{ matrix.name }}-1.0.0.jar
