@@ -46,7 +46,6 @@ jobs:
           name: luau-natives-${{ matrix.name }}-${{ github.ref_name }}.jar
           path: native/build/libs/luau-natives-${{ matrix.name }}-${{ github.ref_name }}.jar
   build-core:
-    needs: [ build-natives ]
     runs-on: ubuntu-latest
     env:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
