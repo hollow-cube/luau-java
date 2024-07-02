@@ -19,8 +19,8 @@ public class Testing {
                 print('hello from lua')
                                 
                 local arr = m2.newarray()
-                m2.push(arr, 1)
-                m2.push(arr, 2)
+                arr:push(1)
+                arr:push(2)
                 m2.show(arr)
 
                 print(m2.add(1, 2))
@@ -34,6 +34,18 @@ public class Testing {
             global.openLibs();
 
             global.newMetaTable("myarray");
+            global.pushString("__index");
+            global.pushValue(-2);
+            global.setTable(-3);
+            global.registerLib(null, Map.of(
+                    "push", state -> {
+                        List<Integer> arr = (List<Integer>) state.checkUserDataArg(1, "myarray");
+                        int value = state.checkIntegerArg(2);
+                        arr.add(value);
+                        return 0;
+                    }
+            ));
+
             global.registerLib("m2", Map.of(
                     "add", state -> {
                         int left = state.checkIntegerArg(1);
@@ -58,12 +70,6 @@ public class Testing {
                         state.setMetaTable(-2);
 
                         return 1;
-                    },
-                    "push", state -> {
-                        List<Integer> arr = (List<Integer>) state.checkUserDataArg(1, "myarray");
-                        int value = state.checkIntegerArg(2);
-                        arr.add(value);
-                        return 0;
                     },
                     "show", state -> {
                         List<Integer> arr = (List<Integer>) state.checkUserDataArg(1, "myarray");
