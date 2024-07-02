@@ -3,15 +3,12 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+cmake-build-debug
+native/luau
+cmake
 
 ### IntelliJ IDEA ###
 .idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
 ### Eclipse ###
 .apt_generated
@@ -37,3 +34,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
