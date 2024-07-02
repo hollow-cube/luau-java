@@ -82,7 +82,9 @@ task<Exec>("buildNative") {
 task<Copy>("copyNative") {
     dependsOn("buildNative")
 
-    from(file(layout.buildDirectory).resolve("cmake/lib"))
+    var libPath = "cmake/lib" // todo it should definitely be a release build. need to do that.
+    if (getOsName() == "windows") libPath += "/Debug"
+    from(file(layout.buildDirectory).resolve(libPath))
     into(file(layout.buildDirectory).resolve("nres/net/hollowcube/luau/${getOsName()}/${getArchName()}"))
 }
 

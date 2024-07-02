@@ -48,8 +48,13 @@ dependencies {
 
 <dependencies>
     <dependency>
-        <groupId>io.github.humbleui</groupId>
-        <artifactId>${artifact}</artifactId>
+        <groupId>dev.hollowcube</groupId>
+        <artifactId>luau</artifactId>
+        <version>${version}</version>
+    </dependency>
+    <dependency>
+        <groupId>dev.hollowcube</groupId>
+        <artifactId>luau-natives-${platform}</artifactId>
         <version>${version}</version>
     </dependency>
 </dependencies>
@@ -57,10 +62,12 @@ dependencies {
 
 </details>
 
-Replace `${platform}` and `${version}` with:
+Replace `${platform}` and `${version}` with one of the following entries. Note that the core library version may be
+different from the native library version.
 
 | Platform      | `${platform}` | `${version}`                                                                                                                                      |
 |---------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| -             | -             | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-windows-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau)             |
 | Windows (x64) | `windows-x64` | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-windows-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-windows-x64) |
 | Linux (x64)   | `linux-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-linux-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-linux-x64)     |
 | macOS (x64)   | `macos-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-macos-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-macos-x64)     |
