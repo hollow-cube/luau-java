@@ -33,14 +33,22 @@ sourceSets {
     }
 }
 
-
 tasks.withType<Jar> {
     archiveBaseName = "luau"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("--enable-preview")
+}
+
+tasks.javadoc {
+    (options as StandardJavadocDocletOptions).run {
+        encoding = "UTF-8"
+        addStringOption("source", "21")
+        addBooleanOption("-enable-preview", true)
+    }
 }
 
 tasks.test {

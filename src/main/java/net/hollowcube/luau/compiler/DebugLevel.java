@@ -9,11 +9,11 @@ public enum DebugLevel {
      */
     NONE,
     /**
-     * line info & function names only; sufficient for backtraces
+     * line info and function names only; sufficient for backtraces
      */
     BACKTRACE,
     /**
-     * full debug info with local & upvalue names; necessary for debugger
+     * full debug info with local and upvalue names; necessary for debugger
      */
     DEBUGGER,
 }
