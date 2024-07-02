@@ -49,6 +49,14 @@ tasks.test {
     jvmArgs("--enable-preview")
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 allprojects {
     extra["cmake"] = findExecutable("cmake")
     extra["jextract"] = findExecutable("jextract")
