@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "dev.hollowcube"
-version = "1.0.0"
+version = System.getenv("TAG_VERSION") ?: "dev"
 description = "Luau bindings for Java"
 
 repositories {
@@ -32,30 +32,20 @@ sourceSets {
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
 
-    jvmArgs("--enable-preview")
+tasks.withType<Jar> {
+    archiveBaseName = "luau"
 }
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
-
     options.compilerArgs.add("--enable-preview")
 }
 
-configure<NexusPublishExtension> {
-    this.packageGroup.set("dev.hollowcube")
+tasks.test {
+    useJUnitPlatform()
 
-    repositories.sonatype {
-        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-        snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-
-        if (System.getenv("SONATYPE_USERNAME") != null) {
-            username.set(System.getenv("SONATYPE_USERNAME"))
-            password.set(System.getenv("SONATYPE_PASSWORD"))
-        }
-    }
+    jvmArgs("--enable-preview")
 }
 
 allprojects {
@@ -100,6 +90,20 @@ allprojects {
     }
 }
 
+configure<NexusPublishExtension> {
+    this.packageGroup.set("dev.hollowcube")
+
+    repositories.sonatype {
+        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+        snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+
+        if (System.getenv("SONATYPE_USERNAME") != null) {
+            username.set(System.getenv("SONATYPE_USERNAME"))
+            password.set(System.getenv("SONATYPE_PASSWORD"))
+        }
+    }
+}
+
 publishing.publications.create<MavenPublication>("luau") {
     groupId = project.group.toString()
     artifactId = "luau"
@@ -113,6 +117,16 @@ publishing.publications.create<MavenPublication>("luau") {
         val commonPomConfig: Action<MavenPom> by project.extra
         commonPomConfig.execute(this)
     }
+}
+
+signing {
+    isRequired = System.getenv("CI") != null
+
+    val privateKey = System.getenv("GPG_PRIVATE_KEY")
+    val keyPassphrase = System.getenv()["GPG_PASSPHRASE"]
+    useInMemoryPgpKeys(privateKey, keyPassphrase)
+
+    sign(publishing.publications)
 }
 
 task<JExtractTask>("jextractLuacode") {

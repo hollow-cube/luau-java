@@ -1,6 +1,9 @@
+name: Build & Publish to Maven Central
+
 on:
   push:
-    branches: [ temp-disabled ]
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   build-natives:
@@ -12,6 +15,11 @@ jobs:
           - { os: macos-13, name: macos-x64 }
           - { os: windows-latest, name: windows-x64 }
     runs-on: ${{ matrix.os }}
+    env:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,10 +35,39 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.28.x'
-      - name: Build Project
-        run: ./gradlew --info :native:publishNativePublicationToMavenLocal
+      - name: Build & Publish
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          ./gradlew :native:publishNativePublicationToSonatype --info
       - name: artifact
         uses: actions/upload-artifact@v4
         with:
-          name: luau-natives-${{ matrix.name }}-1.0.0.jar
-          path: native/build/libs/luau-natives-${{ matrix.name }}-1.0.0.jar
+          name: luau-natives-${{ matrix.name }}-${{ github.ref_name }}.jar
+          path: native/build/libs/luau-natives-${{ matrix.name }}-${{ github.ref_name }}.jar
+  build-core:
+    needs: [ build-natives ]
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21 (for JNI)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Build & Publish
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: ./gradlew :publishLuauPublicationToSonatype :closeAndReleaseSonatypeStagingRepository
+      - name: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: luau-${{ github.ref_name }}.jar
+          path: native/build/libs/luau-${{ github.ref_name }}.jar

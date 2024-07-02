@@ -28,7 +28,7 @@ public class Testing {
                 """;
         var bytecode = LuauCompiler.DEFAULT.compile(source);
 
-        LuaState global = Luau.newState();
+        LuaState global = LuaState.newState();
         try {
             global.openLibs();
 

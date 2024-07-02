@@ -22,7 +22,7 @@ public sealed interface LuaState permits LuaStateImpl {
      */
 
     static @NotNull LuaState newState() {
-        throw new UnsupportedOperationException();
+        return new LuaStateImpl();
     }
 
     void close();

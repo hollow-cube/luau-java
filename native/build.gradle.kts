@@ -92,7 +92,6 @@ tasks.withType<ProcessResources> {
 }
 tasks.withType<Jar> {
     dependsOn("copyNative")
-
     archiveBaseName = artifactName
 }
 
@@ -125,8 +124,7 @@ publishing.publications.create<MavenPublication>("native") {
 }
 
 signing {
-//    isRequired = System.getenv("CI") != null
-    isRequired = false
+    isRequired = System.getenv("CI") != null
 
     val privateKey = System.getenv("GPG_PRIVATE_KEY")
     val keyPassphrase = System.getenv()["GPG_PASSPHRASE"]
