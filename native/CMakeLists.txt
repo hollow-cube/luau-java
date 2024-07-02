@@ -13,8 +13,11 @@ target_include_directories(globalref PRIVATE ${JNI_INCLUDE_DIRS})
 
 
 set_target_properties(Luau.Compiler PROPERTIES OUTPUT_NAME compiler
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set_target_properties(Luau.VM PROPERTIES OUTPUT_NAME vm
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set_target_properties(globalref PROPERTIES OUTPUT_NAME globalref
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
