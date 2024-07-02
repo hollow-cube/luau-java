@@ -27,7 +27,7 @@ natives artifacts at the same time, they will not conflict.
 > `luau-java` uses the
 > new [Foreign Function and Memory API](https://openjdk.org/jeps/442) (FFM) introduced as a preview feature in Java 21.
 > This means that you will be required to enable preview features when using `luau-java`. This can be done by
-> adding `--enable-preview` to your JVM arguments.
+> adding `--enable-preview` and `--enable-native-access=ALL-UNNAMED` to your JVM arguments.
 
 <details open>
 <summary>Gradle</summary>
