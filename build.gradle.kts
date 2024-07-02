@@ -1,4 +1,5 @@
 import io.github.gradlenexus.publishplugin.NexusPublishExtension
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem
 
 plugins {
     `java-library`
@@ -344,7 +345,9 @@ task("jextract") {
     dependsOn("jextractLualibs")
 }
 
-fun findExecutable(name: String): String? {
+fun findExecutable(name_: String): String? {
+    var name = name_
+    if (getCurrentOperatingSystem().isWindows) name += ".exe"
     val pathDirs = System.getenv("PATH").split(File.pathSeparator)
     val executable = pathDirs.map { File(it, name) }
         .find { it.exists() && it.canExecute() }
