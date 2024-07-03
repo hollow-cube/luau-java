@@ -2,10 +2,13 @@ package net.hollowcube.luau.compiler;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
+
 @SuppressWarnings("preview")
 public sealed interface LuauCompiler permits LuauCompilerImpl {
 
-    @NotNull LuauCompiler DEFAULT = builder().build();
+    @NotNull
+    LuauCompiler DEFAULT = builder().build();
 
     static @NotNull Builder builder() {
         return new LuauCompilerImpl.BuilderImpl();
@@ -17,7 +20,17 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
      * @param source The luau source code to compile.
      * @return The bytecode of the compiled source code.
      */
-    byte[] compile(@NotNull String source) throws LuauCompileException;
+    default byte[] compile(@NotNull String source) throws LuauCompileException {
+        return compile(source.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * <p>Compiles the given source code and returns the bytecode as a byte array.</p>
+     *
+     * @param source The luau source code to compile.
+     * @return The bytecode of the compiled source code.
+     */
+    byte[] compile(byte @NotNull [] source) throws LuauCompileException;
 
     sealed interface Builder permits LuauCompilerImpl.BuilderImpl {
 

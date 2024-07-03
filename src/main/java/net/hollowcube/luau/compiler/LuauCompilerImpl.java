@@ -34,13 +34,13 @@ record LuauCompilerImpl(
     }
 
     @Override
-    public byte[] compile(@NotNull String source) throws LuauCompileException {
+    public byte[] compile(byte @NotNull [] source) throws LuauCompileException {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment sourceStr = arena.allocateUtf8String(source);
+            final MemorySegment sourceStr = arena.allocateArray(ValueLayout.JAVA_BYTE, source);
             final MemorySegment bytecodeSize = arena.allocate(ValueLayout.JAVA_LONG);
             final MemorySegment compileOpts = createCompileOptions(arena);
 
-            final MemorySegment result = luacode_h.luau_compile(sourceStr, source.length(), compileOpts, bytecodeSize);
+            final MemorySegment result = luacode_h.luau_compile(sourceStr, source.length, compileOpts, bytecodeSize);
             final long length = bytecodeSize.get(ValueLayout.JAVA_LONG, 0);
             final byte[] bytecode = result.asSlice(0, length).toArray(ValueLayout.JAVA_BYTE);
             free(result);
@@ -107,7 +107,6 @@ record LuauCompilerImpl(
         public @NotNull LuauCompiler build() {
             return new LuauCompilerImpl(optimizationLevel, debugLevel, typeInfoLevel, coverageLevel);
         }
-
     }
 
 }

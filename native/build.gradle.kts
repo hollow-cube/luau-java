@@ -53,7 +53,7 @@ task<Exec>("prepNative") {
     doFirst { mkdir(workingDir) }
 
     val cmake: String? by project.extra
-    commandLine(
+    val args = mutableListOf(
         cmake ?: throw IllegalStateException("cmake not found on path"),
         "-DLUAU_EXTERN_C=ON",
         "-DLUAU_BUILD_CLI=OFF",
@@ -62,6 +62,11 @@ task<Exec>("prepNative") {
         "-B", ".",
         "-S", buildProjectDir
     )
+    if (getOsName() == "windows") args += listOf(
+        "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE",
+        "-DBUILD_SHARED_LIBS=TRUE",
+    )
+    commandLine(args)
 }
 
 task<Exec>("buildNative") {
