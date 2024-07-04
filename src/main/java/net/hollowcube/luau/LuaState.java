@@ -114,6 +114,7 @@ public sealed interface LuaState permits LuaStateImpl {
     void pushInteger(int n);
     void pushUnsigned(int n);
     void pushVector(float[] v);
+    void pushVector(float x, float y, float z);
     void pushString(@NotNull String s);
     //todo pushcclosurek
     void pushBoolean(boolean b);

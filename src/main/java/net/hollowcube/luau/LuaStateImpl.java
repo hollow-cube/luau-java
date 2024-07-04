@@ -430,6 +430,11 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public void pushVector(float x, float y, float z) {
+        lua_pushvector(L, x, y, z);
+    }
+
+    @Override
     public void pushString(@NotNull String s) {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment str = arena.allocateUtf8String(s);
@@ -989,18 +994,18 @@ final class LuaStateImpl implements LuaState {
 
     private float[] unpackVector(@NotNull MemorySegment floats) {
         return new float[]{
-                floats.get(ValueLayout.JAVA_FLOAT, 0),
-                floats.get(ValueLayout.JAVA_FLOAT, 1),
-                floats.get(ValueLayout.JAVA_FLOAT, 2)
+                floats.getAtIndex(ValueLayout.JAVA_FLOAT, 0),
+                floats.getAtIndex(ValueLayout.JAVA_FLOAT, 1),
+                floats.getAtIndex(ValueLayout.JAVA_FLOAT, 2)
         };
     }
 
     private @NotNull MemorySegment packVector(@NotNull SegmentAllocator alloc, float[] floats) {
         if (floats.length != 3) throw new IllegalArgumentException("Vector must have 3 components");
         final MemorySegment seg = alloc.allocateArray(ValueLayout.JAVA_FLOAT, 3);
-        seg.set(ValueLayout.JAVA_FLOAT, 0, floats[0]);
-        seg.set(ValueLayout.JAVA_FLOAT, 1, floats[1]);
-        seg.set(ValueLayout.JAVA_FLOAT, 2, floats[2]);
+        seg.setAtIndex(ValueLayout.JAVA_FLOAT, 0, floats[0]);
+        seg.setAtIndex(ValueLayout.JAVA_FLOAT, 1, floats[1]);
+        seg.setAtIndex(ValueLayout.JAVA_FLOAT, 2, floats[2]);
         return seg;
     }
 
