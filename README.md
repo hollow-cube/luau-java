@@ -65,13 +65,13 @@ dependencies {
 Replace `${platform}` and `${version}` with one of the following entries. Note that the core library version may be
 different from the native library version.
 
-| Platform      | `${platform}` | `${version}`                                                                                                                                      |
-|---------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| -             | -             | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-windows-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau)             |
-| Windows (x64) | `windows-x64` | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-windows-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-windows-x64) |
-| Linux (x64)   | `linux-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-linux-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-linux-x64)     |
-| macOS (x64)   | `macos-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-macos-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-macos-x64)     |
-| macOS (arm64) | `macos-arm64` | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-macos-arm64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-macos-arm64) |
+| Platform      | `${platform}` | `${version}`                                                                                                                                                      |
+|---------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -             | -             | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau)](https://mvnrepository.com/artifact/dev.hollowcube/luau)                                         |
+| Windows (x64) | `windows-x64` | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-natives-windows-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-natives-windows-x64) |
+| Linux (x64)   | `linux-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-natives-linux-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-natives-linux-x64)     |
+| macOS (x64)   | `macos-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-natives-macos-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-natives-macos-x64)     |
+| macOS (arm64) | `macos-arm64` | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-natives-macos-arm64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-natives-macos-arm64) |
 
 ## Usage
 

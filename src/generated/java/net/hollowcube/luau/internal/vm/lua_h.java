@@ -2036,6 +2036,65 @@ public class lua_h {
         }
     }
 
+    private static class lua_namecallatom {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_POINTER,
+            lua_h.C_POINTER,
+            lua_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_namecallatom");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const char *lua_namecallatom(lua_State *L, int *atom)
+     * }
+     */
+    public static FunctionDescriptor lua_namecallatom$descriptor() {
+        return lua_namecallatom.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const char *lua_namecallatom(lua_State *L, int *atom)
+     * }
+     */
+    public static MethodHandle lua_namecallatom$handle() {
+        return lua_namecallatom.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const char *lua_namecallatom(lua_State *L, int *atom)
+     * }
+     */
+    public static MemorySegment lua_namecallatom$address() {
+        return lua_namecallatom.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const char *lua_namecallatom(lua_State *L, int *atom)
+     * }
+     */
+    public static MemorySegment lua_namecallatom(MemorySegment L, MemorySegment atom) {
+        var mh$ = lua_namecallatom.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_namecallatom", L, atom);
+            }
+            return (MemorySegment)mh$.invokeExact(L, atom);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class lua_objlen {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             lua_h.C_INT,

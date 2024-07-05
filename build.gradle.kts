@@ -203,6 +203,7 @@ task<JExtractTask>("jextractLua") {
         "--include-function", "lua_tounsignedx",
         "--include-function", "lua_toboolean",
         "--include-function", "lua_tolstring",
+        "--include-function", "lua_namecallatom",
         "--include-function", "lua_objlen",
         "--include-function", "lua_tocfunction",
         "--include-function", "lua_tolightuserdata",
@@ -338,7 +339,6 @@ task<JExtractTask>("jextractLualibs") {
 
 // Remaining functions to run through jextract
 //# LUA_API const char* lua_tostringatom(lua_State* L, int idx, int* atom);
-//# LUA_API const char* lua_namecallatom(lua_State* L, int* atom);
 //# LUA_API void lua_pushstring(lua_State* L, const char* s);
 //# LUA_API const char* lua_pushvfstring(lua_State* L, const char* fmt, va_list argp);
 //# LUA_API LUA_PRINTF_ATTR(2, 3) const char* lua_pushfstringL(lua_State* L, const char* fmt, ...);

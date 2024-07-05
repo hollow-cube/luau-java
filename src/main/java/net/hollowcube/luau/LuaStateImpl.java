@@ -342,6 +342,13 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public @NotNull String nameCallAtom() {
+        // todo this has an optional arg to get the int atom, not sure when its useful
+        final MemorySegment str = lua_namecallatom(L, MemorySegment.NULL);
+        return str.getUtf8String(0);
+    }
+
+    @Override
     public int objectLength(int index) {
         return lua_objlen(L, index);
     }

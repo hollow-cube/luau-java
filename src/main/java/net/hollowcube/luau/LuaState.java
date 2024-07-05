@@ -91,7 +91,7 @@ public sealed interface LuaState permits LuaStateImpl {
     boolean toBoolean(int index);
     @NotNull String toString(int index);
     // tostringatom
-    // namecallatom
+    @NotNull String nameCallAtom();
     int objectLength(int index);
     int stringLength(int index);
     @NotNull LuaFunc toCFunction(int index);
