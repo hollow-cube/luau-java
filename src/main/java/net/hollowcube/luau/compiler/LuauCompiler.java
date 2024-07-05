@@ -3,6 +3,7 @@ package net.hollowcube.luau.compiler;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @SuppressWarnings("preview")
 public sealed interface LuauCompiler permits LuauCompilerImpl {
@@ -42,7 +43,52 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
 
         @NotNull Builder coverageLevel(@NotNull CoverageLevel level);
 
-        //todo vectorLib, vectorCtor, vectorType, mutableGlobals, userdataTypes
+        /**
+         * name of the library providing vector type operations
+         */
+        @NotNull Builder vectorLib(@NotNull String vectorLib);
+
+        /**
+         * global builtin to construct vectors; disabled by default
+         */
+        @NotNull Builder vectorCtor(@NotNull String vectorCtor);
+
+        /**
+         * vector type name for type tables; disabled by default
+         */
+        @NotNull Builder vectorType(@NotNull String vectorType);
+
+        /**
+         * List of globals that are mutable; disables the import optimization for fields accessed through these
+         * <br/>
+         * Replaces any previously set value.
+         */
+        default @NotNull Builder mutableGlobals(@NotNull String... mutableGlobals) {
+            return mutableGlobals(List.of(mutableGlobals));
+        }
+
+        /**
+         * List of globals that are mutable; disables the import optimization for fields accessed through these
+         * <br/>
+         * Replaces any previously set value.
+         */
+        @NotNull Builder mutableGlobals(@NotNull List<String> mutableGlobals);
+
+        /**
+         * userdata types that will be included in the type information
+         * <br/>
+         * Replaces any previously set value.
+         */
+        default @NotNull Builder userdataTypes(@NotNull String... userdataTypes) {
+            return userdataTypes(List.of(userdataTypes));
+        }
+
+        /**
+         * userdata types that will be included in the type information
+         * <br/>
+         * Replaces any previously set value.
+         */
+        @NotNull Builder userdataTypes(@NotNull List<String> userdataTypes);
 
         @NotNull LuauCompiler build();
 
