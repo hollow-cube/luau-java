@@ -856,10 +856,8 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public void getMetaTable(@NotNull String typeName) {
-        try (Arena arena = Arena.ofConfined()) {
-            final LuaType type = getField(LUA_REGISTRYINDEX(), typeName);
-            assert type == LuaType.TABLE : "expected table";
-        }
+        final LuaType type = getField(LUA_REGISTRYINDEX(), typeName);
+        assert type == LuaType.TABLE : "expected table";
     }
 
     @Override

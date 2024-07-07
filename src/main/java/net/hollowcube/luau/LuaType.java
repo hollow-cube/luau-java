@@ -27,7 +27,7 @@ public enum LuaType {
     private static final LuaType[] VALUES = values();
 
     public static @NotNull LuaType byId(int id) {
-        return id >= 0 && id < VALUES.length ? VALUES[id] : NONE;
+        return id >= 0 && id < VALUES.length ? VALUES[id + 1] : NONE;
     }
 
     public int id() {
