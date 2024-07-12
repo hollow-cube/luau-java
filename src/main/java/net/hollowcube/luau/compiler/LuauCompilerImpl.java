@@ -30,9 +30,15 @@ record LuauCompilerImpl(
     private static final MethodHandle FREE_HANDLE;
 
     static {
-        // This is basically just a manually inlined version of what jextract would generate for `free`.
+        final SymbolLookup symbolLookup;
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            // On Windows, use the msvc runtime library
+            symbolLookup = SymbolLookup.libraryLookup("msvcrt", Arena.global());
+        } else {
+            // On Linux/macOS, use the default standard C library
+            symbolLookup = SymbolLookup.loaderLookup().or(Linker.nativeLinker().defaultLookup());
+        }
 
-        final SymbolLookup symbolLookup = SymbolLookup.loaderLookup().or(Linker.nativeLinker().defaultLookup());
         final MemorySegment freeAddr = symbolLookup.find("free")
                 .orElseThrow(() -> new UnsatisfiedLinkError("unresolved symbol: free"));
         final FunctionDescriptor freeDesc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS);
