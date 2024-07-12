@@ -77,6 +77,11 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public @NotNull MemorySegment ptr() {
+        return L;
+    }
+
+    @Override
     public void close() {
         if (isThread)
             throw new IllegalStateException("cannot close a thread directly, it will be closed when lua garbage collects it.");
@@ -381,6 +386,11 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public int toUserDataInt(int index) {
+        return lua_touserdata(L, index).get(ValueLayout.JAVA_INT, 0);
+    }
+
+    @Override
     public Object toUserDataTagged(int index) {
         throw new UnsupportedOperationException("todo");
     }
@@ -458,7 +468,7 @@ final class LuaStateImpl implements LuaState {
     public void pushCFunction(@NotNull LuaFunc func, @NotNull String debugName) {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment debugNameStr = arena.allocateUtf8String(debugName);
-            lua_pushcclosurek(L, wrapLuaFunc(func), debugNameStr, 0, MemorySegment.NULL);
+            lua_pushcclosurek(L, getLuaFuncRef(func), debugNameStr, 0, MemorySegment.NULL);
         }
     }
 
@@ -483,6 +493,12 @@ final class LuaStateImpl implements LuaState {
         // destructor.
         final MemorySegment ud = lua_newuserdatadtor(L, ValueLayout.JAVA_LONG.byteSize(), UNTAGGED_UDATA_DTOR);
         ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(userdata));
+    }
+
+    @Override
+    public void newUserDataInt(int value) {
+        final MemorySegment ud = lua_newuserdatatagged(L, ValueLayout.JAVA_INT.byteSize(), 0);
+        ud.set(ValueLayout.JAVA_INT, 0, value);
     }
 
     @Override
@@ -823,7 +839,7 @@ final class LuaStateImpl implements LuaState {
             for (final Map.Entry<String, LuaFunc> entry : lib.entrySet()) {
                 final MemorySegment elem = luaL_Reg.asSlice(l, i++);
                 luaL_Reg.name(elem, arena.allocateUtf8String(entry.getKey()));
-                luaL_Reg.func(elem, wrapLuaFunc(entry.getValue()));
+                luaL_Reg.func(elem, getLuaFuncRef(entry.getValue()));
             }
 
             final MemorySegment nameStr = name != null
@@ -948,6 +964,14 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
+    public int checkUserDataIntArg(int argIndex, @NotNull String typeName) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateUtf8String(typeName));
+            return ud.get(ValueLayout.JAVA_INT, 0);
+        }
+    }
+
+    @Override
     public void checkStack(int size, @NotNull String message) {
         try (Arena arena = Arena.ofConfined()) {
             luaL_checkstack(L, size, arena.allocateUtf8String(message));
@@ -992,7 +1016,11 @@ final class LuaStateImpl implements LuaState {
         return (LuaStateImpl) GlobalRef.get(lua_getthreaddata(L).address());
     }
 
-    private @NotNull MemorySegment wrapLuaFunc(@NotNull LuaFunc func) {
+    private @NotNull MemorySegment getLuaFuncRef(@NotNull LuaFunc func) {
+        return func instanceof LuaFuncRef r ? r.ref() : wrapLuaFunc(func, this.arena);
+    }
+
+    static @NotNull MemorySegment wrapLuaFunc(@NotNull LuaFunc func, @NotNull Arena arena) {
         final lua_CFunction.Function fi = L -> func.call(deref(L));
         return lua_CFunction.allocate(fi, arena);
     }

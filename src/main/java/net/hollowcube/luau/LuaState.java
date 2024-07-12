@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -25,6 +26,8 @@ public sealed interface LuaState permits LuaStateImpl {
         return new LuaStateImpl();
     }
 
+    @Deprecated
+    @NotNull MemorySegment ptr();
     void close();
 
     @NotNull LuaState newThread();
@@ -98,6 +101,7 @@ public sealed interface LuaState permits LuaStateImpl {
     Object toLightUserData(int index); //todo type
     Object toLightUserDataTagged(int index); //todo type
     Object toUserData(int index); //todo type
+    int toUserDataInt(int value);
     Object toUserDataTagged(int index); //todo type
     int userDataTag(int index);
     int lightUserDataTag(int index);
@@ -125,6 +129,7 @@ public sealed interface LuaState permits LuaStateImpl {
     void pushLightUserData(Object p); //todo type
     void pushLightUserDataTagged(Object p, int tag); //todo type
     void newUserData(@NotNull Object userdata);
+    void newUserDataInt(int value);
     Object newUserDataTagged(long size, int tag); //todo
 
     @NotNull ByteBuffer newBuffer(long size);
@@ -294,6 +299,7 @@ public sealed interface LuaState permits LuaStateImpl {
     @NotNull ByteBuffer checkBufferArg(int argIndex);
     //todo checkOptionArg
     @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName);
+    int checkUserDataIntArg(int argIndex, @NotNull String typeName);
     void checkStack(int size, @NotNull String message);
     void checkType(int argIndex, @NotNull LuaType type);
     void checkAny(int argIndex);
