@@ -22,22 +22,35 @@ task<Copy>("copyForModification") {
     into(buildProjectDir)
 }
 
+fun edit(file: File, edit: (String) -> String) {
+    val originalText = file.readText()
+    val modifiedText = edit(originalText)
+    if (originalText != modifiedText) {
+        file.writeText(modifiedText)
+    }
+}
+
 task("luauStaticToShared") {
     description = "Make Luau.Compiler and Luau.VM compile as shared libraries"
     dependsOn("copyForModification")
 
-    val targetFile = buildProjectDir.resolve("luau/CMakeLists.txt")
-    inputs.file(targetFile)
-    outputs.file(targetFile)
+    val cmakeLists = buildProjectDir.resolve("luau/CMakeLists.txt")
+    val luacodeHeader = buildProjectDir.resolve("luau/Compiler/include/luacode.h")
+    val luacodeSource = buildProjectDir.resolve("luau/Compiler/src/lcode.cpp")
+    inputs.files(cmakeLists, luacodeHeader, luacodeSource)
+    outputs.files(cmakeLists, luacodeHeader, luacodeSource)
 
     doLast {
-        val originalText = targetFile.readText()
-        val modifiedText = originalText
-            .replace("add_library(Luau.Compiler STATIC)", "add_library(Luau.Compiler SHARED)")
-            .replace("add_library(Luau.VM STATIC)", "add_library(Luau.VM SHARED)")
-
-        if (originalText != modifiedText) {
-            targetFile.writeText(modifiedText)
+        edit(cmakeLists) {
+            return@edit it
+                .replace("add_library(Luau.Compiler STATIC)", "add_library(Luau.Compiler SHARED)")
+                .replace("add_library(Luau.VM STATIC)", "add_library(Luau.VM SHARED)")
+        }
+        edit(luacodeHeader) {
+            return@edit "$it\n\nLUACODE_API void luau_ext_free(char *bytecode);"
+        }
+        edit(luacodeSource) {
+            return@edit "$it\n\nvoid luau_ext_free(char *bytecode) {\n    free(bytecode);\n}"
         }
     }
 }

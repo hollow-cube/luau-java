@@ -6,10 +6,13 @@ import net.hollowcube.luau.util.NativeLibraryLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.foreign.*;
-import java.lang.invoke.MethodHandle;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import static net.hollowcube.luau.internal.compiler.luacode_h.luau_ext_free;
 
 @SuppressWarnings("preview")
 record LuauCompilerImpl(
@@ -27,19 +30,6 @@ record LuauCompilerImpl(
         NativeLibraryLoader.loadLibrary("compiler");
     }
 
-    private static final MethodHandle FREE_HANDLE;
-
-    static {
-        // This is basically just a manually inlined version of what jextract would generate for `free`.
-
-        final SymbolLookup symbolLookup = SymbolLookup.loaderLookup().or(Linker.nativeLinker().defaultLookup());
-        final MemorySegment freeAddr = symbolLookup.find("free")
-                .orElseThrow(() -> new UnsatisfiedLinkError("unresolved symbol: free"));
-        final FunctionDescriptor freeDesc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS);
-
-        FREE_HANDLE = Linker.nativeLinker().downcallHandle(freeAddr, freeDesc);
-    }
-
     @Override
     public byte[] compile(byte @NotNull [] source) throws LuauCompileException {
         try (Arena arena = Arena.ofConfined()) {
@@ -50,7 +40,7 @@ record LuauCompilerImpl(
             final MemorySegment result = luacode_h.luau_compile(sourceStr, source.length, compileOpts, bytecodeSize);
             final long length = bytecodeSize.get(ValueLayout.JAVA_LONG, 0);
             final byte[] bytecode = result.asSlice(0, length).toArray(ValueLayout.JAVA_BYTE);
-            free(result);
+            luau_ext_free(result);
 
             // Bytecode now contains either an error or valid luau bytecode.
             // A zero in the first byte indicates that the rest is an error.
@@ -91,14 +81,6 @@ record LuauCompilerImpl(
             lua_CompileOptions.userdataTypes(opts, userdataTypes);
         }
         return opts;
-    }
-
-    private void free(@NotNull MemorySegment segment) {
-        try {
-            FREE_HANDLE.invokeExact(segment);
-        } catch (Throwable ex) {
-            throw new AssertionError("should not reach here", ex);
-        }
     }
 
     static final class BuilderImpl implements Builder {

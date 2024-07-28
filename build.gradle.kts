@@ -147,11 +147,14 @@ signing {
 }
 
 task<JExtractTask>("jextractLuacode") {
-    header = file("native/luau/Compiler/include/luacode.h")
+    // Note: we use the header from the build directory here because we need to catch "luau_ext_free" which is added
+    // by native/build.gradle.kts
+    header = file("native/build/root/luau/Compiler/include/luacode.h")
     targetPackage = "net.hollowcube.luau.internal.compiler"
     extraArgs = listOf(
         "--define-macro", "LUA_API=\"extern \\\"C\\\"\"",
         "--include-function", "luau_compile",
+        "--include-function", "luau_ext_free",
         "--include-struct", "lua_CompileOptions",
     )
 }

@@ -129,5 +129,62 @@ public class luacode_h {
            throw new AssertionError("should not reach here", ex$);
         }
     }
+
+    private static class luau_ext_free {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luacode_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = luacode_h.findOrThrow("luau_ext_free");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luau_ext_free(char *bytecode)
+     * }
+     */
+    public static FunctionDescriptor luau_ext_free$descriptor() {
+        return luau_ext_free.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luau_ext_free(char *bytecode)
+     * }
+     */
+    public static MethodHandle luau_ext_free$handle() {
+        return luau_ext_free.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luau_ext_free(char *bytecode)
+     * }
+     */
+    public static MemorySegment luau_ext_free$address() {
+        return luau_ext_free.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luau_ext_free(char *bytecode)
+     * }
+     */
+    public static void luau_ext_free(MemorySegment bytecode) {
+        var mh$ = luau_ext_free.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luau_ext_free", bytecode);
+            }
+            mh$.invokeExact(bytecode);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
 }
 

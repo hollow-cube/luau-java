@@ -382,6 +382,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public Object toUserData(int index) {
         final MemorySegment ud = lua_touserdata(L, index);
+        //todo NULL can be returned. //todo this call is not valid against userDataInt ud values. We need to include some metadata in
         return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
     }
 
