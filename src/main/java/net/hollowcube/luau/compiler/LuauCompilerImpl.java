@@ -33,7 +33,7 @@ record LuauCompilerImpl(
     @Override
     public byte[] compile(byte @NotNull [] source) throws LuauCompileException {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment sourceStr = arena.allocateArray(ValueLayout.JAVA_BYTE, source);
+            final MemorySegment sourceStr = arena.allocateFrom(ValueLayout.JAVA_BYTE, source);
             final MemorySegment bytecodeSize = arena.allocate(ValueLayout.JAVA_LONG);
             final MemorySegment compileOpts = createCompileOptions(arena);
 
@@ -59,23 +59,23 @@ record LuauCompilerImpl(
         lua_CompileOptions.debugLevel(opts, debugLevel.ordinal());
         lua_CompileOptions.typeInfoLevel(opts, typeInfoLevel.ordinal());
         lua_CompileOptions.coverageLevel(opts, coverageLevel.ordinal());
-        if (vectorLib != null) lua_CompileOptions.vectorLib(opts, arena.allocateUtf8String(vectorLib));
-        if (vectorCtor != null) lua_CompileOptions.vectorCtor(opts, arena.allocateUtf8String(vectorCtor));
-        if (vectorType != null) lua_CompileOptions.vectorType(opts, arena.allocateUtf8String(vectorType));
+        if (vectorLib != null) lua_CompileOptions.vectorLib(opts, arena.allocateFrom(vectorLib));
+        if (vectorCtor != null) lua_CompileOptions.vectorCtor(opts, arena.allocateFrom(vectorCtor));
+        if (vectorType != null) lua_CompileOptions.vectorType(opts, arena.allocateFrom(vectorType));
         if (!mutableGlobals.isEmpty()) {
             // size + 1 because the array is null terminated.
-            final MemorySegment mutableGlobals = arena.allocateArray(ValueLayout.ADDRESS, this.mutableGlobals.size() + 1);
+            final MemorySegment mutableGlobals = arena.allocate(ValueLayout.ADDRESS, this.mutableGlobals.size() + 1);
             for (int i = 0; i < this.mutableGlobals.size(); i++) {
-                final MemorySegment str = arena.allocateUtf8String(this.mutableGlobals.get(i));
+                final MemorySegment str = arena.allocateFrom(this.mutableGlobals.get(i));
                 mutableGlobals.setAtIndex(ValueLayout.ADDRESS, i, str);
             }
             lua_CompileOptions.mutableGlobals(opts, mutableGlobals);
         }
         if (!userdataTypes.isEmpty()) {
             // size + 1 because the array is null terminated.
-            final MemorySegment userdataTypes = arena.allocateArray(ValueLayout.ADDRESS, this.userdataTypes.size() + 1);
+            final MemorySegment userdataTypes = arena.allocate(ValueLayout.ADDRESS, this.userdataTypes.size() + 1);
             for (int i = 0; i < this.userdataTypes.size(); i++) {
-                final MemorySegment str = arena.allocateUtf8String(this.userdataTypes.get(i));
+                final MemorySegment str = arena.allocateFrom(this.userdataTypes.get(i));
                 userdataTypes.setAtIndex(ValueLayout.ADDRESS, i, str);
             }
             lua_CompileOptions.userdataTypes(opts, userdataTypes);

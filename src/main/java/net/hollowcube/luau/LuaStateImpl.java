@@ -19,7 +19,6 @@ import java.util.function.Function;
 import static net.hollowcube.luau.internal.vm.lua_h.*;
 import static net.hollowcube.luau.internal.vm.lualib_h.*;
 
-@SuppressWarnings("preview")
 final class LuaStateImpl implements LuaState {
 
     static {
@@ -127,7 +126,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void setGlobal(@NotNull String name) {
         try (Arena local = Arena.ofConfined()) {
-            final MemorySegment nameStr = local.allocateUtf8String(name);
+            final MemorySegment nameStr = local.allocateFrom(name);
             lua_setfield(L, LUA_GLOBALSINDEX(), nameStr);
         }
     }
@@ -135,7 +134,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public int getGlobal(@NotNull String name) {
         try (Arena local = Arena.ofConfined()) {
-            final MemorySegment nameStr = local.allocateUtf8String(name);
+            final MemorySegment nameStr = local.allocateFrom(name);
             return lua_getfield(L, LUA_GLOBALSINDEX(), nameStr);
         }
     }
@@ -293,7 +292,7 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public @NotNull String typeName(@NotNull LuaType type) {
-        return lua_typename(L, type.id()).getUtf8String(0);
+        return lua_typename(L, type.id()).getString(0);
     }
 
     @Override
@@ -350,7 +349,7 @@ final class LuaStateImpl implements LuaState {
     public @NotNull String nameCallAtom() {
         // todo this has an optional arg to get the int atom, not sure when its useful
         final MemorySegment str = lua_namecallatom(L, MemorySegment.NULL);
-        return str.getUtf8String(0);
+        return str.getString(0);
     }
 
     @Override
@@ -455,7 +454,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void pushString(@NotNull String s) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment str = arena.allocateUtf8String(s);
+            final MemorySegment str = arena.allocateFrom(s);
             lua_pushlstring(L, str, str.byteSize() - 1); // -1 to exclude null terminator
         }
     }
@@ -468,7 +467,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void pushCFunction(@NotNull LuaFunc func, @NotNull String debugName) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment debugNameStr = arena.allocateUtf8String(debugName);
+            final MemorySegment debugNameStr = arena.allocateFrom(debugName);
             lua_pushcclosurek(L, getLuaFuncRef(func), debugNameStr, 0, MemorySegment.NULL);
         }
     }
@@ -520,7 +519,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public @NotNull LuaType getField(int index, @NotNull String key) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateUtf8String(key);
+            final MemorySegment nameStr = arena.allocateFrom(key);
             return LuaType.byId(lua_getfield(L, index, nameStr));
         }
     }
@@ -528,7 +527,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public @NotNull LuaType rawGetField(int index, @NotNull String key) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateUtf8String(key);
+            final MemorySegment nameStr = arena.allocateFrom(key);
             return LuaType.byId(lua_rawgetfield(L, index, nameStr));
         }
     }
@@ -586,14 +585,14 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void setField(int index, @NotNull String key) {
         try (Arena arena = Arena.ofConfined()) {
-            lua_setfield(L, index, arena.allocateUtf8String(key));
+            lua_setfield(L, index, arena.allocateFrom(key));
         }
     }
 
     @Override
     public void rawSetField(int index, @NotNull String key) {
         try (Arena arena = Arena.ofConfined()) {
-            lua_rawsetfield(L, index, arena.allocateUtf8String(key));
+            lua_rawsetfield(L, index, arena.allocateFrom(key));
         }
     }
 
@@ -620,8 +619,8 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void load(@NotNull String fileName, byte[] bytecode) {
         try (final Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateUtf8String(fileName);
-            final MemorySegment bytecodeArr = arena.allocateArray(ValueLayout.JAVA_BYTE, bytecode);
+            final MemorySegment nameStr = arena.allocateFrom(fileName);
+            final MemorySegment bytecodeArr = arena.allocateFrom(ValueLayout.JAVA_BYTE, bytecode);
 
             int result = lua_h.luau_load(L, nameStr, bytecodeArr, bytecode.length, 0);
             if (result != 0) {
@@ -735,14 +734,14 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void typeError(int argIndex, @NotNull String typeName) {
         try (Arena arena = Arena.ofConfined()) {
-            luaL_typeerrorL(L, argIndex, arena.allocateUtf8String(typeName)); // noreturn
+            luaL_typeerrorL(L, argIndex, arena.allocateFrom(typeName)); // noreturn
         }
     }
 
     @Override
     public void argError(int argIndex, @NotNull String message) {
         try (Arena arena = Arena.ofConfined()) {
-            luaL_argerrorL(L, argIndex, arena.allocateUtf8String(message)); // noreturn
+            luaL_argerrorL(L, argIndex, arena.allocateFrom(message)); // noreturn
         }
     }
 
@@ -839,12 +838,12 @@ final class LuaStateImpl implements LuaState {
             int i = 0;
             for (final Map.Entry<String, LuaFunc> entry : lib.entrySet()) {
                 final MemorySegment elem = luaL_Reg.asSlice(l, i++);
-                luaL_Reg.name(elem, arena.allocateUtf8String(entry.getKey()));
+                luaL_Reg.name(elem, arena.allocateFrom(entry.getKey()));
                 luaL_Reg.func(elem, getLuaFuncRef(entry.getValue()));
             }
 
             final MemorySegment nameStr = name != null
-                    ? arena.allocateUtf8String(name)
+                    ? arena.allocateFrom(name)
                     : MemorySegment.NULL;
             luaL_register(L, nameStr, l);
         }
@@ -853,21 +852,21 @@ final class LuaStateImpl implements LuaState {
     @Override
     public boolean getMetaField(int obj, @NotNull String e) {
         try (Arena arena = Arena.ofConfined()) {
-            return luaL_getmetafield(L, obj, arena.allocateUtf8String(e)) != 0;
+            return luaL_getmetafield(L, obj, arena.allocateFrom(e)) != 0;
         }
     }
 
     @Override
     public boolean callMeta(int obj, @NotNull String e) {
         try (Arena arena = Arena.ofConfined()) {
-            return luaL_callmeta(L, obj, arena.allocateUtf8String(e)) != 0;
+            return luaL_callmeta(L, obj, arena.allocateFrom(e)) != 0;
         }
     }
 
     @Override
     public boolean newMetaTable(@NotNull String typeName) {
         try (Arena arena = Arena.ofConfined()) {
-            return luaL_newmetatable(L, arena.allocateUtf8String(typeName)) != 0;
+            return luaL_newmetatable(L, arena.allocateFrom(typeName)) != 0;
         }
     }
 
@@ -947,7 +946,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public @NotNull String optStringArg(int argIndex, @NotNull String defaultValue) {
         try (Arena arena = Arena.ofConfined()) {
-            return readLString(len -> luaL_optlstring(L, argIndex, arena.allocateUtf8String(defaultValue), len));
+            return readLString(len -> luaL_optlstring(L, argIndex, arena.allocateFrom(defaultValue), len));
         }
     }
 
@@ -959,7 +958,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateUtf8String(typeName));
+            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateFrom(typeName));
             return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
         }
     }
@@ -967,7 +966,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public int checkUserDataIntArg(int argIndex, @NotNull String typeName) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateUtf8String(typeName));
+            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateFrom(typeName));
             return ud.get(ValueLayout.JAVA_INT, 0);
         }
     }
@@ -975,7 +974,7 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void checkStack(int size, @NotNull String message) {
         try (Arena arena = Arena.ofConfined()) {
-            luaL_checkstack(L, size, arena.allocateUtf8String(message));
+            luaL_checkstack(L, size, arena.allocateFrom(message));
         }
     }
 
@@ -1036,7 +1035,7 @@ final class LuaStateImpl implements LuaState {
 
     private @NotNull MemorySegment packVector(@NotNull SegmentAllocator alloc, float[] floats) {
         if (floats.length != 3) throw new IllegalArgumentException("Vector must have 3 components");
-        final MemorySegment seg = alloc.allocateArray(ValueLayout.JAVA_FLOAT, 3);
+        final MemorySegment seg = alloc.allocate(ValueLayout.JAVA_FLOAT, 3);
         seg.setAtIndex(ValueLayout.JAVA_FLOAT, 0, floats[0]);
         seg.setAtIndex(ValueLayout.JAVA_FLOAT, 1, floats[1]);
         seg.setAtIndex(ValueLayout.JAVA_FLOAT, 2, floats[2]);

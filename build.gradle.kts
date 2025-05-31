@@ -1,4 +1,5 @@
 import io.github.gradlenexus.publishplugin.NexusPublishExtension
+import io.github.krakowski.jextract.JextractTask
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem
 
 plugins {
@@ -7,6 +8,8 @@ plugins {
     `maven-publish`
     signing
     alias(libs.plugins.nexuspublish)
+
+    id("io.github.krakowski.jextract") version "0.5.0"
 }
 
 group = "dev.hollowcube"
@@ -40,34 +43,31 @@ tasks.withType<Jar> {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
-    options.compilerArgs.add("--enable-preview")
 }
 
 tasks.javadoc {
     (options as StandardJavadocDocletOptions).run {
         encoding = "UTF-8"
-        addStringOption("source", "21")
-        addBooleanOption("-enable-preview", true)
+        addStringOption("source", "23")
     }
 }
 
 tasks.test {
     useJUnitPlatform()
-
-    jvmArgs("--enable-preview")
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
 
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(23))
+        vendor.set(JvmVendorSpec.ADOPTIUM)
+    }
 }
 
 allprojects {
     extra["cmake"] = findExecutable("cmake")
-    extra["jextract"] = findExecutable("jextract")
 
     extra["commonPomConfig"] = Action<MavenPom> {
         description.set(project.description)
@@ -146,222 +146,128 @@ signing {
     sign(publishing.publications)
 }
 
-task<JExtractTask>("jextractLuacode") {
-    // Note: we use the header from the build directory here because we need to catch "luau_ext_free" which is added
-    // by native/build.gradle.kts
-    header = file("native/build/root/luau/Compiler/include/luacode.h")
-    targetPackage = "net.hollowcube.luau.internal.compiler"
-    extraArgs = listOf(
-        "--define-macro", "LUA_API=\"extern \\\"C\\\"\"",
-        "--include-function", "luau_compile",
-        "--include-function", "luau_ext_free",
-        "--include-struct", "lua_CompileOptions",
-    )
-}
+tasks.named<JextractTask>("jextract") {
+    dependsOn(":native:prepNative")
 
-task<JExtractTask>("jextractLua") {
-    header = file("native/luau/VM/include/lua.h")
-    targetPackage = "net.hollowcube.luau.internal.vm"
-    extraArgs = listOf(
-        "--include-constant", "LUA_REGISTRYINDEX",
-        "--include-constant", "LUA_ENVIRONINDEX",
-        "--include-constant", "LUA_GLOBALSINDEX",
+    outputDir.set(project.layout.projectDirectory.dir("src/generated/java"))
 
-        "--include-constant", "LUA_UTAG_LIMIT",
-        "--include-constant", "LUA_LUTAG_LIMIT",
-        "--include-constant", "LUA_MEMORY_CATEGORIES",
+    // Note: we use the header from the build directory here because
+    // we need to catch "luau_ext_free" which is added by native/build.gradle.kts
+    val nativeBuild = project(":native").layout.buildDirectory.dir("root/luau").get().asFile.absolutePath
+    header("$nativeBuild/Compiler/include/luacode.h") {
+        targetPackage = "net.hollowcube.luau.internal.compiler";
+        definedMacros.addAll("LUA_API=\"extern \\\"C\\\"\"")
+        functions.addAll("luau_compile", "luau_ext_free")
+        structs.addAll("lua_CompileOptions")
+    }
 
-        "--include-function", "lua_newstate",
-        "--include-function", "lua_close",
-        "--include-function", "lua_newthread",
-        "--include-function", "lua_mainthread",
-        "--include-function", "lua_resetthread",
-        "--include-function", "lua_isthreadreset",
+    val native = project(":native").layout.projectDirectory.dir("luau").asFile.absolutePath
+    header("$native/VM/include/lua.h") {
+        targetPackage = "net.hollowcube.luau.internal.vm"
 
-        "--include-function", "lua_absindex",
-        "--include-function", "lua_gettop",
-        "--include-function", "lua_settop",
-        "--include-function", "lua_pushvalue",
-        "--include-function", "lua_remove",
-        "--include-function", "lua_insert",
-        "--include-function", "lua_replace",
-        "--include-function", "lua_checkstack",
-        "--include-function", "lua_rawcheckstack",
-        "--include-function", "lua_xmove",
-        "--include-function", "lua_xpush",
+        constants.addAll(
+            "LUA_REGISTRYINDEX", "LUA_ENVIRONINDEX", "LUA_GLOBALSINDEX",
+            "LUA_UTAG_LIMIT", "LUA_LUTAG_LIMIT", "LUA_MEMORY_CATEGORIES",
+        )
+        functions.addAll(
+            "lua_newstate", "lua_close", "lua_newthread",
+            "lua_mainthread", "lua_resetthread", "lua_isthreadreset",
 
-        "--include-function", "lua_isnumber",
-        "--include-function", "lua_isstring",
-        "--include-function", "lua_iscfunction",
-        "--include-function", "lua_isLfunction",
-        "--include-function", "lua_isuserdata",
-        "--include-function", "lua_type",
-        "--include-function", "lua_typename",
-        "--include-function", "lua_equal",
-        "--include-function", "lua_rawequal",
-        "--include-function", "lua_lessthan",
-        "--include-function", "lua_tovector",
-        "--include-function", "lua_tonumberx",
-        "--include-function", "lua_tointegerx",
-        "--include-function", "lua_tounsignedx",
-        "--include-function", "lua_toboolean",
-        "--include-function", "lua_tolstring",
-        "--include-function", "lua_namecallatom",
-        "--include-function", "lua_objlen",
-        "--include-function", "lua_tocfunction",
-        "--include-function", "lua_tolightuserdata",
-        "--include-function", "lua_tolightuserdatatagged",
-        "--include-function", "lua_touserdata",
-        "--include-function", "lua_touserdatatagged",
-        "--include-function", "lua_userdatatag",
-        "--include-function", "lua_lightuserdatatag",
-        "--include-function", "lua_tothread",
-        "--include-function", "lua_tobuffer",
-        "--include-function", "lua_topointer",
+            "lua_absindex", "lua_gettop", "lua_settop",
+            "lua_pushvalue", "lua_remove", "lua_insert",
+            "lua_replace", "lua_checkstack", "lua_rawcheckstack",
+            "lua_xmove", "lua_xpush",
 
-        "--include-function", "lua_pushnil",
-        "--include-function", "lua_pushnumber",
-        "--include-function", "lua_pushinteger",
-        "--include-function", "lua_pushunsigned",
-        "--include-function", "lua_pushvector",
-        "--include-function", "lua_pushlstring",
-        "--include-typedef", "lua_CFunction",
-        "--include-function", "lua_pushcclosurek",
-        "--include-function", "lua_pushboolean",
-        "--include-function", "lua_pushthread",
-        "--include-function", "lua_pushlightuserdatatagged",
-        "--include-function", "lua_newuserdatatagged",
-        "--include-function", "lua_newuserdatadtor",
-        "--include-function", "lua_newbuffer",
+            "lua_isnumber", "lua_isstring", "lua_iscfunction",
+            "lua_isLfunction", "lua_isuserdata", "lua_type",
+            "lua_typename", "lua_equal", "lua_rawequal",
+            "lua_lessthan", "lua_tovector", "lua_tonumberx",
+            "lua_tointegerx", "lua_tounsignedx", "lua_toboolean",
+            "lua_tolstring", "lua_namecallatom", "lua_objlen",
+            "lua_tocfunction", "lua_tolightuserdata", "lua_tolightuserdatatagged",
+            "lua_touserdata", "lua_touserdatatagged", "lua_userdatatag",
+            "lua_lightuserdatatag", "lua_tothread", "lua_tobuffer",
+            "lua_topointer",
 
-        "--include-function", "lua_gettable",
-        "--include-function", "lua_getfield",
-        "--include-function", "lua_rawgetfield",
-        "--include-function", "lua_rawget",
-        "--include-function", "lua_rawgeti",
-        "--include-function", "lua_createtable",
-        "--include-function", "lua_setreadonly",
-        "--include-function", "lua_getreadonly",
-        "--include-function", "lua_setsafeenv",
-        "--include-function", "lua_getmetatable",
-        "--include-function", "lua_getfenv",
+            "lua_pushnil", "lua_pushnumber", "lua_pushinteger",
+            "lua_pushunsigned", "lua_pushvector", "lua_pushlstring",
+            "lua_pushcclosurek", "lua_pushboolean", "lua_pushthread",
+            "lua_pushlightuserdatatagged", "lua_newuserdatatagged",
+            "lua_newuserdatadtor", "lua_newbuffer",
 
-        "--include-function", "lua_settable",
-        "--include-function", "lua_setfield",
-        "--include-function", "lua_rawsetfield",
-        "--include-function", "lua_rawset",
-        "--include-function", "lua_rawseti",
-        "--include-function", "lua_setmetatable",
-        "--include-function", "lua_setfenv",
+            "lua_gettable", "lua_getfield", "lua_rawgetfield",
+            "lua_rawget", "lua_rawgeti", "lua_createtable",
+            "lua_setreadonly", "lua_getreadonly", "lua_setsafeenv",
+            "lua_getmetatable", "lua_getfenv",
 
-        "--include-function", "luau_load",
-        "--include-function", "lua_call",
-        "--include-function", "lua_pcall",
+            "lua_settable", "lua_setfield", "lua_rawsetfield",
+            "lua_rawset", "lua_rawseti", "lua_setmetatable",
+            "lua_setfenv",
 
-        "--include-function", "lua_yield",
-        "--include-function", "lua_break",
-        "--include-function", "lua_resume",
-        "--include-function", "lua_resumeerror",
-        "--include-function", "lua_status",
-        "--include-function", "lua_isyieldable",
-        "--include-function", "lua_getthreaddata",
-        "--include-function", "lua_setthreaddata",
-        "--include-function", "lua_costatus",
+            "luau_load", "lua_call", "lua_pcall",
 
-        "--include-function", "lua_gc",
-        "--include-function", "lua_setmemcat",
-        "--include-function", "lua_totalbytes",
+            "lua_yield", "lua_break", "lua_resume",
+            "lua_resumeerror", "lua_status", "lua_isyieldable",
+            "lua_getthreaddata", "lua_setthreaddata", "lua_costatus",
 
-        "--include-function", "lua_error",
-        "--include-function", "lua_next",
-        "--include-function", "lua_rawiter",
-        "--include-function", "lua_concat",
-        "--include-function", "lua_clock",
-        "--include-function", "lua_clonefunction",
-        "--include-function", "lua_cleartable",
+            "lua_gc", "lua_setmemcat", "lua_totalbytes",
 
-        "--include-function", "lua_ref",
-        "--include-function", "lua_unref",
+            "lua_error", "lua_next", "lua_rawiter",
+            "lua_concat", "lua_clock", "lua_clonefunction",
+            "lua_cleartable",
 
-        "--include-struct", "lua_Callbacks",
-        "--include-function", "lua_callbacks",
-    )
-}
+            "lua_ref", "lua_unref",
 
-task<JExtractTask>("jextractLualibs") {
-    header = file("native/luau/VM/include/lualib.h")
-    targetPackage = "net.hollowcube.luau.internal.vm"
-    extraArgs = listOf(
-        "--include-struct", "luaL_Reg",
-        "--include-function", "luaL_register",
-        "--include-function", "luaL_getmetafield",
-        "--include-function", "luaL_callmeta",
-        "--include-function", "luaL_typeerrorL",
-        "--include-function", "luaL_argerrorL",
-        "--include-function", "luaL_newmetatable",
+            "lua_callbacks"
+        )
+        typedefs.addAll("lua_CFunction")
+        structs.addAll("lua_Callbacks")
+    }
 
-        "--include-function", "luaL_checklstring",
-        "--include-function", "luaL_optlstring",
-        "--include-function", "luaL_checknumber",
-        "--include-function", "luaL_optnumber",
-        "--include-function", "luaL_checkboolean",
-        "--include-function", "luaL_optboolean",
-        "--include-function", "luaL_checkinteger",
-        "--include-function", "luaL_optinteger",
-        "--include-function", "luaL_checkunsigned",
-        "--include-function", "luaL_optunsigned",
-        "--include-function", "luaL_checkvector",
-        "--include-function", "luaL_optvector",
-        "--include-function", "luaL_checkbuffer",
-        "--include-function", "luaL_checkstack",
-        "--include-function", "luaL_checktype",
-        "--include-function", "luaL_checkany",
-        "--include-function", "luaL_checkudata",
-        "--include-function", "luaL_checkoption",
+    header("$native/VM/include/lualib.h") {
+        targetPackage = "net.hollowcube.luau.internal.vm"
 
-        "--include-function", "luaL_where",
+        functions.addAll(
+            "luaL_register",
+            "luaL_getmetafield", "luaL_callmeta", "luaL_typeerrorL",
+            "luaL_argerrorL", "luaL_newmetatable",
 
-        "--include-function", "luaopen_base",
-        "--include-function", "luaopen_coroutine",
-        "--include-function", "luaopen_table",
-        "--include-function", "luaopen_os",
-        "--include-function", "luaopen_string",
-        "--include-function", "luaopen_bit32",
-        "--include-function", "luaopen_buffer",
-        "--include-function", "luaopen_utf8",
-        "--include-function", "luaopen_math",
-        "--include-function", "luaopen_debug",
-        "--include-function", "luaL_openlibs",
+            "luaL_checklstring", "luaL_optlstring", "luaL_checknumber",
+            "luaL_optnumber", "luaL_checkboolean", "luaL_optboolean",
+            "luaL_checkinteger", "luaL_optinteger", "luaL_checkunsigned",
+            "luaL_optunsigned", "luaL_checkvector", "luaL_optvector",
+            "luaL_checkbuffer", "luaL_checkstack", "luaL_checktype",
+            "luaL_checkany", "luaL_checkudata", "luaL_checkoption",
 
-        "--include-function", "luaL_newstate",
+            "luaL_where",
 
-        "--include-function", "luaL_sandbox",
-        "--include-function", "luaL_sandboxthread",
-    )
-}
+            "luaopen_base", "luaopen_coroutine", "luaopen_table",
+            "luaopen_os", "luaopen_string", "luaopen_bit32",
+            "luaopen_buffer", "luaopen_utf8", "luaopen_math",
+            "luaopen_debug", "luaL_openlibs",
 
-// Remaining functions to run through jextract
-//# LUA_API const char* lua_tostringatom(lua_State* L, int idx, int* atom);
-//# LUA_API void lua_pushstring(lua_State* L, const char* s);
-//# LUA_API const char* lua_pushvfstring(lua_State* L, const char* fmt, va_list argp);
-//# LUA_API LUA_PRINTF_ATTR(2, 3) const char* lua_pushfstringL(lua_State* L, const char* fmt, ...);
-//# LUA_API void lua_pushcclosurek(lua_State* L, lua_CFunction fn, const char* debugname, int nup, lua_Continuation cont);
-//# LUA_API uintptr_t lua_encodepointer(lua_State* L, uintptr_t p);
-//# LUA_API void lua_setuserdatatag(lua_State* L, int idx, int tag);
-//# typedef void (*lua_Destructor)(lua_State* L, void* userdata);
-//# LUA_API void lua_setuserdatadtor(lua_State* L, int tag, lua_Destructor dtor);
-//# LUA_API lua_Destructor lua_getuserdatadtor(lua_State* L, int tag);
-//# LUA_API void lua_setuserdatametatable(lua_State* L, int tag, int idx);
-//# LUA_API void lua_getuserdatametatable(lua_State* L, int tag);
-//# LUA_API void lua_setlightuserdataname(lua_State* L, int tag, const char* name);
-//# LUA_API const char* lua_getlightuserdataname(lua_State* L, int tag);
-//# LUA_API void lua_clonefunction(lua_State* L, int idx);
-//# LUA_API void lua_cleartable(lua_State* L, int idx);
+            "luaL_newstate", "luaL_sandbox", "luaL_sandboxthread",
+        )
+        structs.addAll("luaL_Reg")
+    }
 
-task("jextract") {
-    dependsOn("jextractLuacode")
-    dependsOn("jextractLua")
-    dependsOn("jextractLualibs")
+    // Remaining functions to run through jextract
+    //# LUA_API const char* lua_tostringatom(lua_State* L, int idx, int* atom);
+    //# LUA_API void lua_pushstring(lua_State* L, const char* s);
+    //# LUA_API const char* lua_pushvfstring(lua_State* L, const char* fmt, va_list argp);
+    //# LUA_API LUA_PRINTF_ATTR(2, 3) const char* lua_pushfstringL(lua_State* L, const char* fmt, ...);
+    //# LUA_API void lua_pushcclosurek(lua_State* L, lua_CFunction fn, const char* debugname, int nup, lua_Continuation cont);
+    //# LUA_API uintptr_t lua_encodepointer(lua_State* L, uintptr_t p);
+    //# LUA_API void lua_setuserdatatag(lua_State* L, int idx, int tag);
+    //# typedef void (*lua_Destructor)(lua_State* L, void* userdata);
+    //# LUA_API void lua_setuserdatadtor(lua_State* L, int tag, lua_Destructor dtor);
+    //# LUA_API lua_Destructor lua_getuserdatadtor(lua_State* L, int tag);
+    //# LUA_API void lua_setuserdatametatable(lua_State* L, int tag, int idx);
+    //# LUA_API void lua_getuserdatametatable(lua_State* L, int tag);
+    //# LUA_API void lua_setlightuserdataname(lua_State* L, int tag, const char* name);
+    //# LUA_API const char* lua_getlightuserdataname(lua_State* L, int tag);
+    //# LUA_API void lua_clonefunction(lua_State* L, int idx);
+    //# LUA_API void lua_cleartable(lua_State* L, int idx);
 }
 
 fun findExecutable(name_: String): String? {
@@ -373,37 +279,3 @@ fun findExecutable(name_: String): String? {
     return executable?.absolutePath
 }
 
-@CacheableTask
-abstract class JExtractTask : Exec() {
-
-    @get:InputFile
-    @PathSensitive(value = PathSensitivity.RELATIVE)
-    val header: RegularFileProperty = project.objects.fileProperty()
-
-    @get:Input
-    val targetPackage: Property<String> = project.objects.property(String::class.java)
-
-    @get:Input
-    val extraArgs: ListProperty<String> = project.objects.listProperty(String::class.java)
-
-    @get:OutputDirectory
-    val outputDir: DirectoryProperty = project.objects.directoryProperty().convention(project.provider {
-        val pkg = targetPackage.get().replace(".", "/")
-        project.layout.projectDirectory.dir("src/generated/java/$pkg")
-    })
-
-    @TaskAction
-    override fun exec() {
-        workingDir = this.project.layout.projectDirectory.asFile
-
-        val jextract: String? by project.extra
-        commandLine(
-            listOf(
-                jextract ?: throw IllegalStateException("jextract not found in PATH"),
-                header.get(), "--output", "src/generated/java",
-                "--target-package", targetPackage.get()
-            ) + extraArgs.get()
-        )
-        super.exec()
-    }
-}
