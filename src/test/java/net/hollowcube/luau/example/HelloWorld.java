@@ -9,11 +9,13 @@ public class HelloWorld {
     public static void main(String[] args) throws LuauCompileException {
         final byte[] bytecode = LuauCompiler.DEFAULT.compile("""
                         print("Hello, Luau!")
+                        print(testObject:ComputeThing())
                 """);
 
         final LuaState state = LuaState.newState();
         try {
             state.openLibs(); // Open all libraries
+            TestClass.init(state);
             state.sandbox(); // Sandbox the global state so it cannot be edited by a script
 
             var thread = state.newThread();

@@ -15,7 +15,7 @@ val artifactName = "luau-natives-${getOsName()}-${getArchName()}"
 
 val buildProjectDir = file(layout.buildDirectory.file("root").get())
 
-task<Copy>("copyForModification") {
+tasks.register<Copy>("copyForModification") {
     description = "Copy project to the build directory for modification"
     from(layout.projectDirectory)
     include("luau/**", "src/**", "CMakeLists.txt")
@@ -30,7 +30,7 @@ fun edit(file: File, edit: (String) -> String) {
     }
 }
 
-task("luauStaticToShared") {
+tasks.register("luauStaticToShared") {
     description = "Make Luau.Compiler and Luau.VM compile as shared libraries"
     dependsOn("copyForModification")
 
@@ -55,7 +55,7 @@ task("luauStaticToShared") {
     }
 }
 
-task<Exec>("prepNative") {
+tasks.register<Exec>("prepNative") {
     dependsOn("luauStaticToShared")
     workingDir = file(layout.buildDirectory).resolve("cmake")
     standardOutput = System.out
@@ -82,7 +82,7 @@ task<Exec>("prepNative") {
     commandLine(args)
 }
 
-task<Exec>("buildNative") {
+tasks.register<Exec>("buildNative") {
     dependsOn("prepNative")
     workingDir = file(layout.buildDirectory).resolve("cmake")
     standardOutput = System.out
@@ -97,7 +97,7 @@ task<Exec>("buildNative") {
     )
 }
 
-task<Copy>("copyNative") {
+tasks.register<Copy>("copyNative") {
     dependsOn("buildNative")
 
     var libPath = "cmake/lib" // todo it should definitely be a release build. need to do that.

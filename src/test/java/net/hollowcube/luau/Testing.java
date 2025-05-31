@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("preview")
 public class Testing {
 
     //todo NEED TO COME UP WITH SOME WAY TO MAKE SURE A PROGRAM DOESNT LEAK REFERENCES.
@@ -16,12 +15,12 @@ public class Testing {
 
         var source = """
                 print('hello from lua')
-                                
+                
                 local arr = m2.newarray()
                 arr:push(1)
                 arr:push(2)
                 m2.show(arr)
-
+                
                 print(m2.add(1, 2))
                 print(m2.sub(1, 2))
                 abc()
