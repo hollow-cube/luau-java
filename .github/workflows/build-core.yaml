@@ -15,6 +15,8 @@ jobs:
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Set up JDK 23 (for JNI)
         uses: actions/setup-java@v4
         with:
