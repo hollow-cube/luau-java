@@ -31,22 +31,6 @@ JNIEXPORT void JNICALL Java_net_hollowcube_luau_util_GlobalRef_unref
 JNIEXPORT jobject JNICALL Java_net_hollowcube_luau_util_GlobalRef_get
   (JNIEnv *, jclass, jlong);
 
-/*
- * Class:     net_hollowcube_luau_util_GlobalRef
- * Method:    newweakref
- * Signature: (Ljava/lang/Object;)J
- */
-JNIEXPORT jlong JNICALL Java_net_hollowcube_luau_util_GlobalRef_newweakref
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     net_hollowcube_luau_util_GlobalRef
- * Method:    getweak
- * Signature: (J)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_net_hollowcube_luau_util_GlobalRef_getweak
-  (JNIEnv *, jclass, jlong);
-
 #ifdef __cplusplus
 }
 #endif
