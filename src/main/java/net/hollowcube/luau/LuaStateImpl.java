@@ -687,12 +687,14 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public @Nullable Object getThreadData() {
-        return this.threadData;
+        final MemorySegment threaddata = lua_getthreaddata(L);
+        return threaddata == MemorySegment.NULL ? null : GlobalRef.getweakref(threaddata.address());
     }
 
     @Override
     public void setThreadData(@Nullable Object data) {
-        this.threadData = data;
+        lua_setthreaddata(L, data == null ? MemorySegment.NULL
+                : MemorySegment.ofAddress(GlobalRef.newweakref(data)));
     }
 
     @Override
