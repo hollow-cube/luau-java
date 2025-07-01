@@ -24,6 +24,7 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  *     void (*debugstep)(lua_State *, lua_Debug *);
  *     void (*debuginterrupt)(lua_State *, lua_Debug *);
  *     void (*debugprotectederror)(lua_State *);
+ *     void (*onallocate)(lua_State *, size_t, size_t);
  * }
  * }
  */
@@ -42,7 +43,8 @@ public class lua_Callbacks {
         lua_h.C_POINTER.withName("debugbreak"),
         lua_h.C_POINTER.withName("debugstep"),
         lua_h.C_POINTER.withName("debuginterrupt"),
-        lua_h.C_POINTER.withName("debugprotectederror")
+        lua_h.C_POINTER.withName("debugprotectederror"),
+        lua_h.C_POINTER.withName("onallocate")
     ).withName("lua_Callbacks");
 
     /**
@@ -878,6 +880,105 @@ public class lua_Callbacks {
      */
     public static void debugprotectederror(MemorySegment struct, MemorySegment fieldValue) {
         struct.set(debugprotectederror$LAYOUT, debugprotectederror$OFFSET, fieldValue);
+    }
+
+    /**
+     * {@snippet lang=c :
+     * void (*onallocate)(lua_State *, size_t, size_t)
+     * }
+     */
+    public static class onallocate {
+
+        onallocate() {
+            // Should not be called directly
+        }
+
+        /**
+         * The function pointer signature, expressed as a functional interface
+         */
+        public interface Function {
+            void apply(MemorySegment _x0, long _x1, long _x2);
+        }
+
+        private static final FunctionDescriptor $DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_LONG,
+            lua_h.C_LONG
+        );
+
+        /**
+         * The descriptor of this function pointer
+         */
+        public static FunctionDescriptor descriptor() {
+            return $DESC;
+        }
+
+        private static final MethodHandle UP$MH = lua_h.upcallHandle(onallocate.Function.class, "apply", $DESC);
+
+        /**
+         * Allocates a new upcall stub, whose implementation is defined by {@code fi}.
+         * The lifetime of the returned segment is managed by {@code arena}
+         */
+        public static MemorySegment allocate(onallocate.Function fi, Arena arena) {
+            return Linker.nativeLinker().upcallStub(UP$MH.bindTo(fi), $DESC, arena);
+        }
+
+        private static final MethodHandle DOWN$MH = Linker.nativeLinker().downcallHandle($DESC);
+
+        /**
+         * Invoke the upcall stub {@code funcPtr}, with given parameters
+         */
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, long _x1, long _x2) {
+            try {
+                 DOWN$MH.invokeExact(funcPtr, _x0, _x1, _x2);
+            } catch (Throwable ex$) {
+                throw new AssertionError("should not reach here", ex$);
+            }
+        }
+    }
+
+    private static final AddressLayout onallocate$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("onallocate"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * void (*onallocate)(lua_State *, size_t, size_t)
+     * }
+     */
+    public static final AddressLayout onallocate$layout() {
+        return onallocate$LAYOUT;
+    }
+
+    private static final long onallocate$OFFSET = 72;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * void (*onallocate)(lua_State *, size_t, size_t)
+     * }
+     */
+    public static final long onallocate$offset() {
+        return onallocate$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * void (*onallocate)(lua_State *, size_t, size_t)
+     * }
+     */
+    public static MemorySegment onallocate(MemorySegment struct) {
+        return struct.get(onallocate$LAYOUT, onallocate$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * void (*onallocate)(lua_State *, size_t, size_t)
+     * }
+     */
+    public static void onallocate(MemorySegment struct, MemorySegment fieldValue) {
+        struct.set(onallocate$LAYOUT, onallocate$OFFSET, fieldValue);
     }
 
     /**

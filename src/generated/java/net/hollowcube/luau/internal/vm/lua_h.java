@@ -5755,7 +5755,7 @@ public class lua_h {
                 if (TRACE_DOWNCALLS) {
                     traceDowncall("lua_clock", x0);
                 }
-                return (double)spreader.invokeExact(x0);
+                return (double) spreader.invokeExact(x0);
             } catch(IllegalArgumentException | ClassCastException ex$)  {
                 throw ex$; // rethrow IAE from passing wrong number/type of args
             } catch (Throwable ex$) {

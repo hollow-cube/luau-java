@@ -1,10 +1,13 @@
 package net.hollowcube.luau;
 
+import net.hollowcube.luau.internal.vm.lua_Alloc;
+import net.hollowcube.luau.internal.vm.lua_h;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -24,6 +27,14 @@ public sealed interface LuaState permits LuaStateImpl {
 
     static @NotNull LuaState newState() {
         return new LuaStateImpl();
+    }
+
+    static @NotNull LuaState newState(lua_Alloc.Function alloc){
+        final Arena arena = Arena.ofConfined();
+        final MemorySegment allocPtr = lua_Alloc.allocate(alloc, arena);
+        final MemorySegment L = lua_h.lua_newstate(allocPtr, MemorySegment.NULL);
+
+        return new LuaStateImpl(L, arena, false);
     }
 
     @Deprecated

@@ -220,7 +220,7 @@ tasks.named<JextractTask>("jextract") {
 
             "lua_callbacks"
         )
-        typedefs.addAll("lua_CFunction")
+        typedefs.addAll("lua_Alloc", "lua_CFunction")
         structs.addAll("lua_Callbacks")
     }
 
