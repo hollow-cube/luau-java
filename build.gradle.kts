@@ -209,6 +209,7 @@ tasks.named<JextractTask>("jextract") {
             "lua_yield", "lua_break", "lua_resume",
             "lua_resumeerror", "lua_status", "lua_isyieldable",
             "lua_getthreaddata", "lua_setthreaddata", "lua_costatus",
+            "lua_debugtrace",
 
             "lua_gc", "lua_setmemcat", "lua_totalbytes",
 
