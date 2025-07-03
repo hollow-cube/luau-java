@@ -34,6 +34,10 @@ public sealed interface LuaState permits LuaStateImpl {
         final MemorySegment allocPtr = lua_Alloc.allocate(alloc, arena);
         final MemorySegment L = lua_h.lua_newstate(allocPtr, MemorySegment.NULL);
 
+        if(MemorySegment.NULL.equals(L)){
+            throw new NullPointerException("Couldn't allocate state");
+        }
+
         return new LuaStateImpl(L, arena, false);
     }
 

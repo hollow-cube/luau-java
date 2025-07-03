@@ -36,6 +36,8 @@ public class HelloCustomAllocator {
                 else{
                     System.out.println("Allocating " + nsize);
                     return (MemorySegment) realloc.invokeExact(ptr, nsize);
+                    // Force Luau to throw out-of-memory error by returning null here:
+                    // return MemorySegment.NULL;
                 }
 
             }catch (Throwable t){
