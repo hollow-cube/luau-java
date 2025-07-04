@@ -3,10 +3,11 @@ metadata.format.version = "1.1"
 [versions]
 annotations = "26.0.2"
 
-nexuspublish = "1.3.0"
+nmcp = "1.0.0-rc.1"
 
 [libraries]
 annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
 
 [plugins]
-nexuspublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexuspublish" }
+nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
+nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }

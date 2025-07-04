@@ -1,4 +1,3 @@
-import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import io.github.krakowski.jextract.JextractTask
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem
 
@@ -7,7 +6,8 @@ plugins {
 
     `maven-publish`
     signing
-    alias(libs.plugins.nexuspublish)
+    alias(libs.plugins.nmcp)
+    alias(libs.plugins.nmcp.aggregation)
 
     id("io.github.krakowski.jextract") version "0.5.0"
 }
@@ -107,18 +107,19 @@ allprojects {
     }
 }
 
-configure<NexusPublishExtension> {
-    this.packageGroup.set("dev.hollowcube")
-
-    repositories.sonatype {
-        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-        snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-
-        if (System.getenv("SONATYPE_USERNAME") != null) {
-            username.set(System.getenv("SONATYPE_USERNAME"))
-            password.set(System.getenv("SONATYPE_PASSWORD"))
-        }
+nmcpAggregation {
+    centralPortal {
+        username = System.getenv("SONATYPE_USERNAME")
+        password = System.getenv("SONATYPE_PASSWORD")
+        publishingType = "AUTOMATIC"
     }
+}
+
+dependencies {
+    if (System.getProperty("LUAU_PUBLISH_ROOT") != null)
+        nmcpAggregation(rootProject)
+    if (System.getProperty("LUAU_PUBLISH_NATIVES") != null)
+        nmcpAggregation(project(":native"))
 }
 
 publishing.publications.create<MavenPublication>("luau") {
