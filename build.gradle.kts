@@ -116,9 +116,9 @@ nmcpAggregation {
 }
 
 dependencies {
-    if (System.getProperty("LUAU_PUBLISH_ROOT") != null)
+    if (System.getenv("LUAU_PUBLISH_ROOT") != null)
         nmcpAggregation(rootProject)
-    if (System.getProperty("LUAU_PUBLISH_NATIVES") != null)
+    if (System.getenv("LUAU_PUBLISH_NATIVES") != null)
         nmcpAggregation(project(":native"))
 }
 
