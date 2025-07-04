@@ -5755,7 +5755,7 @@ public class lua_h {
                 if (TRACE_DOWNCALLS) {
                     traceDowncall("lua_clock", x0);
                 }
-                return (double)spreader.invokeExact(x0);
+                return (double) spreader.invokeExact(x0);
             } catch(IllegalArgumentException | ClassCastException ex$)  {
                 throw ex$; // rethrow IAE from passing wrong number/type of args
             } catch (Throwable ex$) {
@@ -5992,6 +5992,64 @@ public class lua_h {
                 traceDowncall("lua_unref", L, ref);
             }
             mh$.invokeExact(L, ref);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_debugtrace {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_POINTER,
+            lua_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_debugtrace");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const char *lua_debugtrace(lua_State *L)
+     * }
+     */
+    public static FunctionDescriptor lua_debugtrace$descriptor() {
+        return lua_debugtrace.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const char *lua_debugtrace(lua_State *L)
+     * }
+     */
+    public static MethodHandle lua_debugtrace$handle() {
+        return lua_debugtrace.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const char *lua_debugtrace(lua_State *L)
+     * }
+     */
+    public static MemorySegment lua_debugtrace$address() {
+        return lua_debugtrace.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const char *lua_debugtrace(lua_State *L)
+     * }
+     */
+    public static MemorySegment lua_debugtrace(MemorySegment L) {
+        var mh$ = lua_debugtrace.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_debugtrace", L);
+            }
+            return (MemorySegment)mh$.invokeExact(L);
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }

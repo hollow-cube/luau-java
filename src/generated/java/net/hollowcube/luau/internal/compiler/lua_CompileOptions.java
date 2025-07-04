@@ -24,6 +24,10 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  *     const char *vectorType;
  *     const char *const *mutableGlobals;
  *     const char *const *userdataTypes;
+ *     const char *const *librariesWithKnownMembers;
+ *     lua_LibraryMemberTypeCallback libraryMemberTypeCb;
+ *     lua_LibraryMemberConstantCallback libraryMemberConstantCb;
+ *     const char *const *disabledBuiltins;
  * }
  * }
  */
@@ -42,7 +46,11 @@ public class lua_CompileOptions {
         luacode_h.C_POINTER.withName("vectorCtor"),
         luacode_h.C_POINTER.withName("vectorType"),
         luacode_h.C_POINTER.withName("mutableGlobals"),
-        luacode_h.C_POINTER.withName("userdataTypes")
+        luacode_h.C_POINTER.withName("userdataTypes"),
+        luacode_h.C_POINTER.withName("librariesWithKnownMembers"),
+        luacode_h.C_POINTER.withName("libraryMemberTypeCb"),
+        luacode_h.C_POINTER.withName("libraryMemberConstantCb"),
+        luacode_h.C_POINTER.withName("disabledBuiltins")
     ).withName("lua_CompileOptions");
 
     /**
@@ -446,6 +454,182 @@ public class lua_CompileOptions {
      */
     public static void userdataTypes(MemorySegment struct, MemorySegment fieldValue) {
         struct.set(userdataTypes$LAYOUT, userdataTypes$OFFSET, fieldValue);
+    }
+
+    private static final AddressLayout librariesWithKnownMembers$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("librariesWithKnownMembers"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * const char *const *librariesWithKnownMembers
+     * }
+     */
+    public static final AddressLayout librariesWithKnownMembers$layout() {
+        return librariesWithKnownMembers$LAYOUT;
+    }
+
+    private static final long librariesWithKnownMembers$OFFSET = 56;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * const char *const *librariesWithKnownMembers
+     * }
+     */
+    public static final long librariesWithKnownMembers$offset() {
+        return librariesWithKnownMembers$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * const char *const *librariesWithKnownMembers
+     * }
+     */
+    public static MemorySegment librariesWithKnownMembers(MemorySegment struct) {
+        return struct.get(librariesWithKnownMembers$LAYOUT, librariesWithKnownMembers$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * const char *const *librariesWithKnownMembers
+     * }
+     */
+    public static void librariesWithKnownMembers(MemorySegment struct, MemorySegment fieldValue) {
+        struct.set(librariesWithKnownMembers$LAYOUT, librariesWithKnownMembers$OFFSET, fieldValue);
+    }
+
+    private static final AddressLayout libraryMemberTypeCb$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("libraryMemberTypeCb"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberTypeCallback libraryMemberTypeCb
+     * }
+     */
+    public static final AddressLayout libraryMemberTypeCb$layout() {
+        return libraryMemberTypeCb$LAYOUT;
+    }
+
+    private static final long libraryMemberTypeCb$OFFSET = 64;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberTypeCallback libraryMemberTypeCb
+     * }
+     */
+    public static final long libraryMemberTypeCb$offset() {
+        return libraryMemberTypeCb$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberTypeCallback libraryMemberTypeCb
+     * }
+     */
+    public static MemorySegment libraryMemberTypeCb(MemorySegment struct) {
+        return struct.get(libraryMemberTypeCb$LAYOUT, libraryMemberTypeCb$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberTypeCallback libraryMemberTypeCb
+     * }
+     */
+    public static void libraryMemberTypeCb(MemorySegment struct, MemorySegment fieldValue) {
+        struct.set(libraryMemberTypeCb$LAYOUT, libraryMemberTypeCb$OFFSET, fieldValue);
+    }
+
+    private static final AddressLayout libraryMemberConstantCb$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("libraryMemberConstantCb"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberConstantCallback libraryMemberConstantCb
+     * }
+     */
+    public static final AddressLayout libraryMemberConstantCb$layout() {
+        return libraryMemberConstantCb$LAYOUT;
+    }
+
+    private static final long libraryMemberConstantCb$OFFSET = 72;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberConstantCallback libraryMemberConstantCb
+     * }
+     */
+    public static final long libraryMemberConstantCb$offset() {
+        return libraryMemberConstantCb$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberConstantCallback libraryMemberConstantCb
+     * }
+     */
+    public static MemorySegment libraryMemberConstantCb(MemorySegment struct) {
+        return struct.get(libraryMemberConstantCb$LAYOUT, libraryMemberConstantCb$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * lua_LibraryMemberConstantCallback libraryMemberConstantCb
+     * }
+     */
+    public static void libraryMemberConstantCb(MemorySegment struct, MemorySegment fieldValue) {
+        struct.set(libraryMemberConstantCb$LAYOUT, libraryMemberConstantCb$OFFSET, fieldValue);
+    }
+
+    private static final AddressLayout disabledBuiltins$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("disabledBuiltins"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * const char *const *disabledBuiltins
+     * }
+     */
+    public static final AddressLayout disabledBuiltins$layout() {
+        return disabledBuiltins$LAYOUT;
+    }
+
+    private static final long disabledBuiltins$OFFSET = 80;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * const char *const *disabledBuiltins
+     * }
+     */
+    public static final long disabledBuiltins$offset() {
+        return disabledBuiltins$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * const char *const *disabledBuiltins
+     * }
+     */
+    public static MemorySegment disabledBuiltins(MemorySegment struct) {
+        return struct.get(disabledBuiltins$LAYOUT, disabledBuiltins$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * const char *const *disabledBuiltins
+     * }
+     */
+    public static void disabledBuiltins(MemorySegment struct, MemorySegment fieldValue) {
+        struct.set(disabledBuiltins$LAYOUT, disabledBuiltins$OFFSET, fieldValue);
     }
 
     /**

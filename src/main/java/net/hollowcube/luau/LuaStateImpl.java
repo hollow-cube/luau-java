@@ -64,15 +64,15 @@ final class LuaStateImpl implements LuaState {
         // We implement the user data setter/getter in plain java so this is fine.
         this.ref = GlobalRef.newref(this);
         lua_setthreaddata(L, MemorySegment.ofAddress(this.ref));
+
+        if (!isThread) {
+            configureRootThreadCleanup();
+        }
     }
 
     public LuaStateImpl() {
         this(lualib_h.luaL_newstate(), Arena.ofConfined(), false);
-
-        // If this is a root state, setup the thread close callback to clean them up.
-        final MemorySegment callbacks = lua_callbacks(L);
-        final MemorySegment userthread = lua_Callbacks.userthread.allocate(LuaStateImpl::threadChange, arena);
-        lua_Callbacks.userthread(callbacks, userthread);
+        configureRootThreadCleanup();
     }
 
     @Override
@@ -86,6 +86,13 @@ final class LuaStateImpl implements LuaState {
             throw new IllegalStateException("cannot close a thread directly, it will be closed when lua garbage collects it.");
         lua_h.lua_close(L);
         closeInternal();
+    }
+
+    private void configureRootThreadCleanup() {
+        // If this is a root state, setup the thread close callback to clean them up.
+        final MemorySegment callbacks = lua_callbacks(L);
+        final MemorySegment userthread = lua_Callbacks.userthread.allocate(LuaStateImpl::threadChange, arena);
+        lua_Callbacks.userthread(callbacks, userthread);
     }
 
     private static void threadChange(@NotNull MemorySegment LP, @NotNull MemorySegment L) {
