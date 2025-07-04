@@ -65,7 +65,7 @@ final class LuaStateImpl implements LuaState {
         this.ref = GlobalRef.newref(this);
         lua_setthreaddata(L, MemorySegment.ofAddress(this.ref));
 
-        if(!isThread){
+        if (!isThread) {
             configureRootThreadCleanup();
         }
     }
@@ -88,7 +88,7 @@ final class LuaStateImpl implements LuaState {
         closeInternal();
     }
 
-    private void configureRootThreadCleanup(){
+    private void configureRootThreadCleanup() {
         // If this is a root state, setup the thread close callback to clean them up.
         final MemorySegment callbacks = lua_callbacks(L);
         final MemorySegment userthread = lua_Callbacks.userthread.allocate(LuaStateImpl::threadChange, arena);

@@ -28,19 +28,17 @@ public class HelloCustomAllocator {
         final LuaState state = LuaState.newState((ud, ptr, osize, nsize) -> {
 
             try {
-                if (nsize == 0)
-                {
+                if (nsize == 0) {
                     free.invokeExact(ptr);
                     return NULL;
-                }
-                else{
+                } else {
                     System.out.println("Allocating " + nsize);
                     return (MemorySegment) realloc.invokeExact(ptr, nsize);
                     // Force Luau to throw out-of-memory error by returning null here:
                     // return MemorySegment.NULL;
                 }
 
-            }catch (Throwable t){
+            } catch (Throwable t) {
                 t.printStackTrace();
                 return NULL;
             }

@@ -29,12 +29,12 @@ public sealed interface LuaState permits LuaStateImpl {
         return new LuaStateImpl();
     }
 
-    static @NotNull LuaState newState(lua_Alloc.Function alloc){
+    static @NotNull LuaState newState(lua_Alloc.Function alloc) {
         final Arena arena = Arena.ofConfined();
         final MemorySegment allocPtr = lua_Alloc.allocate(alloc, arena);
         final MemorySegment L = lua_h.lua_newstate(allocPtr, MemorySegment.NULL);
 
-        if(MemorySegment.NULL.equals(L)){
+        if (MemorySegment.NULL.equals(L)) {
             throw new NullPointerException("Couldn't allocate state");
         }
 
