@@ -665,15 +665,13 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public void yield(int resultCount) {
-        // lua_yield does return an int, but its always -1.
-        lua_yield(L, resultCount);
+    public int yield(int resultCount) {
+        return lua_yield(L, resultCount);
     }
 
     @Override
-    public void break_() {
-        // lua_break does return an int, but its always -1.
-        lua_break(L);
+    public int break_() {
+        return lua_break(L);
     }
 
     @Override

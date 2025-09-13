@@ -199,8 +199,8 @@ public sealed interface LuaState permits LuaStateImpl {
     Coroutine Functions
      */
 
-    void yield(int resultCount);
-    void break_();
+    int yield(int resultCount);
+    int break_();
     @NotNull LuaStatus resume(@NotNull LuaState from, int argCount);
     @NotNull LuaStatus resumeError(@NotNull LuaState from);
     @NotNull LuaStatus status();
