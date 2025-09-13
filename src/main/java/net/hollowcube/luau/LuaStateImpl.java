@@ -83,7 +83,8 @@ final class LuaStateImpl implements LuaState {
     @Override
     public void close() {
         if (isThread)
-            throw new IllegalStateException("cannot close a thread directly, it will be closed when lua garbage collects it.");
+            throw new IllegalStateException(
+                    "cannot close a thread directly, it will be closed when lua garbage collects it.");
         lua_h.lua_close(L);
         closeInternal();
     }
@@ -425,6 +426,11 @@ final class LuaStateImpl implements LuaState {
     @Override
     public Object toPointer(int index) {
         throw new UnsupportedOperationException("todo");
+    }
+
+    @Override
+    public @NotNull String toStringRepr(int index) {
+        return readLString(len -> luaL_tolstring(L, index, len));
     }
 
     @Override

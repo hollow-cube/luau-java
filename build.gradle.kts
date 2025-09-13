@@ -241,6 +241,8 @@ tasks.named<JextractTask>("jextract") {
             "luaL_checkbuffer", "luaL_checkstack", "luaL_checktype",
             "luaL_checkany", "luaL_checkudata", "luaL_checkoption",
 
+            "luaL_tolstring",
+
             "luaL_where",
 
             "luaopen_base", "luaopen_coroutine", "luaopen_table",

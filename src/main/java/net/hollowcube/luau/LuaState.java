@@ -124,6 +124,13 @@ public sealed interface LuaState permits LuaStateImpl {
     @NotNull ByteBuffer toBuffer(int index); //todo type
     Object toPointer(int index); //todo type
 
+    /**
+     * Converts the value to its string representation, including calling __tostring metamethods.
+     *
+     * <p>Maps to luaL_tolstring.</p>
+     */
+    @NotNull String toStringRepr(int index);
+
     /*
     Push Functions (Java -> Stack)
      */
@@ -264,8 +271,8 @@ public sealed interface LuaState permits LuaStateImpl {
      */
 
     int stackDepth();
-//    int getInfo(); //todo args here
-//    int getArgument(); //todo args here
+    //    int getInfo(); //todo args here
+    //    int getArgument(); //todo args here
     // getLocal
     // setLocal
     // getUpValue

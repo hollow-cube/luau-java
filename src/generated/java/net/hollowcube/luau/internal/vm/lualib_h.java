@@ -1556,6 +1556,66 @@ public class lualib_h {
         }
     }
 
+    private static class luaL_tolstring {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lualib_h.C_POINTER,
+            lualib_h.C_POINTER,
+            lualib_h.C_INT,
+            lualib_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_tolstring");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const char *luaL_tolstring(lua_State *L, int idx, size_t *len)
+     * }
+     */
+    public static FunctionDescriptor luaL_tolstring$descriptor() {
+        return luaL_tolstring.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const char *luaL_tolstring(lua_State *L, int idx, size_t *len)
+     * }
+     */
+    public static MethodHandle luaL_tolstring$handle() {
+        return luaL_tolstring.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const char *luaL_tolstring(lua_State *L, int idx, size_t *len)
+     * }
+     */
+    public static MemorySegment luaL_tolstring$address() {
+        return luaL_tolstring.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const char *luaL_tolstring(lua_State *L, int idx, size_t *len)
+     * }
+     */
+    public static MemorySegment luaL_tolstring(MemorySegment L, int idx, MemorySegment len) {
+        var mh$ = luaL_tolstring.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaL_tolstring", L, idx, len);
+            }
+            return (MemorySegment)mh$.invokeExact(L, idx, len);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaL_newstate {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             lualib_h.C_POINTER    );
