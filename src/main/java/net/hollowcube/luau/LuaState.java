@@ -201,7 +201,7 @@ public sealed interface LuaState permits LuaStateImpl {
 
     int yield(int resultCount);
     int break_();
-    @NotNull LuaStatus resume(@NotNull LuaState from, int argCount);
+    @NotNull LuaStatus resume(@Nullable LuaState from, int argCount);
     @NotNull LuaStatus resumeError(@NotNull LuaState from);
     @NotNull LuaStatus status();
     boolean isYieldable();

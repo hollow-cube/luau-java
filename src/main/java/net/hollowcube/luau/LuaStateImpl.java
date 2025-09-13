@@ -675,8 +675,9 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public @NotNull LuaStatus resume(@NotNull LuaState from, int argCount) {
-        final int status = lua_resume(L, ((LuaStateImpl) from).L, argCount);
+    public @NotNull LuaStatus resume(@Nullable LuaState from, int argCount) {
+        final MemorySegment fromL = from != null ? ((LuaStateImpl) from).L : MemorySegment.NULL;
+        final int status = lua_resume(L, fromL, argCount);
         return LuaStatus.byId(status);
     }
 
