@@ -13,6 +13,7 @@ version = rootProject.version
 description = rootProject.description
 
 val artifactName = "luau-natives-${getOsName()}-${getArchName()}"
+val buildType: String by project.extra { "Release" }
 
 val buildProjectDir = file(layout.buildDirectory.file("root").get())
 
@@ -69,10 +70,12 @@ tasks.register<Exec>("prepNative") {
     val cmake: String? by project.extra
     val args = mutableListOf(
         cmake ?: throw IllegalStateException("cmake not found on path"),
+        "-DCMAKE_BUILD_TYPE=${buildType}", "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        // We don't control the library so warnings are kinda irrelevant. can just suppress.
+        "-DCMAKE_CXX_FLAGS=-w", "-DCMAKE_C_FLAGS=-w",
+        // Just need the libraries themselves, not the extras.
+        "-DLUAU_BUILD_CLI=OFF", "-DLUAU_BUILD_TESTS=OFF",
         "-DLUAU_EXTERN_C=ON",
-        "-DLUAU_BUILD_CLI=OFF",
-        "-DLUAU_BUILD_TESTS=OFF",
-        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         "-B", ".",
         "-S", buildProjectDir
     )
@@ -101,8 +104,8 @@ tasks.register<Exec>("buildNative") {
 tasks.register<Copy>("copyNative") {
     dependsOn("buildNative")
 
-    var libPath = "cmake/lib" // todo it should definitely be a release build. need to do that.
-    if (getOsName() == "windows") libPath += "/Debug"
+    var libPath = "cmake/lib"
+    if (getOsName() == "windows") libPath += "/${buildType}"
     from(file(layout.buildDirectory).resolve(libPath))
     into(file(layout.buildDirectory).resolve("nres/net/hollowcube/luau/${getOsName()}/${getArchName()}"))
 }
