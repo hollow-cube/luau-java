@@ -25,9 +25,8 @@ natives artifacts at the same time, they will not conflict.
 
 > [!IMPORTANT]  
 > `luau-java` uses the
-> new [Foreign Function and Memory API](https://openjdk.org/jeps/442) (FFM) introduced as a preview feature in Java 21.
-> This means that you will be required to enable preview features when using `luau-java`. This can be done by
-> adding `--enable-preview` and `--enable-native-access=ALL-UNNAMED` to your JVM arguments.
+> new [Foreign Function and Memory API](https://openjdk.org/jeps/442) (FFM) introduced in Java 22. You must be using
+> Java 22 or higher to use `luau-java`.
 
 <details open>
 <summary>Gradle</summary>
@@ -73,6 +72,10 @@ different from the native library version.
 | macOS (x64)   | `macos-x64`   | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-natives-macos-x64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-natives-macos-x64)     |
 | macOS (arm64) | `macos-arm64` | [![](https://img.shields.io/maven-central/v/dev.hollowcube/luau-natives-macos-arm64)](https://mvnrepository.com/artifact/dev.hollowcube/luau-natives-macos-arm64) |
 
+> [!IMPORTANT]  
+> We publish two sets of native dependencies for each platform. Without a suffix on the version is release binaries,
+> with `-debug` corresponds to debug builds.
+
 ## Usage
 
 A hello world print from Luau would look something like the following:
@@ -81,8 +84,8 @@ A hello world print from Luau would look something like the following:
 public class HelloWorld {
     public static void main(String[] args) throws LuauCompileException {
         final byte[] bytecode = LuauCompiler.DEFAULT.compile("""
-                        print("Hello, Luau!")
-                """);
+                                                                             print("Hello, Luau!")
+                                                                     """);
 
         final LuaState state = LuaState.newState();
         try {
