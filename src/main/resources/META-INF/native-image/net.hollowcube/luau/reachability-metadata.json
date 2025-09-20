@@ -1,0 +1,502 @@
+{
+  "reflection": [
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Alloc$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "long",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_CFunction$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$debugbreak$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$debuginterrupt$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$debugprotectederror$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$debugstep$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$interrupt$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$onallocate$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "long",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$panic$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$useratom$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Callbacks$userthread$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_newuserdatadtor$dtor$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "glob": "net/hollowcube/luau/**"
+    }
+  ],
+  "foreign": {
+    "upcalls": [
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jshort",
+        "parameterTypes": [
+          "void*",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jlong",
+          "jlong"
+        ]
+      }
+    ],
+    "downcalls": [
+      {
+        "returnType": "jlong",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jdouble",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": []
+      },
+      {
+        "returnType": "jdouble",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "jdouble"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "void*",
+          "jlong",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "jshort",
+        "parameterTypes": [
+          "void*",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jlong",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "jdouble",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jlong",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jdouble"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jfloat",
+          "jfloat",
+          "jfloat"
+        ]
+      },
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "jint",
+          "jint"
+        ]
+      }
+    ]
+  }
+}

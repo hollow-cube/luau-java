@@ -6,13 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class Testing {
-
-    //todo NEED TO COME UP WITH SOME WAY TO MAKE SURE A PROGRAM DOESNT LEAK REFERENCES.
-    // some env var which adds them all to a list to check would probably work.
-
-    static void main(String[] args) throws Exception {
-
+public class Example {
+    static void main() throws Exception {
         var source = """
                 print('hello from lua')
                 
@@ -97,5 +92,4 @@ public class Testing {
             global.close();
         }
     }
-
 }

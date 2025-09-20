@@ -48,7 +48,7 @@ tasks.withType<JavaCompile> {
 tasks.javadoc {
     (options as StandardJavadocDocletOptions).run {
         encoding = "UTF-8"
-        addStringOption("source", "23")
+        addStringOption("source", "25")
     }
 }
 
@@ -61,8 +61,8 @@ java {
     withJavadocJar()
 
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(24))
-        vendor.set(JvmVendorSpec.ADOPTIUM)
+        languageVersion.set(JavaLanguageVersion.of(25))
+        vendor.set(JvmVendorSpec.GRAAL_VM)
     }
 }
 

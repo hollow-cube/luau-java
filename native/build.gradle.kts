@@ -39,7 +39,14 @@ tasks.register("luauStaticToShared") {
     val cmakeLists = buildProjectDir.resolve("luau/CMakeLists.txt")
     val luacodeHeader = buildProjectDir.resolve("luau/Compiler/include/luacode.h")
     val luacodeSource = buildProjectDir.resolve("luau/Compiler/src/lcode.cpp")
-    inputs.files(cmakeLists, luacodeHeader, luacodeSource)
+
+    // Input files from the original project directory (source of truth)
+    inputs.files(
+        layout.projectDirectory.file("luau/CMakeLists.txt"),
+        layout.projectDirectory.file("luau/Compiler/include/luacode.h"),
+        layout.projectDirectory.file("luau/Compiler/src/lcode.cpp")
+    )
+    // Output files in the build directory (modified versions)
     outputs.files(cmakeLists, luacodeHeader, luacodeSource)
 
     doLast {
@@ -62,8 +69,17 @@ tasks.register<Exec>("prepNative") {
     workingDir = file(layout.buildDirectory).resolve("cmake")
     standardOutput = System.out
 
-    inputs.dir(buildProjectDir)
-    outputs.dir(file(layout.buildDirectory))
+    // More specific inputs - only the modified source files and CMakeLists.txt
+    inputs.files(
+        buildProjectDir.resolve("luau/CMakeLists.txt"),
+        buildProjectDir.resolve("CMakeLists.txt")
+    )
+    inputs.dir(buildProjectDir.resolve("luau")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(buildProjectDir.resolve("src")).withPathSensitivity(PathSensitivity.RELATIVE)
+
+    // Output specifically to cmake directory to avoid circular dependencies
+    outputs.dir(workingDir)
+    outputs.file(workingDir.resolve("CMakeCache.txt"))
 
     doFirst { mkdir(workingDir) }
 
@@ -91,8 +107,16 @@ tasks.register<Exec>("buildNative") {
     workingDir = file(layout.buildDirectory).resolve("cmake")
     standardOutput = System.out
 
-    inputs.dir(workingDir)
-    outputs.dir(workingDir.resolve("lib"))
+    inputs.file(workingDir.resolve("CMakeCache.txt"))
+    inputs.files(workingDir.resolve("Makefile")).optional()
+
+    // More specific outputs based on the actual library files we expect
+    val libDir = if (getOsName() == "windows") {
+        workingDir.resolve("lib/${buildType}")
+    } else {
+        workingDir.resolve("lib")
+    }
+    outputs.dir(libDir)
 
     val cmake: String? by project.extra
     commandLine(
