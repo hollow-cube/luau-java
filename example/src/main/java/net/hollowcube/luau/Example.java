@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Example {
+    record MyRecord(int x, String y) {}
+
     static void main() throws Exception {
         var source = """
                 print('hello from lua')
@@ -19,6 +21,7 @@ public class Example {
                 print(m2.add(1, 2))
                 print(m2.sub(1, 2))
                 abc()
+                print(myRecord)
                 """;
         var bytecode = LuauCompiler.DEFAULT.compile(source);
 
@@ -38,6 +41,10 @@ public class Example {
                         return 0;
                     }
             ));
+
+            global.setLightUserDataName(1, "MyNamedLightUserData");
+            global.pushLightUserDataTagged(12345, 1);
+            global.setGlobal("myRecord");
 
             global.registerLib("m2", Map.of(
                     "add", state -> {

@@ -113,8 +113,10 @@ public sealed interface LuaState permits LuaStateImpl {
     int objectLength(int index);
     int stringLength(int index);
     @NotNull LuaFunc toCFunction(int index);
-    Object toLightUserData(int index); //todo type
-    Object toLightUserDataTagged(int index); //todo type
+    /** Returns zero if index is not a lightuserdata */
+    long toLightUserData(int index);
+    /** Returns zero if index is not a lightuserdata with the given tag */
+    long toLightUserDataTagged(int index, int tag);
     Object toUserData(int index); //todo type
     int toUserDataInt(int value);
     Object toUserDataTagged(int index); //todo type
@@ -148,9 +150,29 @@ public sealed interface LuaState permits LuaStateImpl {
     //    void pushCClosure(Object func, @NotNull String debugName, int nup); //todo
     int pushThread();
 
-    void pushLightUserData(Object p); //todo type
-    void pushLightUserDataTagged(Object p, int tag); //todo type
+    /**
+     * Pushes a light userdata with the given raw value.
+     *
+     * <p>If you want to push a java value you can make use of GlobalRef to get a pointer to an object. However those
+     * pointers must be freed manually. This is handled automatically for normal userdata, but light userdata does
+     * not have a destructor</p>
+     *
+     * @param value A long value to store in the lightuserdata. May not be zero
+     */
+    void pushLightUserData(long value);
+    /**
+     * Pushes a light userdata with the given tag and raw value.
+     *
+     * <p>If you want to push a java value you can make use of GlobalRef to get a pointer to an object. However those
+     * pointers must be freed manually. This is handled automatically for normal userdata, but light userdata does
+     * not have a destructor</p>
+     *
+     * @param value A long value to store in the lightuserdata. May not be zero
+     * @param tag   The tag of this lightuserdata type.
+     */
+    void pushLightUserDataTagged(long value, int tag);
     void newUserData(@NotNull Object userdata);
+    // TODO: should probably expose the ffm values here (eg make UD of specific size and add content to it)
     void newUserDataInt(int value);
     Object newUserDataTagged(long size, int tag); //todo
 
@@ -250,7 +272,7 @@ public sealed interface LuaState permits LuaStateImpl {
     void getUserDataMetaTable(int tag);
 
     void setLightUserDataName(int tag, @NotNull String name);
-    @UnknownNullability String getLightUserDataName(int tag); //todo nullable?
+    @UnknownNullability String getLightUserDataName(int tag);
 
     void cloneFunction(int index);
 
@@ -321,7 +343,8 @@ public sealed interface LuaState permits LuaStateImpl {
     @NotNull ByteBuffer checkBufferArg(int argIndex);
     //todo checkOptionArg
     @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName);
-    int checkUserDataIntArg(int argIndex, @NotNull String typeName);
+    long checkLightUserDataArg(int argIndex);
+    long checkLightUserDataTagArg(int argIndex, int tag);
     void checkStack(int size, @NotNull String message);
     void checkType(int argIndex, @NotNull LuaType type);
     void checkAny(int argIndex);

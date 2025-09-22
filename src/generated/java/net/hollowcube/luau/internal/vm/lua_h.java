@@ -5764,6 +5764,358 @@ public class lua_h {
         }
     }
 
+    private static class lua_setuserdatatag {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_INT,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_setuserdatatag");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatatag(lua_State *L, int idx, int tag)
+     * }
+     */
+    public static FunctionDescriptor lua_setuserdatatag$descriptor() {
+        return lua_setuserdatatag.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatatag(lua_State *L, int idx, int tag)
+     * }
+     */
+    public static MethodHandle lua_setuserdatatag$handle() {
+        return lua_setuserdatatag.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatatag(lua_State *L, int idx, int tag)
+     * }
+     */
+    public static MemorySegment lua_setuserdatatag$address() {
+        return lua_setuserdatatag.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_setuserdatatag(lua_State *L, int idx, int tag)
+     * }
+     */
+    public static void lua_setuserdatatag(MemorySegment L, int idx, int tag) {
+        var mh$ = lua_setuserdatatag.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_setuserdatatag", L, idx, tag);
+            }
+            mh$.invokeExact(L, idx, tag);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_setuserdatadtor {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_INT,
+            lua_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_setuserdatadtor");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatadtor(lua_State *L, int tag, lua_Destructor dtor)
+     * }
+     */
+    public static FunctionDescriptor lua_setuserdatadtor$descriptor() {
+        return lua_setuserdatadtor.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatadtor(lua_State *L, int tag, lua_Destructor dtor)
+     * }
+     */
+    public static MethodHandle lua_setuserdatadtor$handle() {
+        return lua_setuserdatadtor.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatadtor(lua_State *L, int tag, lua_Destructor dtor)
+     * }
+     */
+    public static MemorySegment lua_setuserdatadtor$address() {
+        return lua_setuserdatadtor.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_setuserdatadtor(lua_State *L, int tag, lua_Destructor dtor)
+     * }
+     */
+    public static void lua_setuserdatadtor(MemorySegment L, int tag, MemorySegment dtor) {
+        var mh$ = lua_setuserdatadtor.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_setuserdatadtor", L, tag, dtor);
+            }
+            mh$.invokeExact(L, tag, dtor);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_setuserdatametatable {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_setuserdatametatable");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static FunctionDescriptor lua_setuserdatametatable$descriptor() {
+        return lua_setuserdatametatable.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static MethodHandle lua_setuserdatametatable$handle() {
+        return lua_setuserdatametatable.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_setuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static MemorySegment lua_setuserdatametatable$address() {
+        return lua_setuserdatametatable.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_setuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static void lua_setuserdatametatable(MemorySegment L, int tag) {
+        var mh$ = lua_setuserdatametatable.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_setuserdatametatable", L, tag);
+            }
+            mh$.invokeExact(L, tag);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_getuserdatametatable {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_getuserdatametatable");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_getuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static FunctionDescriptor lua_getuserdatametatable$descriptor() {
+        return lua_getuserdatametatable.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_getuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static MethodHandle lua_getuserdatametatable$handle() {
+        return lua_getuserdatametatable.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_getuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static MemorySegment lua_getuserdatametatable$address() {
+        return lua_getuserdatametatable.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_getuserdatametatable(lua_State *L, int tag)
+     * }
+     */
+    public static void lua_getuserdatametatable(MemorySegment L, int tag) {
+        var mh$ = lua_getuserdatametatable.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_getuserdatametatable", L, tag);
+            }
+            mh$.invokeExact(L, tag);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_setlightuserdataname {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_INT,
+            lua_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_setlightuserdataname");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_setlightuserdataname(lua_State *L, int tag, const char *name)
+     * }
+     */
+    public static FunctionDescriptor lua_setlightuserdataname$descriptor() {
+        return lua_setlightuserdataname.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_setlightuserdataname(lua_State *L, int tag, const char *name)
+     * }
+     */
+    public static MethodHandle lua_setlightuserdataname$handle() {
+        return lua_setlightuserdataname.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_setlightuserdataname(lua_State *L, int tag, const char *name)
+     * }
+     */
+    public static MemorySegment lua_setlightuserdataname$address() {
+        return lua_setlightuserdataname.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_setlightuserdataname(lua_State *L, int tag, const char *name)
+     * }
+     */
+    public static void lua_setlightuserdataname(MemorySegment L, int tag, MemorySegment name) {
+        var mh$ = lua_setlightuserdataname.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_setlightuserdataname", L, tag, name);
+            }
+            mh$.invokeExact(L, tag, name);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_getlightuserdataname {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_POINTER,
+            lua_h.C_POINTER,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_getlightuserdataname");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern const char *lua_getlightuserdataname(lua_State *L, int tag)
+     * }
+     */
+    public static FunctionDescriptor lua_getlightuserdataname$descriptor() {
+        return lua_getlightuserdataname.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern const char *lua_getlightuserdataname(lua_State *L, int tag)
+     * }
+     */
+    public static MethodHandle lua_getlightuserdataname$handle() {
+        return lua_getlightuserdataname.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern const char *lua_getlightuserdataname(lua_State *L, int tag)
+     * }
+     */
+    public static MemorySegment lua_getlightuserdataname$address() {
+        return lua_getlightuserdataname.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern const char *lua_getlightuserdataname(lua_State *L, int tag)
+     * }
+     */
+    public static MemorySegment lua_getlightuserdataname(MemorySegment L, int tag) {
+        var mh$ = lua_getlightuserdataname.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_getlightuserdataname", L, tag);
+            }
+            return (MemorySegment)mh$.invokeExact(L, tag);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class lua_clonefunction {
         public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
             lua_h.C_POINTER,

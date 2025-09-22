@@ -214,6 +214,10 @@ tasks.named<JextractTask>("jextract") {
 
             "lua_gc", "lua_setmemcat", "lua_totalbytes",
 
+            "lua_setuserdatatag", "lua_setuserdatadtor",
+            "lua_setuserdatametatable", "lua_getuserdatametatable",
+            "lua_setlightuserdataname", "lua_getlightuserdataname",
+
             "lua_error", "lua_next", "lua_rawiter",
             "lua_concat", "lua_clock", "lua_clonefunction",
             "lua_cleartable",
@@ -222,7 +226,7 @@ tasks.named<JextractTask>("jextract") {
 
             "lua_callbacks"
         )
-        typedefs.addAll("lua_Alloc", "lua_CFunction")
+        typedefs.addAll("lua_Alloc", "lua_CFunction", "lua_Destructor")
         structs.addAll("lua_Callbacks")
     }
 
@@ -262,16 +266,6 @@ tasks.named<JextractTask>("jextract") {
     //# LUA_API LUA_PRINTF_ATTR(2, 3) const char* lua_pushfstringL(lua_State* L, const char* fmt, ...);
     //# LUA_API void lua_pushcclosurek(lua_State* L, lua_CFunction fn, const char* debugname, int nup, lua_Continuation cont);
     //# LUA_API uintptr_t lua_encodepointer(lua_State* L, uintptr_t p);
-    //# LUA_API void lua_setuserdatatag(lua_State* L, int idx, int tag);
-    //# typedef void (*lua_Destructor)(lua_State* L, void* userdata);
-    //# LUA_API void lua_setuserdatadtor(lua_State* L, int tag, lua_Destructor dtor);
-    //# LUA_API lua_Destructor lua_getuserdatadtor(lua_State* L, int tag);
-    //# LUA_API void lua_setuserdatametatable(lua_State* L, int tag, int idx);
-    //# LUA_API void lua_getuserdatametatable(lua_State* L, int tag);
-    //# LUA_API void lua_setlightuserdataname(lua_State* L, int tag, const char* name);
-    //# LUA_API const char* lua_getlightuserdataname(lua_State* L, int tag);
-    //# LUA_API void lua_clonefunction(lua_State* L, int idx);
-    //# LUA_API void lua_cleartable(lua_State* L, int idx);
 }
 
 fun findExecutable(name_: String): String? {

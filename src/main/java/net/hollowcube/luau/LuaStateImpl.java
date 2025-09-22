@@ -14,6 +14,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static net.hollowcube.luau.internal.vm.lua_h.*;
@@ -24,14 +25,6 @@ final class LuaStateImpl implements LuaState {
     static {
         NativeLibraryLoader.loadLibrary("vm");
     }
-
-    /*
-        // isSandboxed call required
-    // assertNotSandboxed() before any setglobal
-    //todo if global.sandbox() prevents any globals in that state from being changed
-    // then what does sandboxthread actually do?
-    // would stop modification of anything present, so i believe i could eval some code and then sandboxthread and it couldnt be touched.
-     */
 
     static final int UTAG_LIMIT = LUA_UTAG_LIMIT();
     static final int LUTAG_LIMIT = LUA_LUTAG_LIMIT();
@@ -355,7 +348,7 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public @NotNull String nameCallAtom() {
-        // todo this has an optional arg to get the int atom, not sure when its useful
+        // todo need to support string atoms, not sure the api for that.
         final MemorySegment str = lua_namecallatom(L, MemorySegment.NULL);
         return str.getString(0);
     }
@@ -377,13 +370,13 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public Object toLightUserData(int index) {
-        throw new UnsupportedOperationException("todo");
+    public long toLightUserData(int index) {
+        return lua_tolightuserdata(L, index).address();
     }
 
     @Override
-    public Object toLightUserDataTagged(int index) {
-        throw new UnsupportedOperationException("todo");
+    public long toLightUserDataTagged(int index, int tag) {
+        return lua_tolightuserdatatagged(L, index, tag).address();
     }
 
     @Override
@@ -405,12 +398,12 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public int userDataTag(int index) {
-        throw new UnsupportedOperationException("todo");
+        return lua_userdatatag(L, index);
     }
 
     @Override
     public int lightUserDataTag(int index) {
-        throw new UnsupportedOperationException("todo");
+        return lua_lightuserdatatag(L, index);
     }
 
     @Override
@@ -491,13 +484,17 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public void pushLightUserData(Object p) {
-        throw new UnsupportedOperationException("todo");
+    public void pushLightUserData(long value) {
+        if (value == 0) throw new IllegalArgumentException("value must be non-zero");
+        // 0 corresponds to the untagged light user data type.
+        lua_pushlightuserdatatagged(L, MemorySegment.ofAddress(value), 0);
     }
 
     @Override
-    public void pushLightUserDataTagged(Object p, int tag) {
-        throw new UnsupportedOperationException("todo");
+    public void pushLightUserDataTagged(long value, int tag) {
+        if (value == 0) throw new IllegalArgumentException("value must be non-zero");
+        if (tag <= 0) throw new IllegalArgumentException("tag must be non-negative");
+        lua_pushlightuserdatatagged(L, MemorySegment.ofAddress(value), tag);
     }
 
     @Override
@@ -799,12 +796,15 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public void setLightUserDataName(int tag, @NotNull String name) {
-        throw new UnsupportedOperationException("todo");
+        try (Arena arena = Arena.ofConfined()) {
+            lua_setlightuserdataname(L, tag, arena.allocateFrom(name));
+        }
     }
 
     @Override
     public @UnknownNullability String getLightUserDataName(int tag) {
-        throw new UnsupportedOperationException("todo");
+        final MemorySegment name = lua_getlightuserdataname(L, tag);
+        return name == MemorySegment.NULL ? null : name.getString(0);
     }
 
     @Override
@@ -976,11 +976,19 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public int checkUserDataIntArg(int argIndex, @NotNull String typeName) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateFrom(typeName));
-            return ud.get(ValueLayout.JAVA_INT, 0);
-        }
+    public long checkLightUserDataArg(int argIndex) {
+        MemorySegment value = lua_tolightuserdata(L, argIndex);
+        if (value == MemorySegment.NULL)
+            typeError(argIndex, "userdata");
+        return value.address();
+    }
+
+    @Override
+    public long checkLightUserDataTagArg(int argIndex, int tag) {
+        MemorySegment value = lua_tolightuserdatatagged(L, argIndex, tag);
+        if (value == MemorySegment.NULL)
+            typeError(argIndex, Objects.requireNonNullElse(getLightUserDataName(tag), "userdata"));
+        return value.address();
     }
 
     @Override
