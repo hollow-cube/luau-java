@@ -1,7 +1,5 @@
 package net.hollowcube.luau;
 
-import org.jetbrains.annotations.NotNull;
-
 public enum LuaType {
     NONE,
 
@@ -19,18 +17,19 @@ public enum LuaType {
     USERDATA,
     THREAD,
     BUFFER,
-
-    PROTO,
-    UPVAL,
-    DEADKEY;
+    ;
 
     private static final LuaType[] VALUES = values();
 
-    public static @NotNull LuaType byId(int id) {
+    public static LuaType byId(int id) {
         return id >= 0 && id < VALUES.length ? VALUES[id + 1] : NONE;
     }
 
     public int id() {
         return ordinal() - 1;
+    }
+
+    public String typeName() {
+        return name().toLowerCase();
     }
 }

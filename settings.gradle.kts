@@ -3,6 +3,6 @@ plugins {
 }
 
 rootProject.name = "luau-java"
+
 include("native")
 include("example")
-

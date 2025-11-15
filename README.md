@@ -24,9 +24,7 @@ the main luau artifact, as well as at least one of the platform specific natives
 natives artifacts at the same time, they will not conflict.
 
 > [!IMPORTANT]  
-> `luau-java` uses the
-> new [Foreign Function and Memory API](https://openjdk.org/jeps/442) (FFM) introduced in Java 22. You must be using
-> Java 22 or higher to use `luau-java`.
+> `luau-java` requires Java 25 or higher.
 
 <details open>
 <summary>Gradle</summary>
@@ -82,10 +80,8 @@ A hello world print from Luau would look something like the following:
 
 ```java
 public class HelloWorld {
-    public static void main(String[] args) throws LuauCompileException {
-        final byte[] bytecode = LuauCompiler.DEFAULT.compile("""
-                                                                             print("Hello, Luau!")
-                                                                     """);
+    static void main(String[] args) throws LuauCompileException {
+        final byte[] bytecode = LuauCompiler.DEFAULT.compile("print(\"Hello, Luau!\")");
 
         final LuaState state = LuaState.newState();
         try {
@@ -109,9 +105,13 @@ public class HelloWorld {
 
 The test sources contain library examples, which should help you to get started.
 
+## Error Handling
+
+TODO: add some notes about error handling
+
 ## Building from Source
 
-Prerequisites: JDK 21+, CMake 3.15+, [JExtract](https://jdk.java.net/jextract/) (Only required to update bindings)
+Prerequisites: JDK 25+, CMake 3.15+, [JExtract](https://jdk.java.net/jextract/) (Only required to update bindings)
 
 ```shell
 git clone git@github.com:hollow-cube/luau-java.git --recurse-submodules && cd luau-java

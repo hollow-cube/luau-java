@@ -2,11 +2,17 @@ package net.hollowcube.luau;
 
 public enum LuaStatus {
     OK,
+    /// Execution yielded
     YIELD,
+    /// Runtime error
     ERRRUN,
-    ERRSYNTAX, // Legacy, never actually returned now that bytecode is precompiled.
+    /// Unused, preserved for legacy compatibility
+    UNUSED0,
+    /// Out of memory
     ERRMEM,
+    /// error occurred during error handler
     ERRERR,
+    /// yielded for a debug breakpoint
     BREAK;
 
     private static final LuaStatus[] VALUES = values();
@@ -18,5 +24,4 @@ public enum LuaStatus {
     public int id() {
         return ordinal();
     }
-    
 }

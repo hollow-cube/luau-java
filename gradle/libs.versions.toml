@@ -3,11 +3,19 @@ metadata.format.version = "1.1"
 [versions]
 annotations = "26.0.2"
 
-nmcp = "1.0.0-rc.1"
+junit = "5.11.4"
+
+nmcp = "1.2.0"
+jextract = "0.5.0"
 
 [libraries]
 annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
 
+junit-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
+junit-params = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "junit" }
+junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
+
 [plugins]
 nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
+jextract = { id = "io.github.krakowski.jextract", version.ref = "jextract" }

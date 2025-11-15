@@ -1,91 +1,32 @@
-import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
-
 plugins {
-    `java-library`
-
-    `maven-publish`
-    signing
-    alias(libs.plugins.nmcp)
+    id("luau.java-library")
 }
 
 group = rootProject.group
 version = rootProject.version
 description = rootProject.description
 
-val artifactName = "luau-natives-${getOsName()}-${getArchName()}"
-val buildType: String by project.extra { "Release" }
+val artifactName = "luau-natives-${platformOs}-${platformArch}"
+val buildType: String by project.extra { "Debug" }
 
-val buildProjectDir = file(layout.buildDirectory.file("root").get())
-
-tasks.register<Copy>("copyForModification") {
-    description = "Copy project to the build directory for modification"
-    from(layout.projectDirectory)
-    include("luau/**", "src/**", "CMakeLists.txt")
-    into(buildProjectDir)
-}
-
-fun edit(file: File, edit: (String) -> String) {
-    val originalText = file.readText()
-    val modifiedText = edit(originalText)
-    if (originalText != modifiedText) {
-        file.writeText(modifiedText)
-    }
-}
-
-tasks.register("luauStaticToShared") {
-    description = "Make Luau.Compiler and Luau.VM compile as shared libraries"
-    dependsOn("copyForModification")
-
-    val cmakeLists = buildProjectDir.resolve("luau/CMakeLists.txt")
-    val luacodeHeader = buildProjectDir.resolve("luau/Compiler/include/luacode.h")
-    val luacodeSource = buildProjectDir.resolve("luau/Compiler/src/lcode.cpp")
-
-    // Input files from the original project directory (source of truth)
-    inputs.files(
-        layout.projectDirectory.file("luau/CMakeLists.txt"),
-        layout.projectDirectory.file("luau/Compiler/include/luacode.h"),
-        layout.projectDirectory.file("luau/Compiler/src/lcode.cpp")
-    )
-    // Output files in the build directory (modified versions)
-    outputs.files(cmakeLists, luacodeHeader, luacodeSource)
-
-    doLast {
-        edit(cmakeLists) {
-            return@edit it
-                .replace("add_library(Luau.Compiler STATIC)", "add_library(Luau.Compiler SHARED)")
-                .replace("add_library(Luau.VM STATIC)", "add_library(Luau.VM SHARED)")
-        }
-        edit(luacodeHeader) {
-            return@edit "$it\n\nLUACODE_API void luau_ext_free(char *bytecode);"
-        }
-        edit(luacodeSource) {
-            return@edit "$it\n\nvoid luau_ext_free(char *bytecode) {\n    free(bytecode);\n}"
-        }
-    }
-}
-
-tasks.register<Exec>("prepNative") {
-    dependsOn("luauStaticToShared")
-    workingDir = file(layout.buildDirectory).resolve("cmake")
+tasks.register<Exec>("cmakeConfigure") {
+    workingDir = file(layout.buildDirectory).resolve("cmake-build")
     standardOutput = System.out
 
-    // More specific inputs - only the modified source files and CMakeLists.txt
+    // Configuration does not rely on sources, notably.
+    inputs.property("buildType", buildType)
     inputs.files(
-        buildProjectDir.resolve("luau/CMakeLists.txt"),
-        buildProjectDir.resolve("CMakeLists.txt")
+        layout.projectDirectory.file("luau/CMakeLists.txt"),
+        layout.projectDirectory.file("CMakeLists.txt")
     )
-    inputs.dir(buildProjectDir.resolve("luau")).withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.dir(buildProjectDir.resolve("src")).withPathSensitivity(PathSensitivity.RELATIVE)
 
-    // Output specifically to cmake directory to avoid circular dependencies
     outputs.dir(workingDir)
     outputs.file(workingDir.resolve("CMakeCache.txt"))
 
     doFirst { mkdir(workingDir) }
 
-    val cmake: String? by project.extra
-    val args = mutableListOf(
-        cmake ?: throw IllegalStateException("cmake not found on path"),
+    val args = mutableListOf<String>(
+        cmakeExecutable ?: throw IllegalStateException("cmake not found on path"),
         "-DCMAKE_BUILD_TYPE=${buildType}", "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         // We don't control the library so warnings are kinda irrelevant. can just suppress.
         "-DCMAKE_CXX_FLAGS=-w", "-DCMAKE_C_FLAGS=-w",
@@ -93,65 +34,65 @@ tasks.register<Exec>("prepNative") {
         "-DLUAU_BUILD_CLI=OFF", "-DLUAU_BUILD_TESTS=OFF",
         "-DLUAU_EXTERN_C=ON",
         "-B", ".",
-        "-S", buildProjectDir
+        "-S", layout.projectDirectory.asFile.absolutePath
     )
-    if (getOsName() == "windows") args += listOf(
+    if (platformOs == "windows") args += listOf(
         "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE",
         "-DBUILD_SHARED_LIBS=TRUE",
     )
     commandLine(args)
 }
 
-tasks.register<Exec>("buildNative") {
-    dependsOn("prepNative")
-    workingDir = file(layout.buildDirectory).resolve("cmake")
+tasks.register<Exec>("cmakeBuild") {
+    dependsOn("cmakeConfigure")
+    workingDir = file(layout.buildDirectory).resolve("cmake-build")
     standardOutput = System.out
 
-    inputs.file(workingDir.resolve("CMakeCache.txt"))
-    inputs.files(workingDir.resolve("Makefile")).optional()
+    // CMake build files input
+    inputs.dir(workingDir.resolve("CMakeFiles"))
+    inputs.file(workingDir.resolve("Makefile"))
+    inputs.dir(workingDir.resolve("luau/CMakeFiles"))
+    inputs.file(workingDir.resolve("luau/Makefile"))
 
-    // More specific outputs based on the actual library files we expect
-    val libDir = if (getOsName() == "windows") {
-        workingDir.resolve("lib/${buildType}")
-    } else {
-        workingDir.resolve("lib")
-    }
-    outputs.dir(libDir)
+    // GlobalRef & Luau source inputs
+    inputs.dir(layout.projectDirectory.dir("src"))
+    inputs.dir(layout.projectDirectory.dir("luau"))
 
-    val cmake: String? by project.extra
+    outputs.dir(
+        workingDir.resolve(
+            if (platformOs == "windows") "lib/${buildType}"
+            else "lib"
+        )
+    )
+
     commandLine(
-        cmake ?: throw IllegalStateException("cmake not found on path"),
+        cmakeExecutable ?: throw IllegalStateException("cmake not found on path"),
         "--build", "."
     )
 }
 
-tasks.register<Copy>("copyNative") {
-    dependsOn("buildNative")
+tasks.register<Copy>("copyNativeResources") {
+    dependsOn("cmakeBuild")
 
-    var libPath = "cmake/lib"
-    if (getOsName() == "windows") libPath += "/${buildType}"
+    val nativeResources = "nativeResources/net/hollowcube/luau/${platformOs}/${platformArch}"
+
+    var libPath = "cmake-build/lib"
+    if (platformOs == "windows") libPath += "/${buildType}"
     from(file(layout.buildDirectory).resolve(libPath))
-    into(file(layout.buildDirectory).resolve("nres/net/hollowcube/luau/${getOsName()}/${getArchName()}"))
+    into(file(layout.buildDirectory).resolve(nativeResources))
 }
 
 tasks.withType<ProcessResources> {
-    dependsOn("copyNative")
+    dependsOn("copyNativeResources")
 }
 tasks.withType<Jar> {
-    dependsOn("copyNative")
+    dependsOn("copyNativeResources")
     archiveBaseName = artifactName
 }
 
 sourceSets.main {
-    resources.srcDirs.clear()
-    resources.srcDir(file(layout.buildDirectory).resolve("nres"))
-}
-
-java {
-    withSourcesJar()
-    withJavadocJar()
-
-    toolchain.languageVersion = JavaLanguageVersion.of(24)
+    val nativeResources = file(layout.buildDirectory).resolve("nativeResources");
+    resources.srcDir(nativeResources)
 }
 
 publishing.publications.create<MavenPublication>("native") {
@@ -163,37 +104,6 @@ publishing.publications.create<MavenPublication>("native") {
 
     pom {
         name.set(artifactId)
-
-        val commonPomConfig: Action<MavenPom> by project.ext
-        commonPomConfig.execute(this)
-    }
-}
-
-signing {
-    isRequired = System.getenv("CI") != null
-
-    val privateKey = System.getenv("GPG_PRIVATE_KEY")
-    val keyPassphrase = System.getenv()["GPG_PASSPHRASE"]
-    useInMemoryPgpKeys(privateKey, keyPassphrase)
-
-    sign(publishing.publications)
-}
-
-fun getOsName(): String {
-    val os = DefaultNativePlatform.getCurrentOperatingSystem()
-    return when {
-        os.isMacOsX -> "macos"
-        os.isLinux -> "linux"
-        os.isWindows -> "windows"
-        else -> throw IllegalStateException("Unsupported operating system: ${os.name}")
-    }
-}
-
-fun getArchName(): String {
-    val arch = DefaultNativePlatform.getCurrentArchitecture()
-    return when {
-        arch.isAmd64 -> "x64"
-        arch.isArm64 -> "arm64"
-        else -> throw IllegalStateException("Unsupported architecture: ${arch.name}")
+        configureMavenPom(this)
     }
 }

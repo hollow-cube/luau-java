@@ -3,151 +3,91 @@ package net.hollowcube.luau;
 import net.hollowcube.luau.internal.vm.*;
 import net.hollowcube.luau.util.GlobalRef;
 import net.hollowcube.luau.util.NativeLibraryLoader;
-import org.jetbrains.annotations.NotNull;
+import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnknownNullability;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import java.util.*;
+import java.util.regex.Pattern;
 
 import static net.hollowcube.luau.internal.vm.lua_h.*;
 import static net.hollowcube.luau.internal.vm.lualib_h.*;
+import static net.hollowcube.luau.internal.vm.luawrap_h.*;
 
-final class LuaStateImpl implements LuaState {
-
+/// LuaStateImpl is a thin wrapper around a LuaState*, and must hold no extra state on the java side.
+/// This is because we reconstruct instances simply from the pointer returned by c functions.
+record LuaStateImpl(MemorySegment L) implements LuaState {
     static {
         NativeLibraryLoader.loadLibrary("vm");
     }
 
-    static final int UTAG_LIMIT = LUA_UTAG_LIMIT();
-    static final int LUTAG_LIMIT = LUA_LUTAG_LIMIT();
+    private static final boolean SHOW_COMPLETE_BACKTRACE = Boolean.getBoolean("luau.show-complete-backtrace");
+    private static final boolean NO_BACKTRACE_MERGE = Boolean.getBoolean("luau.no-backtrace-merge");
 
-    static double clock() {
-        class H {
-            static final lua_clock invoker = lua_clock.makeInvoker();
-        }
-        return H.invoker.apply();
-    }
+    private static final Pattern DEFAULT_ERROR_TRACE_REGEX = Pattern.compile("^\\[string \".*?\"]:\\d+:\\s");
 
-    private static final MemorySegment UNTAGGED_UDATA_DTOR = lua_newuserdatadtor$dtor.allocate(
+    private static final MemorySegment UNTAGGED_UDATA_DTOR = luaW_newuserdatadtor$dtor.allocate(
             ud -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)), Arena.global());
+    private static final MemorySegment TAGGED_UDATA_DTOR = lua_Destructor.allocate(
+            (_, ud) -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)), Arena.global());
+    // We allocate the raw value for this function because we don't want the error handling parts of LuaFunc.
+    private static final MemorySegment PCALL_ERRFUNC_REF = lua_CFunction.allocate(
+            LuaStateImpl::pcallErrFunc, Arena.global());
+    private static final MemorySegment LUA_DEBUG_WHAT = Arena.global().allocateFrom("sln");
 
-    private final MemorySegment L;
-    private final Arena arena;
-    private final boolean isThread;
+    static final int LIGHT_USERDATA_TAG_LIMIT = LUA_LUTAG_LIMIT();
+    static final int USERDATA_TAG_LIMIT = LUA_UTAG_LIMIT();
+    static final int MEMORY_CATEGORIES = LUA_MEMORY_CATEGORIES();
 
-    private long ref; // JNI global reference which needs to be freed.
-
-    // Holds the thread data set by the user, rather than actually sending it to lua.
-    private Object threadData = null;
-
-    public LuaStateImpl(@NotNull MemorySegment L, @NotNull Arena arena, boolean isThread) {
-        this.L = L;
-        this.arena = arena;
-        this.isThread = isThread;
-
-        // Create a JNI global reference and store it in the userdata of this state.
-        // We implement the user data setter/getter in plain java so this is fine.
-        this.ref = GlobalRef.newref(this);
-        lua_setthreaddata(L, MemorySegment.ofAddress(this.ref));
-
-        if (!isThread) {
-            configureRootThreadCleanup();
+    static LuaState newState(@Nullable MemorySegment allocator) {
+        var L = luaW_newstate(Objects.requireNonNullElse(allocator, MemorySegment.NULL));
+        if (L.equals(MemorySegment.NULL)) {
+            throw new IllegalStateException("Failed to create new Lua state");
         }
-    }
 
-    public LuaStateImpl() {
-        this(lualib_h.luaL_newstate(), Arena.ofConfined(), false);
-        configureRootThreadCleanup();
-    }
+        // We use userdata destructors to remove the java object ref (so it may be GC'd).
+        // So we must add a destructor for every tag immediately.
+        for (int i = 0; i < USERDATA_TAG_LIMIT; i++)
+            lua_setuserdatadtor(L, i, TAGGED_UDATA_DTOR);
 
-    @Override
-    public @NotNull MemorySegment ptr() {
-        return L;
+        return new LuaStateImpl(L);
     }
 
     @Override
     public void close() {
-        if (isThread)
-            throw new IllegalStateException(
-                    "cannot close a thread directly, it will be closed when lua garbage collects it.");
-        lua_h.lua_close(L);
-        closeInternal();
+        lua_close(L);
     }
 
-    private void configureRootThreadCleanup() {
-        // If this is a root state, setup the thread close callback to clean them up.
-        final MemorySegment callbacks = lua_callbacks(L);
-        final MemorySegment userthread = lua_Callbacks.userthread.allocate(LuaStateImpl::threadChange, arena);
-        lua_Callbacks.userthread(callbacks, userthread);
-    }
-
-    private static void threadChange(@NotNull MemorySegment LP, @NotNull MemorySegment L) {
-        // We don't need to do anything on start currently
-        if (LP != MemorySegment.NULL) return;
-
-        deref(L).closeInternal();
-    }
-
-    private void closeInternal() {
-        arena.close();
-
-        if (ref == 0) throw new IllegalStateException("LuaState was double closed.");
-        GlobalRef.unref(ref);
-        ref = 0;
-    }
-
+    //TODO: test me
     @Override
-    public @NotNull LuaState newThread() {
-        return new LuaStateImpl(lua_newthread(L), Arena.ofConfined(), true);
+    public LuaState newThread() {
+        final MemorySegment thread = luaW_newthread(L);
+        propagateException();
+        return new LuaStateImpl(thread);
     }
 
+    //TODO: test me
     @Override
-    public @NotNull LuaState mainThread() {
-        return new LuaStateImpl(lua_mainthread(L), Arena.ofConfined(), true);
+    public LuaState mainThread() {
+        return new LuaStateImpl(lua_mainthread(L));
     }
 
+    //TODO: test me
     @Override
     public void resetThread() {
-        lua_resetthread(L);
+        luaW_resetthread(L);
+        propagateException();
     }
 
+    //TODO: test me
     @Override
     public boolean isThreadReset() {
         return lua_isthreadreset(L) != 0;
-    }
-
-    @Override
-    public void setGlobal(@NotNull String name) {
-        try (Arena local = Arena.ofConfined()) {
-            final MemorySegment nameStr = local.allocateFrom(name);
-            lua_setfield(L, LUA_GLOBALSINDEX(), nameStr);
-        }
-    }
-
-    @Override
-    public int getGlobal(@NotNull String name) {
-        try (Arena local = Arena.ofConfined()) {
-            final MemorySegment nameStr = local.allocateFrom(name);
-            return lua_getfield(L, LUA_GLOBALSINDEX(), nameStr);
-        }
-    }
-
-    @Override
-    public void sandbox() {
-        lualib_h.luaL_sandbox(L);
-    }
-
-    @Override
-    public void sandboxThread() {
-        lualib_h.luaL_sandboxthread(L);
     }
 
     @Override
@@ -157,12 +97,19 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public int getTop() {
+        // TODO: might be faster for some simple methods to inline the reads from luastate directly.
+        //       The jvm is able to optimize that much better than a downcall
         return lua_gettop(L);
     }
 
     @Override
     public void setTop(int index) {
         lua_settop(L, index);
+    }
+
+    @Override
+    public void pop(int n) {
+        lua_settop(L, -n - 1);
     }
 
     @Override
@@ -185,29 +132,27 @@ final class LuaStateImpl implements LuaState {
         lua_replace(L, index);
     }
 
+    //TODO: test me
     @Override
-    public boolean checkStack(int size) {
-        return lua_checkstack(L, size) != 0;
-    }
-
-    @Override
-    public void rawCheckStack(int size) {
-        lua_rawcheckstack(L, size);
-    }
-
-    @Override
-    public void xMove(@NotNull LuaState to, int n) {
+    public void xmove(LuaState to, int n) {
         lua_xmove(L, ((LuaStateImpl) to).L, n);
     }
 
+    //TODO: test me
     @Override
-    public void xPush(@NotNull LuaState to, int index) {
+    public void xpush(LuaState to, int index) {
         lua_xpush(L, ((LuaStateImpl) to).L, index);
     }
 
     @Override
-    public void pop(int n) {
-        setTop(-n - 1);
+    public LuaType type(int index) {
+        return LuaType.byId(lua_type(L, index));
+    }
+
+    //TODO: test me (including on userdata types & stuff)
+    @Override
+    public String typeName(int index) {
+        return luaLW_typename(L, index).getString(0, StandardCharsets.UTF_8);
     }
 
     @Override
@@ -232,11 +177,6 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public boolean isLightUserData(int index) {
-        return type(index) == LuaType.LIGHTUSERDATA;
-    }
-
-    @Override
     public boolean isNumber(int index) {
         return type(index) == LuaType.NUMBER;
     }
@@ -248,7 +188,12 @@ final class LuaStateImpl implements LuaState {
 
     @Override
     public boolean isString(int index) {
-        return lua_isstring(L, index) != 0;
+        return type(index) == LuaType.STRING;
+    }
+
+    @Override
+    public boolean isBuffer(int index) {
+        return type(index) == LuaType.BUFFER;
     }
 
     @Override
@@ -262,78 +207,64 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public boolean isCFunction(int index) {
+    public boolean isNativeFunction(int index) {
         return lua_iscfunction(L, index) != 0;
     }
 
     @Override
-    public boolean isLFunction(int index) {
+    public boolean isLuaFunction(int index) {
         return lua_isLfunction(L, index) != 0;
     }
 
     @Override
     public boolean isUserData(int index) {
-        return lua_isuserdata(L, index) != 0;
+        return type(index) == LuaType.USERDATA;
     }
 
+    @Override
+    public boolean isLightUserData(int index) {
+        return type(index) == LuaType.LIGHTUSERDATA;
+    }
+
+    //TODO: test me
     @Override
     public boolean isThread(int index) {
         return type(index) == LuaType.THREAD;
     }
 
-    @Override
-    public boolean isBuffer(int index) {
-        return type(index) == LuaType.BUFFER;
-    }
-
-    @Override
-    public @NotNull LuaType type(int index) {
-        return LuaType.byId(lua_type(L, index));
-    }
-
-    @Override
-    public @NotNull String typeName(@NotNull LuaType type) {
-        return lua_typename(L, type.id()).getString(0);
-    }
-
-    @Override
-    public @NotNull String typeName(int index) {
-        return typeName(type(index));
-    }
-
+    //TODO: test me
     @Override
     public boolean equal(int index1, int index2) {
-        return lua_equal(L, index1, index2) != 0;
+        final boolean result = luaW_equal(L, index1, index2) != 0;
+        propagateException();
+        return result;
     }
 
+    //TODO: test me
     @Override
     public boolean rawEqual(int index1, int index2) {
         return lua_rawequal(L, index1, index2) != 0;
     }
 
+    //TODO: test me
     @Override
     public boolean lessThan(int index1, int index2) {
-        return lua_lessthan(L, index1, index2) != 0;
+        int res = luaW_lessthan(L, index1, index2);
+        propagateException();
+        return res != 0;
     }
 
     @Override
-    public int toInteger(int index) {
-        return lua_tointegerx(L, index, MemorySegment.NULL);
+    public void concat(int n) {
+        luaW_concat(L, n);
+        propagateException();
     }
 
     @Override
-    public double toNumber(int index) {
-        return lua_tonumberx(L, index, MemorySegment.NULL);
-    }
-
-    @Override
-    public int toUnsigned(int index) {
-        return lua_tounsignedx(L, index, MemorySegment.NULL);
-    }
-
-    @Override
-    public float[] toVector(int index) {
-        return unpackVector(lua_tovector(L, index));
+    public int len(int index) {
+        int result = luaW_objlen(L, index);
+        propagateException();
+        return result;
     }
 
     @Override
@@ -342,31 +273,147 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public @NotNull String toString(int index) {
-        return readLString(len -> lua_tolstring(L, index, len));
+    public double toNumber(int index) {
+        return lua_tonumberx(L, index, MemorySegment.NULL);
     }
 
     @Override
-    public @NotNull String nameCallAtom() {
-        // todo need to support string atoms, not sure the api for that.
-        final MemorySegment str = lua_namecallatom(L, MemorySegment.NULL);
-        return str.getString(0);
+    public @Nullable Double toNumberOrNull(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment isNum = arena.allocate(ValueLayout.JAVA_INT);
+            final double value = lua_tonumberx(L, index, isNum);
+            return isNum.get(ValueLayout.JAVA_INT, 0) != 0
+                    ? value : null;
+        }
     }
 
     @Override
-    public int objectLength(int index) {
-        return lua_objlen(L, index);
+    public int toInteger(int index) {
+        return lua_tointegerx(L, index, MemorySegment.NULL);
     }
 
     @Override
-    public int stringLength(int index) {
-        return objectLength(index);
+    public @Nullable Integer toIntegerOrNull(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment isNum = arena.allocate(ValueLayout.JAVA_INT);
+            final int value = lua_tointegerx(L, index, isNum);
+            return isNum.get(ValueLayout.JAVA_INT, 0) != 0
+                    ? value : null;
+        }
     }
 
     @Override
-    public @NotNull LuaFunc toCFunction(int index) {
-        final MemorySegment cfunc = lua_tocfunction(L, index);
-        return state -> lua_CFunction.invoke(cfunc, ((LuaStateImpl) state).L);
+    public long toUnsigned(int index) {
+        return Integer.toUnsignedLong(lua_tounsignedx(L, index, MemorySegment.NULL));
+    }
+
+    @Override
+    public @Nullable Long toUnsignedOrNull(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment isNum = arena.allocate(ValueLayout.JAVA_INT);
+            final int value = lua_tounsignedx(L, index, isNum);
+            return isNum.get(ValueLayout.JAVA_INT, 0) != 0
+                    ? Integer.toUnsignedLong(value) : null;
+        }
+    }
+
+    @Override
+    public float @Nullable [] toVector(int index) {
+        final MemorySegment value = lua_tovector(L, index);
+        return value.equals(MemorySegment.NULL) ? null : new float[]{
+                value.getAtIndex(ValueLayout.JAVA_FLOAT, 0),
+                value.getAtIndex(ValueLayout.JAVA_FLOAT, 1),
+                value.getAtIndex(ValueLayout.JAVA_FLOAT, 2)
+        };
+    }
+
+    @Override
+    public @Nullable String toString(int index) {
+        if (!isString(index)) return null;
+        return unsafeToString(index);
+    }
+
+    @Override
+    public @Nullable String unsafeToString(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment len = arena.allocate(ValueLayout.JAVA_LONG);
+            final MemorySegment raw = luaW_tolstring(L, index, len);
+            propagateException();
+
+            if (raw.equals(MemorySegment.NULL))
+                return null;
+
+            final long msgLen = len.get(ValueLayout.JAVA_LONG, 0);
+            final byte[] msg = raw.asSlice(0, msgLen).toArray(ValueLayout.JAVA_BYTE);
+            return new String(msg, StandardCharsets.UTF_8);
+        }
+    }
+
+    @Override
+    public String toStringRepr(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment len = arena.allocate(ValueLayout.JAVA_LONG);
+            final MemorySegment raw = luaLW_tolstring(L, index, len);
+            propagateException();
+
+            final long msgLen = len.get(ValueLayout.JAVA_LONG, 0);
+            final byte[] msg = raw.asSlice(0, msgLen).toArray(ValueLayout.JAVA_BYTE);
+            return new String(msg, StandardCharsets.UTF_8);
+        }
+    }
+
+    @Override
+    public short toStringAtomRaw(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment atomRef = arena.allocate(ValueLayout.JAVA_SHORT);
+            final MemorySegment str = lua_tolstringatom(L, index, MemorySegment.NULL, atomRef);
+            if (str.equals(MemorySegment.NULL)) return NO_ATOM;
+            return atomRef.get(ValueLayout.JAVA_SHORT, 0);
+        }
+    }
+
+    @Override
+    public @Nullable LuaString toStringAtom(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment lenRef = arena.allocate(ValueLayout.JAVA_INT);
+            final MemorySegment atomRef = arena.allocate(ValueLayout.JAVA_SHORT);
+            final MemorySegment str = lua_tolstringatom(L, index, lenRef, atomRef);
+            if (str.equals(MemorySegment.NULL)) return null;
+
+            short atom = atomRef.get(ValueLayout.JAVA_SHORT, 0);
+            if (atom >= 0) return new LuaString.Atom(atom);
+            return new LuaString.Str(new String(
+                    str.reinterpret(lenRef.get(ValueLayout.JAVA_INT, 0)).toArray(ValueLayout.JAVA_BYTE),
+                    StandardCharsets.UTF_8
+            ));
+        }
+    }
+
+    //TODO: test me
+    @Override
+    public short nameCallAtomRaw() {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment atomRef = arena.allocate(ValueLayout.JAVA_SHORT);
+            final MemorySegment str = lua_namecallatom(L, atomRef);
+            if (str.equals(MemorySegment.NULL)) return NO_ATOM;
+            return atomRef.get(ValueLayout.JAVA_SHORT, 0);
+        }
+    }
+
+    //TODO: test me
+    @Override
+    public LuaString nameCallAtom() {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment atomRef = arena.allocate(ValueLayout.JAVA_SHORT);
+            final MemorySegment str = lua_namecallatom(L, atomRef);
+            if (str.equals(MemorySegment.NULL)) {
+                throw new IllegalStateException("namecallatom may only be called within a __namecall metamethod");
+            }
+
+            short atom = atomRef.get(ValueLayout.JAVA_SHORT, 0);
+            if (atom >= 0) return new LuaString.Atom(atom);
+            return new LuaString.Str(str.getString(0, StandardCharsets.UTF_8));
+        }
     }
 
     @Override
@@ -379,51 +426,55 @@ final class LuaStateImpl implements LuaState {
         return lua_tolightuserdatatagged(L, index, tag).address();
     }
 
-    @Override
-    public Object toUserData(int index) {
-        final MemorySegment ud = lua_touserdata(L, index);
-        //todo NULL can be returned. //todo this call is not valid against userDataInt ud values. We need to include some metadata in
-        return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
-    }
-
-    @Override
-    public int toUserDataInt(int index) {
-        return lua_touserdata(L, index).get(ValueLayout.JAVA_INT, 0);
-    }
-
-    @Override
-    public Object toUserDataTagged(int index) {
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
-    public int userDataTag(int index) {
-        return lua_userdatatag(L, index);
-    }
-
+    //TODO: test me
     @Override
     public int lightUserDataTag(int index) {
         return lua_lightuserdatatag(L, index);
     }
 
     @Override
-    public @NotNull LuaState toThread(int index) {
-        return deref(lua_tothread(L, index));
+    public @Nullable Object toUserData(int index) {
+        if (type(index) != LuaType.USERDATA)
+            return null;
+        // Can't return null because we already ensured it is a userdata.
+        return GlobalRef.get(lua_touserdata(L, index).get(ValueLayout.JAVA_LONG, 0));
     }
 
     @Override
-    public @NotNull ByteBuffer toBuffer(int index) {
-        return readBuffer(len -> lua_tobuffer(L, index, len));
+    public @Nullable Object toUserDataTagged(int index, int tag) {
+        final MemorySegment address = lua_touserdatatagged(L, index, tag);
+        if (address.equals(MemorySegment.NULL)) return null;
+        return GlobalRef.get(address.get(ValueLayout.JAVA_LONG, 0));
     }
 
     @Override
-    public Object toPointer(int index) {
-        throw new UnsupportedOperationException("todo");
+    public int userDataTag(int index) {
+        int tag = lua_userdatatag(L, index);
+        // We normalize the "untagged with constructor" tag (max tag) to 0 because all
+        // untagged userdata has a destructor and we dont expose destructors to java.
+        return tag == USERDATA_TAG_LIMIT ? 0 : tag;
     }
 
     @Override
-    public @NotNull String toStringRepr(int index) {
-        return readLString(len -> luaL_tolstring(L, index, len));
+    public @Nullable LuaState toThread(int index) {
+        final MemorySegment thread = lua_tothread(L, index);
+        if (thread.equals(MemorySegment.NULL)) return null;
+        return new LuaStateImpl(thread);
+    }
+
+    @Override
+    public @Nullable ByteBuffer toBuffer(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment sizePtr = arena.allocate(ValueLayout.JAVA_LONG);
+            final MemorySegment ptr = lua_tobuffer(L, index, sizePtr);
+            propagateException();
+
+            if (ptr.equals(MemorySegment.NULL))
+                return null;
+
+            final MemorySegment sizedPtr = ptr.asSlice(0, sizePtr.get(ValueLayout.JAVA_LONG, 0));
+            return sizedPtr.asByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
+        }
     }
 
     @Override
@@ -432,24 +483,23 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public void pushNumber(double n) {
-        lua_pushnumber(L, n);
+    public void pushBoolean(boolean value) {
+        lua_pushboolean(L, value ? 1 : 0);
     }
 
     @Override
-    public void pushInteger(int n) {
-        lua_pushinteger(L, n);
+    public void pushNumber(double value) {
+        lua_pushnumber(L, value);
     }
 
     @Override
-    public void pushUnsigned(int n) {
-        lua_pushunsigned(L, n);
+    public void pushInteger(int value) {
+        lua_pushinteger(L, value);
     }
 
     @Override
-    public void pushVector(float[] v) {
-        if (v.length != 3) throw new IllegalArgumentException("Vector must have 3 components");
-        lua_pushvector(L, v[0], v[1], v[2]);
+    public void pushUnsigned(long value) {
+        lua_pushunsigned(L, (int) value);
     }
 
     @Override
@@ -458,98 +508,115 @@ final class LuaStateImpl implements LuaState {
     }
 
     @Override
-    public void pushString(@NotNull String s) {
+    public void pushVector(float[] value) {
+        if (value.length != 3) throw new LuaError("vector must have 3 components");
+        lua_pushvector(L, value[0], value[1], value[2]);
+    }
+
+    @Override
+    public void pushString(String value) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment str = arena.allocateFrom(s);
-            lua_pushlstring(L, str, str.byteSize() - 1); // -1 to exclude null terminator
+            final MemorySegment str = arena.allocateFrom(value);
+            luaW_pushlstring(L, str, str.byteSize() - 1); // -1 to exclude null terminator
+            propagateException();
         }
-    }
-
-    @Override
-    public void pushBoolean(boolean b) {
-        lua_pushboolean(L, b ? 1 : 0);
-    }
-
-    @Override
-    public void pushCFunction(@NotNull LuaFunc func, @NotNull String debugName) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment debugNameStr = arena.allocateFrom(debugName);
-            lua_pushcclosurek(L, getLuaFuncRef(func), debugNameStr, 0, MemorySegment.NULL);
-        }
-    }
-
-    @Override
-    public int pushThread() {
-        return lua_pushthread(L);
     }
 
     @Override
     public void pushLightUserData(long value) {
-        if (value == 0) throw new IllegalArgumentException("value must be non-zero");
-        // 0 corresponds to the untagged light user data type.
         lua_pushlightuserdatatagged(L, MemorySegment.ofAddress(value), 0);
     }
 
     @Override
     public void pushLightUserDataTagged(long value, int tag) {
-        if (value == 0) throw new IllegalArgumentException("value must be non-zero");
-        if (tag <= 0) throw new IllegalArgumentException("tag must be non-negative");
+        if (tag < 0 || tag > LIGHT_USERDATA_TAG_LIMIT)
+            throw new LuaError("light userdata tag must be between 0 and " + LIGHT_USERDATA_TAG_LIMIT);
         lua_pushlightuserdatatagged(L, MemorySegment.ofAddress(value), tag);
     }
 
     @Override
-    public void newUserData(@NotNull Object userdata) {
-        // Our userdata fields always contain a single long holding a jni global reference. It is freed in the
-        // destructor.
-        final MemorySegment ud = lua_newuserdatadtor(L, ValueLayout.JAVA_LONG.byteSize(), UNTAGGED_UDATA_DTOR);
-        ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(userdata));
+    public void newUserData(Object value) {
+        final MemorySegment ud = luaW_newuserdatadtor(L, ValueLayout.JAVA_LONG.byteSize(), UNTAGGED_UDATA_DTOR);
+        propagateException();
+        ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(value));
     }
 
     @Override
-    public void newUserDataInt(int value) {
-        final MemorySegment ud = lua_newuserdatatagged(L, ValueLayout.JAVA_INT.byteSize(), 0);
-        ud.set(ValueLayout.JAVA_INT, 0, value);
+    public void newUserDataTagged(Object value, int tag) {
+        final MemorySegment ud = luaW_newuserdatatagged(L, ValueLayout.JAVA_LONG.byteSize(), tag);
+        propagateException();
+        ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(value));
     }
 
     @Override
-    public Object newUserDataTagged(long size, int tag) {
-        throw new UnsupportedOperationException("todo");
+    public void newUserDataTaggedWithMetatable(Object value, int tag) {
+        final MemorySegment ud = luaW_newuserdatataggedwithmetatable(L, ValueLayout.JAVA_LONG.byteSize(), tag);
+        propagateException();
+        ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(value));
+    }
+
+    //TODO: test me
+    @Override
+    public boolean pushThread(LuaState thread) {
+        return lua_pushthread(((LuaStateImpl) thread).L) != 0;
     }
 
     @Override
-    public @NotNull ByteBuffer newBuffer(long size) {
-        return lua_newbuffer(L, size).asSlice(0, size).asByteBuffer();
+    public ByteBuffer newBuffer(long size) {
+        final MemorySegment value = luaW_newbuffer(L, size);
+        propagateException();
+        return value.reinterpret(size).asByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
     }
 
     @Override
-    public @NotNull LuaType getTable(int index) {
-        return LuaType.byId(lua_gettable(L, index));
-    }
-
-    @Override
-    public @NotNull LuaType getField(int index, @NotNull String key) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateFrom(key);
-            return LuaType.byId(lua_getfield(L, index, nameStr));
+    public void pushFunction(LuaFunc func) {
+        // The switch is here as an exhaustivity check :)
+        switch (func) {
+            case LuaFuncImpl(MemorySegment funcRef, MemorySegment debugNameRef, _) ->
+                    luaW_pushcclosurek(L, funcRef, debugNameRef, 0, MemorySegment.NULL);
         }
     }
 
     @Override
-    public @NotNull LuaType rawGetField(int index, @NotNull String key) {
+    public LuaType getTable(int index) {
+        int result = luaW_gettable(L, index);
+        propagateException();
+        return LuaType.byId(result);
+    }
+
+    @Override
+    public LuaType getField(int index, String key) {
         try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateFrom(key);
-            return LuaType.byId(lua_rawgetfield(L, index, nameStr));
+            int result = luaW_getfield(L, index, arena.allocateFrom(key));
+            propagateException();
+            return LuaType.byId(result);
         }
     }
 
     @Override
-    public @NotNull LuaType rawGet(int index) {
-        return LuaType.byId(lua_rawget(L, index));
+    public LuaType rawGetField(int index, String key) {
+        try (Arena arena = Arena.ofConfined()) {
+            int result = lua_rawgetfield(L, index, arena.allocateFrom(key));
+            return LuaType.byId(result);
+        }
     }
 
     @Override
-    public @NotNull LuaType rawGetI(int index, int n) {
-        return LuaType.byId(lua_rawgeti(L, index, n));
+    public LuaType rawGet(int index) {
+        int result = lua_rawget(L, index);
+        return LuaType.byId(result);
+    }
+
+    @Override
+    public LuaType rawGetI(int index, int n) {
+        int result = lua_rawgeti(L, index, n);
+        return LuaType.byId(result);
+    }
+
+    @Override
+    public void createTable(int narr, int nrec) {
+        luaW_createtable(L, narr, nrec);
+        propagateException();
     }
 
     @Override
@@ -557,167 +624,132 @@ final class LuaStateImpl implements LuaState {
         createTable(0, 0);
     }
 
-    @Override
-    public void createTable(int arrayCapacity, int fieldCapacity) {
-        lua_createtable(L, arrayCapacity, fieldCapacity);
-    }
-
+    //TODO: test me
     @Override
     public void setReadOnly(int index, boolean enabled) {
         lua_setreadonly(L, index, enabled ? 1 : 0);
     }
 
+    //TODO: test me
     @Override
     public boolean getReadOnly(int index) {
         return lua_getreadonly(L, index) != 0;
     }
 
-    @Override
-    public void setSafeEnv(int index, boolean enabled) {
-        lua_setsafeenv(L, index, enabled ? 1 : 0);
-    }
-
-    @Override
-    public int getMetaTable(int objectIndex) {
-        return lua_getmetatable(L, objectIndex);
-    }
-
-    @Override
-    public void getFEnv(int index) {
-        lua_getfenv(L, index);
-    }
-
+    //TODO: test me
     @Override
     public void setTable(int index) {
-        lua_settable(L, index);
+        luaW_settable(L, index);
+        propagateException();
     }
 
+    //TODO: test me
     @Override
-    public void setField(int index, @NotNull String key) {
+    public void setField(int index, String key) {
         try (Arena arena = Arena.ofConfined()) {
-            lua_setfield(L, index, arena.allocateFrom(key));
+            luaW_setfield(L, index, arena.allocateFrom(key));
+            propagateException();
         }
     }
 
+    //TODO: test me
     @Override
-    public void rawSetField(int index, @NotNull String key) {
+    public void rawSetField(int index, String key) {
         try (Arena arena = Arena.ofConfined()) {
-            lua_rawsetfield(L, index, arena.allocateFrom(key));
+            luaW_rawsetfield(L, index, arena.allocateFrom(key));
+            propagateException();
         }
     }
 
+    //TODO: test me
     @Override
     public void rawSet(int index) {
-        lua_rawset(L, index);
+        luaW_rawset(L, index);
+        propagateException();
     }
 
+    //TODO: test me
     @Override
     public void rawSetI(int index, int n) {
-        lua_rawseti(L, index, n);
+        luaW_rawseti(L, index, n);
+        propagateException();
+    }
+
+    //TODO: test me
+    @Override
+    public boolean getMetaTable(int index) {
+        return lua_getmetatable(L, index) != 0;
+    }
+
+    //TODO: test me
+    @Override
+    public void setMetaTable(int index) {
+        luaW_setmetatable(L, index); // always returns 1
+        propagateException();
     }
 
     @Override
-    public void setMetaTable(int objectIndex) {
-        lua_setmetatable(L, objectIndex);
-    }
-
-    @Override
-    public void setFEnv(int index) {
-        lua_setfenv(L, index);
-    }
-
-    @Override
-    public void load(@NotNull String fileName, byte[] bytecode) {
-        try (final Arena arena = Arena.ofConfined()) {
-            final MemorySegment nameStr = arena.allocateFrom(fileName);
-            final MemorySegment bytecodeArr = arena.allocateFrom(ValueLayout.JAVA_BYTE, bytecode);
-
-            int result = lua_h.luau_load(L, nameStr, bytecodeArr, bytecode.length, 0);
-            if (result != 0) {
-                final String error = toString(-1);
-                pop(1);
-                throw new RuntimeException(error);
+    public void load(String chunkName, byte[] data) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment chunkNameRef = arena.allocateFrom(chunkName);
+            final MemorySegment bytecodeRef = arena.allocateFrom(ValueLayout.JAVA_BYTE, data);
+            final LuaStatus status = LuaStatus.byId(luau_load(L, chunkNameRef, bytecodeRef, data.length, 0));
+            if (status != LuaStatus.OK) {
+                final String message = toStringRepr(-1);
+                throw new LuaError(status, message);
             }
         }
     }
 
     @Override
-    public void call(int argCount, int resultCount) {
-        lua_call(L, argCount, resultCount);
+    public void call(int nargs, int nresults) {
+        luaW_pushcclosurek(L, PCALL_ERRFUNC_REF, MemorySegment.NULL, 0, MemorySegment.NULL);
+        // Move the errfunc above the function being called
+        // Stack before: [func] [arg1] [arg2] ... [argN]
+        // Stack after:  [errfunc] [func] [arg1] [arg2] ... [argN]
+        lua_insert(L, -(nargs + 2));
+
+        int errFuncIndex = lua_absindex(L, -(nargs + 2));
+        LuaStatus status = LuaStatus.byId(lua_pcall(L, nargs, nresults, -(nargs + 2)));
+        lua_remove(L, errFuncIndex);
+
+        if (status != LuaStatus.OK) propagateExceptionInner(status);
     }
 
+    //TODO: test me
     @Override
-    public void pcall(int argCount, int resultCount) {
-        final LuaStatus status = LuaStatus.byId(lua_pcall(L, argCount, resultCount, 0)); //todo errFunc
-        switch (status) {
-            case OK -> {
-            }
-            case ERRRUN -> {
-                throw new RuntimeException(toString(1));
-            }
-            default -> {
-                throw new RuntimeException("unexpected pcall error: " + status);
-            }
-        }
+    public int yield(int nresults) {
+        int result = luaW_yield(L, nresults);
+        propagateException();
+        return result;
     }
 
+    //TODO: test me
     @Override
-    public int yield(int resultCount) {
-        return lua_yield(L, resultCount);
-    }
-
-    @Override
-    public int break_() {
-        return lua_break(L);
-    }
-
-    @Override
-    public @NotNull LuaStatus resume(@Nullable LuaState from, int argCount) {
-        final MemorySegment fromL = from != null ? ((LuaStateImpl) from).L : MemorySegment.NULL;
-        final int status = lua_resume(L, fromL, argCount);
-        return LuaStatus.byId(status);
-    }
-
-    @Override
-    public @NotNull LuaStatus resumeError(@NotNull LuaState from) {
-        final int status = lua_resumeerror(L, ((LuaStateImpl) from).L);
-        return LuaStatus.byId(status);
-    }
-
-    @Override
-    public @NotNull LuaStatus status() {
+    public LuaStatus status() {
         return LuaStatus.byId(lua_status(L));
     }
 
+    //TODO: test me
     @Override
     public boolean isYieldable() {
         return lua_isyieldable(L) != 0;
     }
 
+    //TODO: test me
     @Override
-    public @Nullable Object getThreadData() {
-        return this.threadData;
+    public LuaCoStatus costatus(LuaState co) {
+        return LuaCoStatus.byId(lua_costatus(L, ((LuaStateImpl) co).L));
+    }
+
+    //TODO: test me
+    @Override
+    public int gc(LuaGcOp op, int data) {
+        return lua_gc(L, op.ordinal(), data);
     }
 
     @Override
-    public void setThreadData(@Nullable Object data) {
-        this.threadData = data;
-    }
-
-    @Override
-    public @NotNull LuaCoroutineStatus coroutineStatus(@NotNull LuaState coroutine) {
-        return LuaCoroutineStatus.byId(lua_costatus(L, ((LuaStateImpl) coroutine).L));
-    }
-
-    @Override
-    public int gc(@NotNull LuaGCOp op, int data) {
-        return lua_gc(L, op.id(), data);
-    }
-
-    @Override
-    public void setMemoryCategory(int category) {
-        if (category < 0 || category > LUA_MEMORY_CATEGORIES())
-            throw new IllegalArgumentException("Invalid memory category: " + category);
+    public void setMemCat(int category) {
         lua_setmemcat(L, category);
     }
 
@@ -726,290 +758,299 @@ final class LuaStateImpl implements LuaState {
         return lua_totalbytes(L, category);
     }
 
+    //region Error Throwing
+
     @Override
     public void error() {
-        lua_error(L);
+        throw new LuaError((String) null);
     }
 
     @Override
-    public void error(@NotNull String message) {
-        // Reimplements the logic in luaL_errorL to avoid dealing with the varargs/unnecessary formatting
-        luaL_where(L, 1);
-        pushString(message);
-        concat(2);
-        error();
+    public void error(String message) {
+        throw new LuaError(message);
     }
 
     @Override
-    public void typeError(int argIndex, @NotNull String typeName) {
+    public void error(@PrintFormat String message, Object... args) {
+        throw new LuaError(message.formatted(args));
+    }
+
+    @Override
+    public void typeError(int argNum, String typeName) {
         try (Arena arena = Arena.ofConfined()) {
-            luaL_typeerrorL(L, argIndex, arena.allocateFrom(typeName)); // noreturn
+            luaLW_typeerror(L, argNum, arena.allocateFrom(typeName));
+            propagateException();
         }
     }
 
     @Override
-    public void argError(int argIndex, @NotNull String message) {
+    public void argError(int argNum, String message) {
         try (Arena arena = Arena.ofConfined()) {
-            luaL_argerrorL(L, argIndex, arena.allocateFrom(message)); // noreturn
+            luaLW_argerror(L, argNum, arena.allocateFrom(message));
+            propagateException();
         }
     }
 
+    //endregion
+
     @Override
-    public boolean next(int tableIndex) {
-        return lua_next(L, tableIndex) != 0;
+    public boolean checkStack(int size) {
+        return lua_checkstack(L, size) != 0;
     }
 
+    @Override
+    public void checkStack(int size, @Nullable String message) {
+        if (!checkStack(size)) {
+            final String msg = message != null ? "stack overflow (%s)".formatted(message) : "stack overflow";
+            throw new LuaError(msg);
+        }
+    }
+
+    //TODO: test me
+    @Override
+    public boolean next(int index) {
+        int result = luaW_next(L, index);
+        propagateException();
+        return result != 0;
+    }
+
+    //TODO: test me
     @Override
     public int rawIter(int index, int iter) {
         return lua_rawiter(L, index, iter);
     }
 
     @Override
-    public void concat(int n) {
-        lua_concat(L, n);
-    }
-
-    @Override
     public void setUserDataTag(int index, int tag) {
-        throw new UnsupportedOperationException("todo");
+        lua_setuserdatatag(L, index, tag);
     }
 
     @Override
-    public void setUserDataDestructor(int tag, Object destructor) {
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
-    public Object getUserDataDestructor(int tag) {
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
-    public void setUserDataMetaTable(int tag, int index) {
-        throw new UnsupportedOperationException("todo");
+    public void setUserDataMetaTable(int tag) {
+        lua_setuserdatametatable(L, tag);
     }
 
     @Override
     public void getUserDataMetaTable(int tag) {
-        throw new UnsupportedOperationException("todo");
+        lua_getuserdatametatable(L, tag);
     }
 
     @Override
-    public void setLightUserDataName(int tag, @NotNull String name) {
+    public void setLightUserDataName(int tag, String name) {
         try (Arena arena = Arena.ofConfined()) {
-            lua_setlightuserdataname(L, tag, arena.allocateFrom(name));
+            luaW_setlightuserdataname(L, tag, arena.allocateFrom(name));
+            propagateException();
         }
     }
 
     @Override
-    public @UnknownNullability String getLightUserDataName(int tag) {
-        final MemorySegment name = lua_getlightuserdataname(L, tag);
-        return name == MemorySegment.NULL ? null : name.getString(0);
+    public @Nullable String getLightUserDataName(int tag) {
+        try (Arena arena = Arena.ofConfined()) {
+            var name = lua_getlightuserdataname(L, tag);
+            if (name.equals(MemorySegment.NULL)) return null;
+            return name.getString(0, StandardCharsets.UTF_8);
+        }
     }
 
+    //TODO: test me
     @Override
     public void cloneFunction(int index) {
-        lua_clonefunction(L, index);
+        luaW_clonefunction(L, index);
+        propagateException();
     }
 
+    //TODO: test me
     @Override
     public void clearTable(int index) {
-        lua_cleartable(L, index);
+        luaW_cleartable(L, index);
+        propagateException();
     }
 
+    //TODO: test me
+    @Override
+    public void cloneTable(int index) {
+        luaW_clonetable(L, index);
+        propagateException();
+    }
+
+    //TODO: test me
     @Override
     public int ref(int index) {
         return lua_ref(L, index);
     }
 
+    //TODO: test me
     @Override
-    public void unref(int ref) {
+    public void unRef(int ref) {
         lua_unref(L, ref);
     }
 
+    //TODO: test me
     @Override
-    public int getref(int ref) {
-        return lua_rawgeti(L, LUA_REGISTRYINDEX(), ref);
+    public LuaType getRef(int ref) {
+        return rawGetI(LUA_REGISTRYINDEX(), ref);
     }
 
     @Override
-    public int stackDepth() {
-        throw new UnsupportedOperationException("todo");
+    public void setGlobal(String s) {
+        setField(LUA_GLOBALSINDEX(), s);
     }
 
     @Override
-    public @NotNull LuaCallbacks callbacks() {
+    public void getGlobal(String s) {
+        getField(LUA_GLOBALSINDEX(), s);
+    }
+
+    @Override
+    public LuaCallbacks callbacks() {
         return new LuaCallbacksImpl(lua_callbacks(L));
     }
 
+    //region Arg checking
+
     @Override
-    public void registerLib(@Nullable String name, @NotNull Map<String, LuaFunc> lib) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment l = luaL_Reg.allocateArray(lib.size() + 1, arena); // +1 for null entry
+    public void checkAny(int argNum) {
+        if (lua_type(L, argNum) == LuaType.NONE.id())
+            return;
+        error("missing argument #%d", argNum);
+    }
 
-            int i = 0;
-            for (final Map.Entry<String, LuaFunc> entry : lib.entrySet()) {
-                final MemorySegment elem = luaL_Reg.asSlice(l, i++);
-                luaL_Reg.name(elem, arena.allocateFrom(entry.getKey()));
-                luaL_Reg.func(elem, getLuaFuncRef(entry.getValue()));
-            }
+    @Override
+    public void checkType(int argNum, LuaType type) {
+        if (lua_type(L, argNum) == type.id()) return;
+        typeError(argNum, type.typeName());
+    }
 
-            final MemorySegment nameStr = name != null
-                    ? arena.allocateFrom(name)
-                    : MemorySegment.NULL;
-            luaL_register(L, nameStr, l);
+    @Override
+    public boolean checkBoolean(int argNum) {
+        boolean result = luaLW_checkboolean(L, argNum) != 0;
+        propagateException();
+        return result;
+    }
+
+    @Override
+    public boolean optBoolean(int argNum, boolean def) {
+        return luaL_optboolean(L, argNum, def ? 1 : 0) != 0;
+    }
+
+    @Override
+    public double checkNumber(int argNum) {
+        final Double number = toNumberOrNull(argNum);
+        if (number != null) return number;
+
+        typeError(argNum, LuaType.NUMBER.typeName());
+        return 0; // unreachable
+    }
+
+    @Override
+    public double optNumber(int argNum, double def) {
+        final Double number = toNumberOrNull(argNum);
+        return number != null ? number : def;
+    }
+
+    @Override
+    public int checkInteger(int argNum) {
+        final Integer integer = toIntegerOrNull(argNum);
+        if (integer != null) return integer;
+
+        typeError(argNum, LuaType.NUMBER.typeName());
+        return 0; // unreachable
+    }
+
+    @Override
+    public int optInteger(int argNum, int def) {
+        final Integer integer = toIntegerOrNull(argNum);
+        return integer != null ? integer : def;
+    }
+
+    @Override
+    public long checkUnsigned(int argNum) {
+        final Long unsigned = toUnsignedOrNull(argNum);
+        if (unsigned != null) return unsigned;
+
+        typeError(argNum, LuaType.NUMBER.typeName());
+        return 0; // unreachable
+    }
+
+    @Override
+    public long optUnsigned(int argNum, long def) {
+        final Long unsigned = toUnsignedOrNull(argNum);
+        return unsigned != null ? unsigned : def;
+    }
+
+    @Override
+    public float[] checkVector(int argNum) {
+        final float[] vector = toVector(argNum);
+        if (vector != null) return vector;
+
+        typeError(argNum, LuaType.VECTOR.typeName());
+        return null; // unreachable
+    }
+
+    @Override
+    public float[] optVector(int argNum, float[] def) {
+        final float[] vector = toVector(argNum);
+        return vector != null ? vector : def;
+    }
+
+    @Override
+    public String checkString(int argNum) {
+        final String string = toString(argNum);
+        if (string != null) return string;
+
+        typeError(argNum, LuaType.STRING.typeName());
+        return null; // unreachable
+    }
+
+    @Override
+    public String optString(int argNum, String def) {
+        final String string = toString(argNum);
+        return string != null ? string : def;
+    }
+
+    @Override
+    public int checkOption(int argNum, @Nullable String def, List<String> lst) {
+        final String name = def != null ? optString(argNum, def) : checkString(argNum);
+        for (int i = 0; i < lst.size(); i++) {
+            if (lst.get(i).equals(name))
+                return i;
         }
+        argError(argNum, "invalid option '%s'".formatted(name));
+        return 0; // Never reached
     }
 
     @Override
-    public boolean getMetaField(int obj, @NotNull String e) {
+    public Object checkUserData(int argNum, String typeName) {
         try (Arena arena = Arena.ofConfined()) {
-            return luaL_getmetafield(L, obj, arena.allocateFrom(e)) != 0;
-        }
-    }
-
-    @Override
-    public boolean callMeta(int obj, @NotNull String e) {
-        try (Arena arena = Arena.ofConfined()) {
-            return luaL_callmeta(L, obj, arena.allocateFrom(e)) != 0;
-        }
-    }
-
-    @Override
-    public boolean newMetaTable(@NotNull String typeName) {
-        try (Arena arena = Arena.ofConfined()) {
-            return luaL_newmetatable(L, arena.allocateFrom(typeName)) != 0;
-        }
-    }
-
-    @Override
-    public void getMetaTable(@NotNull String typeName) {
-        final LuaType type = getField(LUA_REGISTRYINDEX(), typeName);
-        assert type == LuaType.TABLE : "expected table";
-    }
-
-    @Override
-    public void where() {
-        where(0);
-    }
-
-    @Override
-    public void where(int level) {
-        luaL_where(L, level);
-    }
-
-    @Override
-    public boolean checkBooleanArg(int argIndex) {
-        return luaL_checkboolean(L, argIndex) != 0;
-    }
-
-    @Override
-    public boolean optBooleanArg(int argIndex, boolean defaultValue) {
-        return luaL_optboolean(L, argIndex, defaultValue ? 1 : 0) != 0;
-    }
-
-    @Override
-    public int checkIntegerArg(int argIndex) {
-        return luaL_checkinteger(L, argIndex);
-    }
-
-    @Override
-    public int optIntegerArg(int argIndex, int defaultValue) {
-        return luaL_optinteger(L, argIndex, defaultValue);
-    }
-
-    @Override
-    public double checkNumberArg(int argIndex) {
-        return luaL_checknumber(L, argIndex);
-    }
-
-    @Override
-    public double optNumberArg(int argIndex, float defaultValue) {
-        return luaL_optnumber(L, argIndex, defaultValue);
-    }
-
-    @Override
-    public int checkUnsignedArg(int argIndex) {
-        return luaL_checkunsigned(L, argIndex);
-    }
-
-    @Override
-    public int optUnsignedArg(int argIndex, int defaultValue) {
-        return luaL_optunsigned(L, argIndex, defaultValue);
-    }
-
-    @Override
-    public float[] checkVectorArg(int argIndex) {
-        return unpackVector(luaL_checkvector(L, argIndex));
-    }
-
-    @Override
-    public float[] optVectorArg(int argIndex, float[] defaultValue) {
-        try (Arena arena = Arena.ofConfined()) {
-            return unpackVector(luaL_optvector(L, argIndex, packVector(arena, defaultValue)));
-        }
-    }
-
-    @Override
-    public @NotNull String checkStringArg(int argIndex) {
-        return readLString(len -> luaL_checklstring(L, argIndex, len));
-    }
-
-    @Override
-    public @NotNull String optStringArg(int argIndex, @NotNull String defaultValue) {
-        try (Arena arena = Arena.ofConfined()) {
-            return readLString(len -> luaL_optlstring(L, argIndex, arena.allocateFrom(defaultValue), len));
-        }
-    }
-
-    @Override
-    public @NotNull ByteBuffer checkBufferArg(int argIndex) {
-        return readBuffer(len -> luaL_checkbuffer(L, argIndex, len));
-    }
-
-    @Override
-    public @NotNull Object checkUserDataArg(int argIndex, @NotNull String typeName) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment ud = luaL_checkudata(L, argIndex, arena.allocateFrom(typeName));
+            final MemorySegment ud = luaLW_checkudata(L, argNum, arena.allocateFrom(typeName));
+            propagateException();
             return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
         }
     }
 
     @Override
-    public long checkLightUserDataArg(int argIndex) {
-        MemorySegment value = lua_tolightuserdata(L, argIndex);
-        if (value == MemorySegment.NULL)
-            typeError(argIndex, "userdata");
-        return value.address();
+    public ByteBuffer checkBuffer(int argNum) {
+        final ByteBuffer buffer = toBuffer(argNum);
+        if (buffer != null) return buffer;
+
+        typeError(argNum, LuaType.BUFFER.typeName());
+        return null; // unreachable
+    }
+
+    //endregion
+
+    @Override
+    public void sandbox() {
+        luaL_sandbox(L);
     }
 
     @Override
-    public long checkLightUserDataTagArg(int argIndex, int tag) {
-        MemorySegment value = lua_tolightuserdatatagged(L, argIndex, tag);
-        if (value == MemorySegment.NULL)
-            typeError(argIndex, Objects.requireNonNullElse(getLightUserDataName(tag), "userdata"));
-        return value.address();
+    public void sandboxThread() {
+        luaL_sandboxthread(L);
     }
 
     @Override
-    public void checkStack(int size, @NotNull String message) {
-        try (Arena arena = Arena.ofConfined()) {
-            luaL_checkstack(L, size, arena.allocateFrom(message));
-        }
-    }
-
-    @Override
-    public void checkType(int argIndex, @NotNull LuaType type) {
-        luaL_checktype(L, argIndex, type.id());
-    }
-
-    @Override
-    public void checkAny(int argIndex) {
-        luaL_checkany(L, argIndex);
-    }
-
-    @Override
-    public void openLibs(@NotNull BuilinLibrary... libraries) {
+    public void openLibs(BuilinLibrary... libraries) {
         // Load all libraries if none are specified
         if (libraries.length == 0) {
             luaL_openlibs(L);
@@ -1032,55 +1073,169 @@ final class LuaStateImpl implements LuaState {
         }
     }
 
-    private static @NotNull LuaStateImpl deref(@NotNull MemorySegment L) {
-        return (LuaStateImpl) GlobalRef.get(lua_getthreaddata(L).address());
-    }
-
-    private @NotNull MemorySegment getLuaFuncRef(@NotNull LuaFunc func) {
-        return func instanceof LuaFuncRef r ? r.ref() : wrapLuaFunc(func, this.arena);
-    }
-
-    static @NotNull MemorySegment wrapLuaFunc(@NotNull LuaFunc func, @NotNull Arena arena) {
-        final lua_CFunction.Function fi = L -> func.call(deref(L));
-        return lua_CFunction.allocate(fi, arena);
-    }
-
-    private float[] unpackVector(@NotNull MemorySegment floats) {
-        return new float[]{
-                floats.getAtIndex(ValueLayout.JAVA_FLOAT, 0),
-                floats.getAtIndex(ValueLayout.JAVA_FLOAT, 1),
-                floats.getAtIndex(ValueLayout.JAVA_FLOAT, 2)
-        };
-    }
-
-    private @NotNull MemorySegment packVector(@NotNull SegmentAllocator alloc, float[] floats) {
-        if (floats.length != 3) throw new IllegalArgumentException("Vector must have 3 components");
-        final MemorySegment seg = alloc.allocate(ValueLayout.JAVA_FLOAT, 3);
-        seg.setAtIndex(ValueLayout.JAVA_FLOAT, 0, floats[0]);
-        seg.setAtIndex(ValueLayout.JAVA_FLOAT, 1, floats[1]);
-        seg.setAtIndex(ValueLayout.JAVA_FLOAT, 2, floats[2]);
-        return seg;
-    }
-
-    private @NotNull String readLString(@NotNull Function<MemorySegment, MemorySegment> func) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment len = arena.allocate(ValueLayout.JAVA_LONG);
-            final MemorySegment raw = func.apply(len);
-
-            final long msgLen = len.get(ValueLayout.JAVA_LONG, 0);
-            final byte[] msg = raw.asSlice(0, msgLen).toArray(ValueLayout.JAVA_BYTE);
-
-            return new String(msg, StandardCharsets.UTF_8);
+    @Override
+    public void register(Map<String, LuaFunc> library) {
+        for (Map.Entry<String, LuaFunc> entry : library.entrySet()) {
+            pushFunction(entry.getValue());
+            setField(-2, entry.getKey());
         }
     }
 
-    private @NotNull ByteBuffer readBuffer(@NotNull Function<MemorySegment, MemorySegment> func) {
-        try (Arena arena = Arena.ofConfined()) {
-            final MemorySegment sizePtr = arena.allocate(ValueLayout.JAVA_LONG);
-            final MemorySegment ptr = func.apply(sizePtr);
+    @Override
+    public void register(String name, Map<String, LuaFunc> library) {
+        // TODO
+        // int size = libsize(l);
+        // // check whether lib already exists
+        // luaL_findtable(L, LUA_REGISTRYINDEX, "_LOADED", 1);
+        // lua_getfield(L, -1, libname); // get _LOADED[libname]
+        // if (!lua_istable(L, -1))
+        // {                  // not found?
+        //     lua_pop(L, 1); // remove previous result
+        //     // try global variable (and create one if it does not exist)
+        //     if (luaL_findtable(L, LUA_GLOBALSINDEX, libname, size) != NULL)
+        //         luaL_error(L, "name conflict for module '%s'", libname);
+        //     lua_pushvalue(L, -1);
+        //     lua_setfield(L, -3, libname); // _LOADED[libname] = new table
+        // }
+        // lua_remove(L, -2); // remove _LOADED table
+    }
 
-            final MemorySegment sizedPtr = ptr.asSlice(0, sizePtr.get(ValueLayout.JAVA_LONG, 0));
-            return sizedPtr.asByteBuffer();
+    //region Exception Handling
+
+    private void propagateException() {
+        LuaStatus status = LuaStatus.byId(luaW_getstatus(L));
+        if (status != LuaStatus.OK) propagateExceptionInner(status);
+    }
+
+    private void propagateExceptionInner(LuaStatus status) {
+        // If we have one of our own errors on the stack, simply rethrow
+        if (toUserData(-1) instanceof LuaError err)
+            throw err;
+
+        // Otherwise, start throwing with the message at index -1
+        final String message = isNil(-1) ? null : toStringRepr(-1);
+        pop(1); // Pop the message so the stack is clean.
+
+        // In this case the initial trace was in lua, so start with that.
+        final LuaError err = new LuaError(status, stripDefaultErrorPrefix(message));
+        err.setStackTrace(mergeBacktrace(L, err.getStackTrace(), false));
+        throw err;
+    }
+
+    @SuppressWarnings("SameReturnValue")
+    private static int pcallErrFunc(MemorySegment L) {
+        // There are a few options at this point:
+        // 1. we have a LuaError at -1, in which case we should attach the lua trace
+        //    if needed or just continue upwards otherwise (leaving at -1).
+        final LuaState state = new LuaStateImpl(L);
+        if (state.toUserData(-1) instanceof LuaError) {
+            return 1; // Keep throwing
+        }
+
+        // 2. we have a something at -1, in which case we should use it as the error message.
+        //    We replace that with a LuaError object containing the initial lua stacktrace.
+        final String message = state.isNil(-1) ? null : state.toStringRepr(-1);
+        state.pop(1);
+
+        // In this case the initial trace was in lua, so start with that.
+        final LuaError err = new LuaError(stripDefaultErrorPrefix(message));
+        err.setStackTrace(mergeBacktrace(L, err.getStackTrace(), true));
+        state.newUserData(err);
+        return 1;
+    }
+
+    static StackTraceElement[] mergeBacktrace(
+            MemorySegment L, StackTraceElement[] javaTrace,
+            boolean startInLua
+    ) {
+        if (NO_BACKTRACE_MERGE) return javaTrace;
+
+        final List<StackTraceElement> mergedTrace = new ArrayList<>(javaTrace.length);
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment luaElem = lua_Debug.allocate(arena);
+
+            int luaTraceIndex = 1;
+
+            // If we are starting in lua, read the first part of the trace before any java parts.
+            if (startInLua) luaTraceIndex = readLuaTracePart(
+                    L, luaElem, mergedTrace, luaTraceIndex) - 1;
+
+            for (final StackTraceElement javaElem : javaTrace) {
+                // lua_h.lua_pcall is our downcall marker, we expect no other downcalls to occur.
+                // At every downcall point, we need to get the 'next' lua trace segment.
+                boolean isDowncall = lua_h.class.getName().equals(javaElem.getClassName())
+                        && "lua_pcall".equals(javaElem.getMethodName());
+                if (isDowncall) {
+                    luaTraceIndex = readLuaTracePart(L, luaElem, mergedTrace, luaTraceIndex);
+                }
+
+                if (!shouldExcludeElement(javaElem))
+                    mergedTrace.add(javaElem);
+            }
+        }
+        return mergedTrace.toArray(new StackTraceElement[0]);
+    }
+
+    private static int readLuaTracePart(
+            MemorySegment L, MemorySegment luaElem,
+            List<StackTraceElement> mergedTrace, int index
+    ) {
+        while (lua_getinfo(L, index++, LUA_DEBUG_WHAT, luaElem) != 0) {
+            char what = (char) lua_Debug.what(luaElem).get(ValueLayout.JAVA_BYTE, 0);
+            if (what == 'J') return index;
+
+            boolean isLua = what == 'L';
+            String source = null, name = "<anonymous>";
+            if (isLua) {
+                var sourceRef = lua_Debug.source(luaElem);
+                if (!sourceRef.equals(MemorySegment.NULL))
+                    source = sourceRef.getString(0);
+            }
+            var nameRef = lua_Debug.name(luaElem);
+            if (!nameRef.equals(MemorySegment.NULL))
+                name = nameRef.getString(0);
+            int currentLine = !isLua ? -1 : lua_Debug.currentline(luaElem);
+
+            mergedTrace.add(new StackTraceElement(
+                    // declaring class
+                    "lua",
+                    // method name
+                    name,
+                    // file name
+                    Objects.requireNonNullElse(source, "<native>"),
+                    // line number
+                    currentLine
+            ));
+        }
+        return index;
+    }
+
+    private static boolean shouldExcludeElement(StackTraceElement elem) {
+        if (SHOW_COMPLETE_BACKTRACE) return false;
+
+        class Exclusions {
+            static final Set<String> SET = Set.of(
+                    lua_h.class.getName() + "-lua_pcall",
+                    LuaFuncImpl.CFunctionWrapper.class.getName() + "-apply",
+                    LuaStateImpl.class.getName() + "-propagateException",
+                    LuaStateImpl.class.getName() + "-propagateExceptionInner",
+                    LuaStateImpl.class.getName() + "-pcallErrFunc"
+            );
+        }
+        return Exclusions.SET.contains("%s-%s".formatted(elem.getClassName(), elem.getMethodName()));
+    }
+
+    static @Nullable String stripDefaultErrorPrefix(@Nullable String raw) {
+        if (raw == null) return null;
+        return DEFAULT_ERROR_TRACE_REGEX.matcher(raw).replaceFirst("");
+    }
+
+    //endregion
+
+    record AllocImpl(MemorySegment handle) implements LuaAlloc {
+        public AllocImpl(Function function, Arena arena) {
+            this(lua_Alloc.allocate(function, arena));
         }
     }
+
 }

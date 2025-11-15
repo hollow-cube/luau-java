@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * void (*dtor)(void *)
  * }
  */
-public class lua_newuserdatadtor$dtor {
+public class luaW_newuserdatadtor$dtor {
 
-    lua_newuserdatadtor$dtor() {
+    luaW_newuserdatadtor$dtor() {
         // Should not be called directly
     }
 
@@ -31,7 +31,7 @@ public class lua_newuserdatadtor$dtor {
     }
 
     private static final FunctionDescriptor $DESC = FunctionDescriptor.ofVoid(
-        lua_h.C_POINTER
+        luawrap_h.C_POINTER
     );
 
     /**
@@ -41,13 +41,13 @@ public class lua_newuserdatadtor$dtor {
         return $DESC;
     }
 
-    private static final MethodHandle UP$MH = lua_h.upcallHandle(lua_newuserdatadtor$dtor.Function.class, "apply", $DESC);
+    private static final MethodHandle UP$MH = luawrap_h.upcallHandle(luaW_newuserdatadtor$dtor.Function.class, "apply", $DESC);
 
     /**
      * Allocates a new upcall stub, whose implementation is defined by {@code fi}.
      * The lifetime of the returned segment is managed by {@code arena}
      */
-    public static MemorySegment allocate(lua_newuserdatadtor$dtor.Function fi, Arena arena) {
+    public static MemorySegment allocate(luaW_newuserdatadtor$dtor.Function fi, Arena arena) {
         return Linker.nativeLinker().upcallStub(UP$MH.bindTo(fi), $DESC, arena);
     }
 

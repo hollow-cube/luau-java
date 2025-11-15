@@ -130,6 +130,299 @@ public class luacode_h {
         }
     }
 
+    private static class luau_set_compile_constant_nil {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luacode_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = luacode_h.findOrThrow("luau_set_compile_constant_nil");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_nil(lua_CompileConstant *constant)
+     * }
+     */
+    public static FunctionDescriptor luau_set_compile_constant_nil$descriptor() {
+        return luau_set_compile_constant_nil.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_nil(lua_CompileConstant *constant)
+     * }
+     */
+    public static MethodHandle luau_set_compile_constant_nil$handle() {
+        return luau_set_compile_constant_nil.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_nil(lua_CompileConstant *constant)
+     * }
+     */
+    public static MemorySegment luau_set_compile_constant_nil$address() {
+        return luau_set_compile_constant_nil.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_nil(lua_CompileConstant *constant)
+     * }
+     */
+    public static void luau_set_compile_constant_nil(MemorySegment constant) {
+        var mh$ = luau_set_compile_constant_nil.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luau_set_compile_constant_nil", constant);
+            }
+            mh$.invokeExact(constant);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luau_set_compile_constant_boolean {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luacode_h.C_POINTER,
+            luacode_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = luacode_h.findOrThrow("luau_set_compile_constant_boolean");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_boolean(lua_CompileConstant *constant, int b)
+     * }
+     */
+    public static FunctionDescriptor luau_set_compile_constant_boolean$descriptor() {
+        return luau_set_compile_constant_boolean.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_boolean(lua_CompileConstant *constant, int b)
+     * }
+     */
+    public static MethodHandle luau_set_compile_constant_boolean$handle() {
+        return luau_set_compile_constant_boolean.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_boolean(lua_CompileConstant *constant, int b)
+     * }
+     */
+    public static MemorySegment luau_set_compile_constant_boolean$address() {
+        return luau_set_compile_constant_boolean.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_boolean(lua_CompileConstant *constant, int b)
+     * }
+     */
+    public static void luau_set_compile_constant_boolean(MemorySegment constant, int b) {
+        var mh$ = luau_set_compile_constant_boolean.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luau_set_compile_constant_boolean", constant, b);
+            }
+            mh$.invokeExact(constant, b);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luau_set_compile_constant_number {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luacode_h.C_POINTER,
+            luacode_h.C_DOUBLE
+        );
+
+        public static final MemorySegment ADDR = luacode_h.findOrThrow("luau_set_compile_constant_number");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_number(lua_CompileConstant *constant, double n)
+     * }
+     */
+    public static FunctionDescriptor luau_set_compile_constant_number$descriptor() {
+        return luau_set_compile_constant_number.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_number(lua_CompileConstant *constant, double n)
+     * }
+     */
+    public static MethodHandle luau_set_compile_constant_number$handle() {
+        return luau_set_compile_constant_number.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_number(lua_CompileConstant *constant, double n)
+     * }
+     */
+    public static MemorySegment luau_set_compile_constant_number$address() {
+        return luau_set_compile_constant_number.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_number(lua_CompileConstant *constant, double n)
+     * }
+     */
+    public static void luau_set_compile_constant_number(MemorySegment constant, double n) {
+        var mh$ = luau_set_compile_constant_number.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luau_set_compile_constant_number", constant, n);
+            }
+            mh$.invokeExact(constant, n);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luau_set_compile_constant_vector {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luacode_h.C_POINTER,
+            luacode_h.C_FLOAT,
+            luacode_h.C_FLOAT,
+            luacode_h.C_FLOAT,
+            luacode_h.C_FLOAT
+        );
+
+        public static final MemorySegment ADDR = luacode_h.findOrThrow("luau_set_compile_constant_vector");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_vector(lua_CompileConstant *constant, float x, float y, float z, float w)
+     * }
+     */
+    public static FunctionDescriptor luau_set_compile_constant_vector$descriptor() {
+        return luau_set_compile_constant_vector.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_vector(lua_CompileConstant *constant, float x, float y, float z, float w)
+     * }
+     */
+    public static MethodHandle luau_set_compile_constant_vector$handle() {
+        return luau_set_compile_constant_vector.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_vector(lua_CompileConstant *constant, float x, float y, float z, float w)
+     * }
+     */
+    public static MemorySegment luau_set_compile_constant_vector$address() {
+        return luau_set_compile_constant_vector.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_vector(lua_CompileConstant *constant, float x, float y, float z, float w)
+     * }
+     */
+    public static void luau_set_compile_constant_vector(MemorySegment constant, float x, float y, float z, float w) {
+        var mh$ = luau_set_compile_constant_vector.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luau_set_compile_constant_vector", constant, x, y, z, w);
+            }
+            mh$.invokeExact(constant, x, y, z, w);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luau_set_compile_constant_string {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luacode_h.C_POINTER,
+            luacode_h.C_POINTER,
+            luacode_h.C_LONG
+        );
+
+        public static final MemorySegment ADDR = luacode_h.findOrThrow("luau_set_compile_constant_string");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_string(lua_CompileConstant *constant, const char *s, size_t l)
+     * }
+     */
+    public static FunctionDescriptor luau_set_compile_constant_string$descriptor() {
+        return luau_set_compile_constant_string.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_string(lua_CompileConstant *constant, const char *s, size_t l)
+     * }
+     */
+    public static MethodHandle luau_set_compile_constant_string$handle() {
+        return luau_set_compile_constant_string.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_string(lua_CompileConstant *constant, const char *s, size_t l)
+     * }
+     */
+    public static MemorySegment luau_set_compile_constant_string$address() {
+        return luau_set_compile_constant_string.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luau_set_compile_constant_string(lua_CompileConstant *constant, const char *s, size_t l)
+     * }
+     */
+    public static void luau_set_compile_constant_string(MemorySegment constant, MemorySegment s, long l) {
+        var mh$ = luau_set_compile_constant_string.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luau_set_compile_constant_string", constant, s, l);
+            }
+            mh$.invokeExact(constant, s, l);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luau_ext_free {
         public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
             luacode_h.C_POINTER

@@ -1,7 +1,6 @@
 package net.hollowcube.luau.util;
 
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +11,7 @@ import java.nio.file.Path;
 @ApiStatus.Internal
 public final class NativeLibraryLoader {
 
-    public static void loadLibrary(@NotNull String name) {
+    public static void loadLibrary(String name) {
         if (!loadEmbeddedLibrary(name)) {
             System.loadLibrary(name);
         }
@@ -28,7 +27,7 @@ public final class NativeLibraryLoader {
         }
     }
 
-    private static boolean loadEmbeddedLibrary(@NotNull String name) {
+    private static boolean loadEmbeddedLibrary(String name) {
         String lib = String.format(
                 "/net/hollowcube/luau/%s/%s/%s",
                 currentOperatingSystem(),
@@ -49,7 +48,7 @@ public final class NativeLibraryLoader {
         }
     }
 
-    private static @NotNull String currentOperatingSystem() {
+    private static String currentOperatingSystem() {
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.contains("windows")) {
             return "windows";
@@ -60,7 +59,7 @@ public final class NativeLibraryLoader {
         } else throw new UnsupportedOperationException("Unsupported OS: " + osName);
     }
 
-    private static @NotNull String currentArchitecture() {
+    private static String currentArchitecture() {
         String archName = System.getProperty("os.arch").toLowerCase();
         if (archName.contains("amd64") || archName.contains("x86_64")) {
             return "x64";

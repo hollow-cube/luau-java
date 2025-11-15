@@ -1,0 +1,3 @@
+[submodule "native/luau"]
+	path = native/luau
+	url = git@github.com:hollow-cube/luau.git

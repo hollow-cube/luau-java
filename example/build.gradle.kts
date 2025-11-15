@@ -1,22 +1,10 @@
 plugins {
-    java
-    application
-}
-
-repositories {
-    mavenCentral()
+    id("luau.java-binary")
 }
 
 dependencies {
     implementation(project(":"))
     implementation(project(":native"))
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-        vendor.set(JvmVendorSpec.GRAAL_VM)
-    }
 }
 
 application {

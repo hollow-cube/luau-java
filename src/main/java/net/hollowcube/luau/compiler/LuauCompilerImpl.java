@@ -3,7 +3,6 @@ package net.hollowcube.luau.compiler;
 import net.hollowcube.luau.internal.compiler.lua_CompileOptions;
 import net.hollowcube.luau.internal.compiler.luacode_h;
 import net.hollowcube.luau.util.NativeLibraryLoader;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
@@ -14,24 +13,23 @@ import java.util.List;
 
 import static net.hollowcube.luau.internal.compiler.luacode_h.luau_ext_free;
 
-@SuppressWarnings("preview")
 record LuauCompilerImpl(
-        @NotNull OptimizationLevel optimizationLevel,
-        @NotNull DebugLevel debugLevel,
-        @NotNull TypeInfoLevel typeInfoLevel,
-        @NotNull CoverageLevel coverageLevel,
+        OptimizationLevel optimizationLevel,
+        DebugLevel debugLevel,
+        TypeInfoLevel typeInfoLevel,
+        CoverageLevel coverageLevel,
         @Nullable String vectorLib,
         @Nullable String vectorCtor,
         @Nullable String vectorType,
-        @NotNull List<String> mutableGlobals,
-        @NotNull List<String> userdataTypes
+        List<String> mutableGlobals,
+        List<String> userdataTypes
 ) implements LuauCompiler {
     static {
         NativeLibraryLoader.loadLibrary("compiler");
     }
 
     @Override
-    public byte[] compile(byte @NotNull [] source) throws LuauCompileException {
+    public byte[] compile(byte[] source) throws LuauCompileException {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment sourceStr = arena.allocateFrom(ValueLayout.JAVA_BYTE, source);
             final MemorySegment bytecodeSize = arena.allocate(ValueLayout.JAVA_LONG);
@@ -53,7 +51,7 @@ record LuauCompilerImpl(
         }
     }
 
-    private @NotNull MemorySegment createCompileOptions(Arena arena) {
+    private MemorySegment createCompileOptions(Arena arena) {
         final MemorySegment opts = lua_CompileOptions.allocate(arena);
         lua_CompileOptions.optimizationLevel(opts, optimizationLevel.ordinal());
         lua_CompileOptions.debugLevel(opts, debugLevel.ordinal());
@@ -95,61 +93,61 @@ record LuauCompilerImpl(
         private List<String> userdataTypes = List.of();
 
         @Override
-        public @NotNull Builder optimizationLevel(@NotNull OptimizationLevel level) {
+        public Builder optimizationLevel(OptimizationLevel level) {
             this.optimizationLevel = level;
             return this;
         }
 
         @Override
-        public @NotNull Builder debugLevel(@NotNull DebugLevel level) {
+        public Builder debugLevel(DebugLevel level) {
             this.debugLevel = level;
             return this;
         }
 
         @Override
-        public @NotNull Builder typeInfoLevel(@NotNull TypeInfoLevel level) {
+        public Builder typeInfoLevel(TypeInfoLevel level) {
             this.typeInfoLevel = level;
             return this;
         }
 
         @Override
-        public @NotNull Builder coverageLevel(@NotNull CoverageLevel level) {
+        public Builder coverageLevel(CoverageLevel level) {
             this.coverageLevel = level;
             return this;
         }
 
         @Override
-        public @NotNull Builder vectorLib(@NotNull String vectorLib) {
+        public Builder vectorLib(String vectorLib) {
             this.vectorLib = vectorLib;
             return this;
         }
 
         @Override
-        public @NotNull Builder vectorCtor(@NotNull String vectorCtor) {
+        public Builder vectorCtor(String vectorCtor) {
             this.vectorCtor = vectorCtor;
             return this;
         }
 
         @Override
-        public @NotNull Builder vectorType(@NotNull String vectorType) {
+        public Builder vectorType(String vectorType) {
             this.vectorType = vectorType;
             return this;
         }
 
         @Override
-        public @NotNull Builder mutableGlobals(@NotNull List<String> mutableGlobals) {
+        public Builder mutableGlobals(List<String> mutableGlobals) {
             this.mutableGlobals = mutableGlobals;
             return this;
         }
 
         @Override
-        public @NotNull Builder userdataTypes(@NotNull List<String> userdataTypes) {
+        public Builder userdataTypes(List<String> userdataTypes) {
             this.userdataTypes = userdataTypes;
             return this;
         }
 
         @Override
-        public @NotNull LuauCompiler build() {
+        public LuauCompiler build() {
             return new LuauCompilerImpl(
                     optimizationLevel, debugLevel,
                     typeInfoLevel, coverageLevel,

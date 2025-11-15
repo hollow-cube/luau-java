@@ -1,17 +1,14 @@
 package net.hollowcube.luau.compiler;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-@SuppressWarnings("preview")
+// TODO: should move compiler to its own module so its possible to make a lighter dependency for those use cases.
 public sealed interface LuauCompiler permits LuauCompilerImpl {
 
-    @NotNull
     LuauCompiler DEFAULT = builder().build();
 
-    static @NotNull Builder builder() {
+    static Builder builder() {
         return new LuauCompilerImpl.BuilderImpl();
     }
 
@@ -21,7 +18,7 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
      * @param source The luau source code to compile.
      * @return The bytecode of the compiled source code.
      */
-    default byte[] compile(@NotNull String source) throws LuauCompileException {
+    default byte[] compile(String source) throws LuauCompileException {
         return compile(source.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -31,39 +28,39 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
      * @param source The luau source code to compile.
      * @return The bytecode of the compiled source code.
      */
-    byte[] compile(byte @NotNull [] source) throws LuauCompileException;
+    byte[] compile(byte[] source) throws LuauCompileException;
 
     sealed interface Builder permits LuauCompilerImpl.BuilderImpl {
 
-        @NotNull Builder optimizationLevel(@NotNull OptimizationLevel level);
+        Builder optimizationLevel(OptimizationLevel level);
 
-        @NotNull Builder debugLevel(@NotNull DebugLevel level);
+        Builder debugLevel(DebugLevel level);
 
-        @NotNull Builder typeInfoLevel(@NotNull TypeInfoLevel level);
+        Builder typeInfoLevel(TypeInfoLevel level);
 
-        @NotNull Builder coverageLevel(@NotNull CoverageLevel level);
+        Builder coverageLevel(CoverageLevel level);
 
         /**
          * name of the library providing vector type operations
          */
-        @NotNull Builder vectorLib(@NotNull String vectorLib);
+        Builder vectorLib(String vectorLib);
 
         /**
          * global builtin to construct vectors; disabled by default
          */
-        @NotNull Builder vectorCtor(@NotNull String vectorCtor);
+        Builder vectorCtor(String vectorCtor);
 
         /**
          * vector type name for type tables; disabled by default
          */
-        @NotNull Builder vectorType(@NotNull String vectorType);
+        Builder vectorType(String vectorType);
 
         /**
          * List of globals that are mutable; disables the import optimization for fields accessed through these
          * <br/>
          * Replaces any previously set value.
          */
-        default @NotNull Builder mutableGlobals(@NotNull String... mutableGlobals) {
+        default Builder mutableGlobals(String... mutableGlobals) {
             return mutableGlobals(List.of(mutableGlobals));
         }
 
@@ -72,14 +69,14 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
          * <br/>
          * Replaces any previously set value.
          */
-        @NotNull Builder mutableGlobals(@NotNull List<String> mutableGlobals);
+        Builder mutableGlobals(List<String> mutableGlobals);
 
         /**
          * userdata types that will be included in the type information
          * <br/>
          * Replaces any previously set value.
          */
-        default @NotNull Builder userdataTypes(@NotNull String... userdataTypes) {
+        default Builder userdataTypes(String... userdataTypes) {
             return userdataTypes(List.of(userdataTypes));
         }
 
@@ -88,9 +85,9 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
          * <br/>
          * Replaces any previously set value.
          */
-        @NotNull Builder userdataTypes(@NotNull List<String> userdataTypes);
+        Builder userdataTypes(List<String> userdataTypes);
 
-        @NotNull LuauCompiler build();
+        LuauCompiler build();
 
     }
 }
