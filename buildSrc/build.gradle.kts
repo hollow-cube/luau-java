@@ -7,12 +7,6 @@ repositories {
     gradlePluginPortal()
 }
 
-java {
-//    toolchain {
-//        languageVersion.set(JavaLanguageVersion.of(25))
-//    }
-}
-
-kotlin {
-    jvmToolchain(24)
+dependencies {
+    implementation("com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:9.2.2")
 }

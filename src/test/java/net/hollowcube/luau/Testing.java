@@ -12,24 +12,54 @@ public class Testing {
     // some env var which adds them all to a list to check would probably work.
 
     static void main(String[] args) throws Exception {
-
         var source = """
-                print('hello from lua')
-                
-                local arr = m2.newarray()
-                arr:push(1)
-                arr:push(2)
-                m2.show(arr)
-                
-                print(m2.add(1, 2))
-                print(m2.sub(1, 2))
-                abc()
+                a(function()
+                    b(function()
+                        print('hello from lua')
+                        error('hello')
+                    end)
+                end)
                 """;
+        //        var source = """
+        //                print('hello from lua')
+        //
+        //                local arr = m2.newarray()
+        //                arr:push(1)
+        //                arr:push(2)
+        //                m2.show(arr)
+        //
+        //                print(m2.add(1, 2))
+        //                print(m2.sub(1, 2))
+        //                abc()
+        //                """;
         var bytecode = LuauCompiler.DEFAULT.compile(source);
 
         LuaState global = LuaState.newState();
         try {
             global.openLibs();
+
+            global.pushCFunction(state -> {
+                // Call function at first index
+                state.pushValue(1);
+                state.call(0, 0);
+                return 0;
+            }, "a");
+            global.setGlobal("a");
+            global.pushCFunction(state -> {
+                // Call function at first index
+                try {
+                    if (Math.random() > 0) {
+                        throw new RuntimeException("random error");
+                    }
+                    state.pushValue(1);
+                    state.call(0, 0);
+                } finally {
+                    System.out.println("b finally");
+                }
+                System.out.println("b is ending");
+                return 0;
+            }, "b");
+            global.setGlobal("b");
 
             global.newMetaTable("myarray");
             global.pushString("__index");
@@ -88,8 +118,15 @@ public class Testing {
             LuaState thread = global.newThread();
             thread.sandboxThread();
             // Now ready for running untrusted code.
-            thread.load("main.lua", bytecode);
-            thread.pcall(0, 0);
+
+            for (int i = 0; i < 200; i++) {
+                try {
+                    thread.load("main.lua", bytecode);
+                    thread.pcall(0, 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 
             global.pop(1); // the thread was added to the stack, remove it so that it can be garbage collected.
 
