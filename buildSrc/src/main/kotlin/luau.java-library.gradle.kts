@@ -57,7 +57,17 @@ signing {
 
 spotless {
     java {
-        palantirJavaFormat().style("AOSP")
-
+        prettier(
+            mapOf(
+                "prettier" to "3.6.2",
+                "prettier-plugin-java" to "2.7.7",
+            )
+        ).config(
+            mapOf(
+                "plugins" to listOf("prettier-plugin-java"),
+                "parser" to "java",
+                "tabWidth" to 4,
+            )
+        )
     }
 }
