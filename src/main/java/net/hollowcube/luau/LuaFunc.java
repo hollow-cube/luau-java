@@ -5,7 +5,6 @@ import java.lang.foreign.Arena;
 import java.util.function.ToIntFunction;
 
 public sealed interface LuaFunc extends Closeable permits LuaFuncImpl {
-
     /// Wraps a java function as a native Lua function.
     ///
     /// TODO memory allocation semantics.
@@ -17,10 +16,13 @@ public sealed interface LuaFunc extends Closeable permits LuaFuncImpl {
     }
 
     /// todo document that it cant be closed if you BYO arena
-    static LuaFunc wrap(ToIntFunction<LuaState> impl, String debugName, Arena arena) {
+    static LuaFunc wrap(
+        ToIntFunction<LuaState> impl,
+        String debugName,
+        Arena arena
+    ) {
         return new LuaFuncImpl(impl, debugName, arena);
     }
 
     void close();
-
 }

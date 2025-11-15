@@ -1,17 +1,15 @@
 package net.hollowcube.luau;
 
+import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
 import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
-
 public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
-
     /// Maximum number of usable light userdata tags
     int LIGHT_USERDATA_TAG_LIMIT = LuaStateImpl.LIGHT_USERDATA_TAG_LIMIT;
     /// Maximum number of usable userdata tags
@@ -33,7 +31,9 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     ///
     /// Must be cleaned up with [#close()] when finished, or will leak resources.
     static LuaState newState(LuaAlloc allocator) {
-        return LuaStateImpl.newState(((LuaStateImpl.AllocImpl) allocator).handle());
+        return LuaStateImpl.newState(
+            ((LuaStateImpl.AllocImpl) allocator).handle()
+        );
     }
 
     /// Create a new lua state (main thread) with a custom memory allocator.
@@ -54,7 +54,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     /// Close this lua thread and clean up any managed resources.
     ///
     /// It is invalid to call any methods on this type after closing.
-    @Override void close();
+    @Override
+    void close();
 
     LuaState newThread();
     LuaState mainThread();
@@ -106,25 +107,42 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     boolean toBoolean(int index);
     /// Returns the number at index, or 0 if the value is not a number.
     double toNumber(int index);
-    @Nullable Double toNumberOrNull(int index);
+
+    @Nullable
+    Double toNumberOrNull(int index);
+
     /// Returns the integer at index, or 0 if the value is not a number.
     int toInteger(int index);
-    @Nullable Integer toIntegerOrNull(int index);
+
+    @Nullable
+    Integer toIntegerOrNull(int index);
+
     /// Returns the unsigned integer at index, or 0 if the value is not a number.
     long toUnsigned(int index);
-    @Nullable Long toUnsignedOrNull(int index);
-    float @Nullable [] toVector(int index);
+
+    @Nullable
+    Long toUnsignedOrNull(int index);
+
+    float@Nullable [] toVector(int index);
+
     /// Returns the string at index, or null if the value is not a string.
     ///
     /// Note: this behavior differs from lua_tolstring because it does NOT convert
     /// number values to string. Use [#unsafeToString(int)] for the exact lua behavior
     /// or [#toStringRepr(int)] to stringify any value (luaL_tolstring).
-    @Nullable String toString(int index);
-    @Nullable String unsafeToString(int index);
+    @Nullable
+    String toString(int index);
+
+    @Nullable
+    String unsafeToString(int index);
+
     String toStringRepr(int index);
     /// Returns the string atom if present, otherwise [#NO_ATOM].
     short toStringAtomRaw(int index);
-    @Nullable LuaString toStringAtom(int index);
+
+    @Nullable
+    LuaString toStringAtom(int index);
+
     /// May only be invoked from within a __namecall method, throws otherwise.
     ///
     /// Returns the string atom if present, otherwise [#NO_ATOM].
@@ -134,13 +152,22 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     long toLightUserData(int index);
     long toLightUserDataTagged(int index, int tag);
     int lightUserDataTag(int index);
+
     /// Unlike the lua api, will NOT return a light userdata object.
-    @Nullable Object toUserData(int index);
-    @Nullable Object toUserDataTagged(int index, int tag);
+    @Nullable
+    Object toUserData(int index);
+
+    @Nullable
+    Object toUserDataTagged(int index, int tag);
+
     /// Returns -1 if the value is not a userdata, or 0 for untagged userdata
     int userDataTag(int index);
-    @Nullable LuaState toThread(int index);
-    @Nullable ByteBuffer toBuffer(int index);
+
+    @Nullable
+    LuaState toThread(int index);
+
+    @Nullable
+    ByteBuffer toBuffer(int index);
 
     void pushNil();
     void pushBoolean(boolean value);
@@ -185,7 +212,9 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void call(int nargs, int nresults);
 
     /// Yields the current thread, result _must_ be returned from the [LuaFunc] impl.
-    @CheckReturnValue int yield(int nresults);
+    @CheckReturnValue
+    int yield(int nresults);
+
     // TODO: resume can throw, need to decide how to handle that
     //    int resume(LuaState from, int narg);
     // TODO: unsure what resumeerror does
@@ -205,11 +234,21 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     long totalBytes(int category);
 
     /// Throws, assumes that there is a value on the stack which becomes the thrown object.
-    @Contract("-> fail") void error();
-    @Contract("_ -> fail") void error(String message);
-    @Contract("_, _ -> fail") void error(@PrintFormat String message, Object... args);
-    @Contract("_, _ -> fail") void typeError(int narg, String tname);
-    @Contract("_, _ -> fail") void argError(int narg, String extramsg);
+    @Contract("-> fail")
+    void error();
+
+    @Contract("_ -> fail")
+    void error(String message);
+
+    @Contract("_, _ -> fail")
+    void error(@PrintFormat String message, Object... args);
+
+    @Contract("_, _ -> fail")
+    void typeError(int narg, String tname);
+
+    @Contract("_, _ -> fail")
+    void argError(int narg, String extramsg);
+
     boolean checkStack(int sz);
     void checkStack(int sz, @Nullable String msg);
 
@@ -220,7 +259,9 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void setUserDataMetaTable(int tag);
     void getUserDataMetaTable(int tag);
     void setLightUserDataName(int tag, String name);
-    @Nullable String getLightUserDataName(int tag);
+
+    @Nullable
+    String getLightUserDataName(int tag);
 
     void cloneFunction(int index);
     void clearTable(int index);
@@ -283,5 +324,4 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void openLibs(BuilinLibrary... libraries);
     void register(Map<String, LuaFunc> library);
     void register(String name, Map<String, LuaFunc> library);
-
 }

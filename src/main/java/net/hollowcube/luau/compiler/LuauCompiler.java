@@ -5,7 +5,6 @@ import java.util.List;
 
 // TODO: should move compiler to its own module so its possible to make a lighter dependency for those use cases.
 public sealed interface LuauCompiler permits LuauCompilerImpl {
-
     LuauCompiler DEFAULT = builder().build();
 
     static Builder builder() {
@@ -31,7 +30,6 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
     byte[] compile(byte[] source) throws LuauCompileException;
 
     sealed interface Builder permits LuauCompilerImpl.BuilderImpl {
-
         Builder optimizationLevel(OptimizationLevel level);
 
         Builder debugLevel(DebugLevel level);
@@ -88,6 +86,5 @@ public sealed interface LuauCompiler permits LuauCompilerImpl {
         Builder userdataTypes(List<String> userdataTypes);
 
         LuauCompiler build();
-
     }
 }

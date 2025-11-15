@@ -1,13 +1,12 @@
 package net.hollowcube.luau;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import static net.hollowcube.luau.TestHelpers.eval;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.foreign.Arena;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.hollowcube.luau.TestHelpers.eval;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 @LuaStateParam
 class TestLuaState {
@@ -32,6 +31,7 @@ class TestLuaState {
 
     @Nested
     class BooleanValues {
+
         @Test
         void pushRead(LuaState state) {
             state.pushBoolean(true);
@@ -87,23 +87,23 @@ class TestLuaState {
             state.pushInteger(42);
             assertEquals(42.0, state.toNumber(-1));
         }
-
     }
 
     @Nested
     class VectorValues {
+
         @Test
         void pushRead(LuaState state) {
-            state.pushVector(new float[]{1, 2, 3});
+            state.pushVector(new float[] { 1, 2, 3 });
             assertTrue(state.isVector(-1));
-            assertArrayEquals(new float[]{1, 2, 3}, state.toVector(-1));
+            assertArrayEquals(new float[] { 1, 2, 3 }, state.toVector(-1));
         }
 
         @Test
         void pushRead2(LuaState state) {
             state.pushVector(1, 2, 3);
             assertTrue(state.isVector(-1));
-            assertArrayEquals(new float[]{1, 2, 3}, state.toVector(-1));
+            assertArrayEquals(new float[] { 1, 2, 3 }, state.toVector(-1));
         }
 
         @Test
@@ -115,6 +115,7 @@ class TestLuaState {
 
     @Nested
     class StringValues {
+
         @Test
         void pushRead(LuaState state) {
             state.pushString("hello, world");
@@ -162,6 +163,7 @@ class TestLuaState {
 
     @Nested
     class BufferValues {
+
         @Test
         void pushRead(LuaState state) {
             state.newBuffer(1024);
@@ -184,9 +186,12 @@ class TestLuaState {
             state.newBuffer(1024);
             state.setGlobal("theBuffer");
 
-            eval(state, """
-                    buffer.writei32(theBuffer, 32, buffer.len(theBuffer))
-                    """);
+            eval(
+                state,
+                """
+                buffer.writei32(theBuffer, 32, buffer.len(theBuffer))
+                """
+            );
 
             state.getGlobal("theBuffer");
 
@@ -198,6 +203,7 @@ class TestLuaState {
 
     @Nested
     class TableValues {
+
         @Test
         void pushRead(LuaState state) {
             state.newTable();
@@ -276,11 +282,15 @@ class TestLuaState {
 
         @Test
         void functionParamReturn(LuaState state, Arena arena) {
-            var func = LuaFunc.wrap(L -> {
-                boolean b = L.type(1) == LuaType.TABLE;
-                L.pushString(b ? "yes" : "no");
-                return 1;
-            }, "func", arena);
+            var func = LuaFunc.wrap(
+                L -> {
+                    boolean b = L.type(1) == LuaType.TABLE;
+                    L.pushString(b ? "yes" : "no");
+                    return 1;
+                },
+                "func",
+                arena
+            );
 
             state.pushFunction(func);
             state.pushValue(-1);
@@ -296,14 +306,19 @@ class TestLuaState {
         }
 
         private static class MockLuaFunc {
+
             private final AtomicInteger callCount = new AtomicInteger(0);
             public final LuaFunc ref;
 
             public MockLuaFunc(Arena arena) {
-                this.ref = LuaFunc.wrap(_ -> {
-                    callCount.incrementAndGet();
-                    return 0;
-                }, "mockFunc", arena);
+                this.ref = LuaFunc.wrap(
+                    _ -> {
+                        callCount.incrementAndGet();
+                        return 0;
+                    },
+                    "mockFunc",
+                    arena
+                );
             }
 
             public void assertCalled() {
@@ -311,10 +326,13 @@ class TestLuaState {
             }
 
             public void assertCalled(int times) {
-                assertEquals(times, callCount.get(), "was not called " + times + " times");
+                assertEquals(
+                    times,
+                    callCount.get(),
+                    "was not called " + times + " times"
+                );
             }
         }
-
     }
 
     @Nested
@@ -366,11 +384,11 @@ class TestLuaState {
             state.newUserDataTaggedWithMetatable(new MyUserData(12345), 42);
             assertTrue(state.toStringRepr(-1).startsWith("MyType"));
         }
-
     }
 
     @Nested
     class LightUserDataValues {
+
         @Test
         void pushRead(LuaState state) {
             state.pushLightUserData(12345);
@@ -409,8 +427,7 @@ class TestLuaState {
     class ThreadValues {
 
         @Test
-        void abc() {
-        }
+        void abc() {}
     }
 
     @Test
@@ -422,10 +439,11 @@ class TestLuaState {
 
         state.setMemCat(42);
         assertEquals(0, state.totalBytes(42));
-        state.newUserData("this shouldnt count, it should only be 8 bytes because java owns this string");
+        state.newUserData(
+            "this shouldnt count, it should only be 8 bytes because java owns this string"
+        );
         assertEquals(32, state.totalBytes(42));
     }
 
     //TODO test all the check and opt methods
-
 }

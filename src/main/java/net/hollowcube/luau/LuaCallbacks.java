@@ -1,9 +1,8 @@
 package net.hollowcube.luau;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import org.jetbrains.annotations.Nullable;
 
 /// Wraps the lua_Callbacks api for configuring the VM behavior at runtime.
 ///
@@ -19,7 +18,6 @@ import java.lang.foreign.MemorySegment;
 ///       unprotected calls or longjmps across boundary.
 ///       Userdata has been reserved for potential future library usage for now.
 public sealed interface LuaCallbacks permits LuaCallbacksImpl {
-
     sealed interface Interrupt permits LuaCallbacksImpl.InterruptImpl {
         @FunctionalInterface
         interface Handler {
@@ -84,5 +82,4 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
     /// gets called when memory is allocated
     void onAllocate(@Nullable OnAllocate handler);
     void onAllocate(MemorySegment functionAddress);
-
 }

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Nullable;
 
 public class LuaError extends RuntimeException {
+
     private final LuaStatus status;
 
     LuaError(@Nullable String message) {
@@ -21,7 +22,8 @@ public class LuaError extends RuntimeException {
 
     /// Push the error onto the stack so its discoverable by intermediate handlers, and
     /// create the error marker return value for luau to continue unwinding the callstack.
-    @CheckReturnValue int pushAndMark(LuaState state) {
+    @CheckReturnValue
+    int pushAndMark(LuaState state) {
         state.newUserData(this);
         return -100 - status().id();
     }

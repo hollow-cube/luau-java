@@ -8,5 +8,4 @@ public class TestLuaStateInit {
     void sanityInitClose() {
         LuaState.newState().close();
     }
-
 }

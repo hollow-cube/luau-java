@@ -1,12 +1,11 @@
 package net.hollowcube.luau.util;
 
-import org.jetbrains.annotations.ApiStatus;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public final class NativeLibraryLoader {
@@ -23,22 +22,27 @@ public final class NativeLibraryLoader {
         try {
             NATIVES_DIR = Files.createTempDirectory("luau-natives");
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create temporary directory for native libraries", e);
+            throw new RuntimeException(
+                "Failed to create temporary directory for native libraries",
+                e
+            );
         }
     }
 
     private static boolean loadEmbeddedLibrary(String name) {
         String lib = String.format(
-                "/net/hollowcube/luau/%s/%s/%s",
-                currentOperatingSystem(),
-                currentArchitecture(),
-                System.mapLibraryName(name)
+            "/net/hollowcube/luau/%s/%s/%s",
+            currentOperatingSystem(),
+            currentArchitecture(),
+            System.mapLibraryName(name)
         );
 
         final URL innerPath = NativeLibraryLoader.class.getResource(lib);
         if (innerPath == null) return false;
 
-        final Path targetPath = NATIVES_DIR.resolve(System.mapLibraryName(name));
+        final Path targetPath = NATIVES_DIR.resolve(
+            System.mapLibraryName(name)
+        );
         try (InputStream in = innerPath.openStream()) {
             Files.copy(in, targetPath);
             System.load(targetPath.toString());
@@ -54,9 +58,15 @@ public final class NativeLibraryLoader {
             return "windows";
         } else if (osName.contains("mac os x")) {
             return "macos";
-        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
+        } else if (
+            osName.contains("nix") ||
+            osName.contains("nux") ||
+            osName.contains("aix")
+        ) {
             return "linux";
-        } else throw new UnsupportedOperationException("Unsupported OS: " + osName);
+        } else throw new UnsupportedOperationException(
+            "Unsupported OS: " + osName
+        );
     }
 
     private static String currentArchitecture() {
@@ -65,7 +75,8 @@ public final class NativeLibraryLoader {
             return "x64";
         } else if (archName.contains("aarch64") || archName.contains("arm64")) {
             return "arm64";
-        } else throw new UnsupportedOperationException("Unsupported architecture: " + archName);
+        } else throw new UnsupportedOperationException(
+            "Unsupported architecture: " + archName
+        );
     }
-
 }

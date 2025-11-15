@@ -57,6 +57,11 @@ signing {
 
 spotless {
     java {
+        target("src/**/*.java")
+        targetExclude("src/generated/**/*.java")
+
+        removeUnusedImports()
+
         prettier(
             mapOf(
                 "prettier" to "3.6.2",
@@ -67,6 +72,7 @@ spotless {
                 "plugins" to listOf("prettier-plugin-java"),
                 "parser" to "java",
                 "tabWidth" to 4,
+                "maxLineLength" to 80,
             )
         )
     }

@@ -14,5 +14,4 @@ public class GlobalRef {
     public static native void unref(long ref);
 
     public static native Object get(long ref);
-
 }

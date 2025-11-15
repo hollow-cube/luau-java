@@ -10,5 +10,5 @@ public enum BuilinLibrary {
     BUFFER,
     UTF8,
     MATH,
-    DEBUG;
+    DEBUG,
 }

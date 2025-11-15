@@ -16,8 +16,7 @@ public enum LuaType {
     FUNCTION,
     USERDATA,
     THREAD,
-    BUFFER,
-    ;
+    BUFFER;
 
     private static final LuaType[] VALUES = values();
 

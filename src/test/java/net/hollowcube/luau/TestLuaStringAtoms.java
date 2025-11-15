@@ -1,10 +1,9 @@
 package net.hollowcube.luau;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.foreign.Arena;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 @LuaStateParam
 class TestLuaStringAtoms {
@@ -28,15 +27,26 @@ class TestLuaStringAtoms {
 
     @Test
     void callbackSetsAtom(LuaState state, Arena arena) {
-        state.callbacks().userAtom(LuaCallbacks.UserAtom.allocate((str) -> switch (str) {
-            case "one" -> 1;
-            case "two" -> 2;
-            default -> LuaState.NO_ATOM;
-        }, arena));
+        state
+            .callbacks()
+            .userAtom(
+                LuaCallbacks.UserAtom.allocate(
+                    str ->
+                        switch (str) {
+                            case "one" -> 1;
+                            case "two" -> 2;
+                            default -> LuaState.NO_ATOM;
+                        },
+                    arena
+                )
+            );
 
         state.pushString("one");
         assertEquals(1, state.toStringAtomRaw(-1));
-        var atom = assertInstanceOf(LuaString.Atom.class, state.toStringAtom(-1));
+        var atom = assertInstanceOf(
+            LuaString.Atom.class,
+            state.toStringAtom(-1)
+        );
         assertEquals(1, atom.atom());
         state.pop(1);
 
@@ -54,5 +64,4 @@ class TestLuaStringAtoms {
     }
 
     // TODO: namecall atom test
-
 }

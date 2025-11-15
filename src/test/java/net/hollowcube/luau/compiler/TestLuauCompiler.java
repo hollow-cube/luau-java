@@ -1,9 +1,9 @@
 package net.hollowcube.luau.compiler;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 class TestLuauCompiler {
 
@@ -14,8 +14,12 @@ class TestLuauCompiler {
 
     @Test
     void testCompileFail() {
-        var exc = assertThrows(LuauCompileException.class, () -> LuauCompiler.DEFAULT.compile("+"));
-        assertEquals(":1: Expected identifier when parsing expression, got '+'", exc.getMessage());
+        var exc = assertThrows(LuauCompileException.class, () ->
+            LuauCompiler.DEFAULT.compile("+")
+        );
+        assertEquals(
+            ":1: Expected identifier when parsing expression, got '+'",
+            exc.getMessage()
+        );
     }
-
 }

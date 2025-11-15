@@ -1,16 +1,15 @@
 package net.hollowcube.luau;
 
-import net.hollowcube.luau.compiler.LuauCompiler;
-import org.intellij.lang.annotations.Language;
-import org.opentest4j.AssertionFailedError;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import net.hollowcube.luau.compiler.LuauCompiler;
+import org.intellij.lang.annotations.Language;
+import org.opentest4j.AssertionFailedError;
 
 class TestHelpers {
 
@@ -18,13 +17,19 @@ class TestHelpers {
         eval(state, code, 0);
     }
 
-    public static void eval(LuaState state, @Language("luau") String code, int nret) {
+    public static void eval(
+        LuaState state,
+        @Language("luau") String code,
+        int nret
+    ) {
         load(state, code);
         state.call(0, nret);
     }
 
     public static void load(LuaState state, @Language("luau") String code) {
-        var bytecode = assertDoesNotThrow(() -> LuauCompiler.DEFAULT.compile(code));
+        var bytecode = assertDoesNotThrow(() ->
+            LuauCompiler.DEFAULT.compile(code)
+        );
         state.load("test.luau", bytecode);
     }
 
@@ -34,9 +39,13 @@ class TestHelpers {
         // replace all non-lua line numbers with 0
         var st = t.getStackTrace();
         for (int i = 0; i < st.length; i++) {
-            if ("lua".equals(st[i].getClassName()))
-                continue;
-            st[i] = new StackTraceElement(st[i].getClassName(), st[i].getMethodName(), st[i].getFileName(), 0);
+            if ("lua".equals(st[i].getClassName())) continue;
+            st[i] = new StackTraceElement(
+                st[i].getClassName(),
+                st[i].getMethodName(),
+                st[i].getFileName(),
+                0
+            );
         }
         t.setStackTrace(st);
 
@@ -55,10 +64,15 @@ class TestHelpers {
     public static void assertMatches(String expectedPattern, String actual) {
         expectedPattern = expectedPattern.trim();
         actual = actual.trim();
-        var pattern = Pattern.compile(Arrays.stream(expectedPattern.split("/\\.\\+/"))
-                                              .map(Pattern::quote).collect(Collectors.joining(".+")));
-        if (!pattern.matcher(actual).matches())
-            throw new AssertionFailedError(null, expectedPattern, actual);
+        var pattern = Pattern.compile(
+            Arrays.stream(expectedPattern.split("/\\.\\+/"))
+                .map(Pattern::quote)
+                .collect(Collectors.joining(".+"))
+        );
+        if (!pattern.matcher(actual).matches()) throw new AssertionFailedError(
+            null,
+            expectedPattern,
+            actual
+        );
     }
-
 }
