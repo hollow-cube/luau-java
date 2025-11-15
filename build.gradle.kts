@@ -1,6 +1,7 @@
 plugins {
     id("luau.java-library")
     id("luau.jextract")
+//    id("com.palantir.javaformat:gradle-palantir-java-format:2.82.0")
 }
 
 group = "dev.hollowcube"

@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    alias(libs.plugins.spotless)
 
     `maven-publish`
     signing
@@ -52,4 +53,11 @@ signing {
     useInMemoryPgpKeys(privateKey, keyPassphrase)
 
     sign(publishing.publications)
+}
+
+spotless {
+    java {
+        palantirJavaFormat().style("AOSP")
+
+    }
 }
