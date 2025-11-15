@@ -50,9 +50,7 @@ tasks.register<Exec>("cmakeBuild") {
 
     // CMake build files input
     inputs.dir(workingDir.resolve("CMakeFiles"))
-    inputs.file(workingDir.resolve("Makefile"))
     inputs.dir(workingDir.resolve("luau/CMakeFiles"))
-    inputs.file(workingDir.resolve("luau/Makefile"))
 
     // GlobalRef & Luau source inputs
     inputs.dir(layout.projectDirectory.dir("src"))

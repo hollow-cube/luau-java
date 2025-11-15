@@ -513,7 +513,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment sizePtr = arena.allocate(ValueLayout.JAVA_LONG);
             final MemorySegment ptr = lua_tobuffer(L, index, sizePtr);
-            propagateException();
 
             if (ptr.equals(MemorySegment.NULL)) return null;
 

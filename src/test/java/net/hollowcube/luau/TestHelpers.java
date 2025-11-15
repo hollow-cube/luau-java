@@ -1,15 +1,12 @@
 package net.hollowcube.luau;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import net.hollowcube.luau.compiler.LuauCompiler;
 import org.intellij.lang.annotations.Language;
-import org.opentest4j.AssertionFailedError;
 
 class TestHelpers {
 
@@ -61,18 +58,10 @@ class TestHelpers {
         return string.substring(0, endIndex);
     }
 
-    public static void assertMatches(String expectedPattern, String actual) {
-        expectedPattern = expectedPattern.trim();
-        actual = actual.trim();
-        var pattern = Pattern.compile(
-            Arrays.stream(expectedPattern.split("/\\.\\+/"))
-                .map(Pattern::quote)
-                .collect(Collectors.joining(".+"))
-        );
-        if (!pattern.matcher(actual).matches()) throw new AssertionFailedError(
-            null,
-            expectedPattern,
-            actual
-        );
+    public static void assertMatches(String expected, String actual) {
+        // W*ndows
+        expected = expected.trim().replaceAll("\r\n", "\n");
+        actual = actual.trim().replaceAll("\r\n", "\n");
+        assertEquals(expected, actual);
     }
 }
