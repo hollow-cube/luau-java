@@ -110,4 +110,22 @@ tasks.named<JextractTask>("jextract") {
             "luaW_lessthan", "luaLW_checkboolean", "luaLW_checkudata"
         )
     }
+
+    header("$nativeBuild/Require/include/Luau/Require.h") {
+        targetPackage = "net.hollowcube.luau.internal.require"
+        includes = listOf(
+            "$nativeBuild/VM/include"
+        )
+
+        functions.addAll(
+            "luarequire_pushrequire",
+            "luaopen_require",
+            "luarequire_pushproxyrequire",
+            "luarequire_registermodule",
+            "luarequire_clearcacheentry",
+            "luarequire_clearcache",
+        )
+        structs.addAll("luarequire_Configuration")
+        typedefs.addAll("luarequire_Configuration_init")
+    }
 }
