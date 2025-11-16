@@ -32,7 +32,7 @@ final class RequireImpl {
             Arena.global()
     );
 
-    public static void pushRequireClosure(LuaState state, RequireConfiguration<?> lrc) {
+    public static void pushRequireClosure(LuaState state, RequireResolver lrc) {
         state.newUserData(lrc);
         luaW_pushcclosurek(state.L(), REQUIRE_IMPL, REQUIRE_DEBUG_NAME, 1, REQUIRE_CONTINUATION_IMPL);
     }
@@ -85,10 +85,8 @@ final class RequireImpl {
     private static int requireInternal(LuaState state, String requirerChunkName) {
         state.setTop(1); // Discard extra arguments, we only use path
 
-        final RequireConfiguration<?> lrc = (RequireConfiguration<?>) state.toUserData(upvalueIndex(1));
+        final RequireResolver lrc = (RequireResolver) state.toUserData(upvalueIndex(1));
         if (lrc == null) state.error("unable to find require configuration");
-
-        // void* ctx = lua_tolightuserdata(L, lua_upvalueindex(2));
 
         final String path = state.checkString(1);
         if (checkRegisteredModules(state, path))
@@ -115,7 +113,7 @@ final class RequireImpl {
         String chunkName = state.toString(-2);
         String loadName = state.toString(-1);
 
-        int numResults = lrc.load(state, null, path, chunkName, loadName);
+        int numResults = lrc.load(state, path, chunkName, loadName);
         if (numResults == -1) {
             if (state.getTop() != stackValues)
                 state.error("stack cannot be modified when require yields");
@@ -133,8 +131,8 @@ final class RequireImpl {
         record ErrorReported(String error) implements ResolvedRequire {}
     }
 
-    private static ResolvedRequire resolveRequire(RequireConfiguration<?> lrc, LuaState state, String requirerChunkName, String path) {
-        if (!lrc.isRequireAllowed(state, null, requirerChunkName))
+    private static ResolvedRequire resolveRequire(RequireResolver lrc, LuaState state, String requirerChunkName, String path) {
+        if (!lrc.isRequireAllowed(state, requirerChunkName))
             state.error("require is not supported in this context");
 
         final Navigator navigator = new Navigator(lrc, state, requirerChunkName);
@@ -144,38 +142,23 @@ final class RequireImpl {
         if (status instanceof Navigator.Status.ErrorReported(String error))
             return new ResolvedRequire.ErrorReported(error);
 
-        if (!lrc.isModulePresent(state, null))
+        final RequireResolver.Module module = lrc.getModule(state);
+        if (module == null)
             return new ResolvedRequire.ErrorReported("no module present at resolved path");
 
-        final String cacheKey = lrc.getCacheKey(state, null);
-        if (cacheKey == null)
-            return new ResolvedRequire.ErrorReported("could not get cache key for module");
-
-        if (isCached(state, cacheKey)) {
-            // Put cached result on top of stack before returning.
-            state.getField(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEYS);
-            state.getField(-1, cacheKey);
+        // If module is cached already, return that version
+        state.findTable(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEYS, 1);
+        state.getField(-1, module.cacheKey());
+        if (!state.isNil(-1)) { // The module is cached
             state.remove(-2); // remove cache table
             return new ResolvedRequire.Cached();
         }
+        state.pop(2); // Remove cache table & nil
 
-        final String chunkName = lrc.getChunkName(state, null);
-        if (chunkName == null)
-            return new ResolvedRequire.ErrorReported("could not get chunkname for module");
-
-        final String loadName = lrc.getLoadName(state, null);
-        if (loadName == null)
-            return new ResolvedRequire.ErrorReported("could not get loadname for module");
-
-        return new ResolvedRequire.ModuleRead(chunkName, loadName, cacheKey);
-    }
-
-    private static boolean isCached(LuaState state, String cacheKey) {
-        state.findTable(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEYS, 1);
-        state.getField(-1, cacheKey);
-        boolean cached = !state.isNil(-1);
-        state.pop(2); // Remove table & value
-        return cached;
+        return new ResolvedRequire.ModuleRead(
+                module.chunkName(),
+                module.loadName(),
+                module.cacheKey());
     }
 
     private static boolean checkRegisteredModules(LuaState state, String path) {

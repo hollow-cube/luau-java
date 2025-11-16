@@ -4,12 +4,12 @@ import net.hollowcube.luau.LuaState;
 
 public final class Require {
 
-    public static <T> void pushRequire(LuaState state, RequireConfiguration<T> config, T ctx) {
+    public static void pushRequire(LuaState state, RequireResolver config) {
         RequireImpl.pushRequireClosure(state, config);
     }
 
-    public static <T> void openRequire(LuaState state, RequireConfiguration<T> config, T ctx) {
-        pushRequire(state, config, ctx);
+    public static void openRequire(LuaState state, RequireResolver config) {
+        pushRequire(state, config);
         state.setGlobal("require");
     }
 

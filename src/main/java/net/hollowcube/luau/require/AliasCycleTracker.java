@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class AliasCycleTracker {
+class AliasCycleTracker {
     private final Set<String> seen = new HashSet<>();
     private final List<String> ordered = new ArrayList<>();
 

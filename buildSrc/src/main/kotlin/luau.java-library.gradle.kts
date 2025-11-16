@@ -43,6 +43,8 @@ tasks.withType<Javadoc> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+
+    jvmArgs.add("--enable-native-access=ALL-UNNAMED")
 }
 
 signing {

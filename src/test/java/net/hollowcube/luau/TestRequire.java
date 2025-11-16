@@ -2,10 +2,8 @@ package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.require.luarequire_Configuration;
 import net.hollowcube.luau.internal.require.luarequire_Configuration_init;
-import net.hollowcube.luau.require.ConfigStatus;
-import net.hollowcube.luau.require.NavigationResult;
 import net.hollowcube.luau.require.Require;
-import net.hollowcube.luau.require.RequireConfiguration;
+import net.hollowcube.luau.require.RequireResolver;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -118,83 +116,65 @@ class TestRequire {
 
         state.openLibs();
 
-        Require.openRequire(state, new RequireConfiguration<Void>() {
+        Require.openRequire(state, new RequireResolver() {
             @Override
-            public boolean isRequireAllowed(LuaState state, Void ctx, String requirerChunkName) {
+            public boolean isRequireAllowed(LuaState state, String requirerChunkName) {
                 System.out.println("is_require_allowed(" + requirerChunkName + ")");
                 return true;
             }
 
             @Override
-            public NavigationResult reset(LuaState state, Void ctx, String requirerChunkName) {
+            public Result reset(LuaState state, String requirerChunkName) {
                 System.out.println("reset(" + requirerChunkName + ")");
-                return NavigationResult.SUCCESS;
+                return Result.PRESENT;
             }
 
             @Override
-            public NavigationResult jumpToAlias(LuaState state, Void ctx, String aliasPath) {
+            public Result jumpToAlias(LuaState state, String aliasPath) {
                 System.out.println("jump_to_alias(" + aliasPath + ")");
-                return NavigationResult.SUCCESS;
+                return Result.PRESENT;
             }
 
             @Override
-            public NavigationResult toParent(LuaState state, Void ctx) {
+            public Result toParent(LuaState state) {
                 System.out.println("to_parent");
                 if (maxParentCalls.decrementAndGet() <= 0)
-                    return NavigationResult.NOT_FOUND;
-                return NavigationResult.SUCCESS;
+                    return Result.NOT_FOUND;
+                return Result.PRESENT;
             }
 
             @Override
-            public NavigationResult toChild(LuaState state, Void ctx, String name) {
+            public Result toChild(LuaState state, String name) {
                 System.out.println("to_child(" + name + ")");
-                return NavigationResult.SUCCESS;
+                return Result.PRESENT;
             }
 
             @Override
-            public boolean isModulePresent(LuaState state, Void ctx) {
-                System.out.println("is_module_present");
-                return true;
+            public @Nullable Module getModule(LuaState state) {
+                System.out.println("get_module");
+                return new Module("my_chunk_name", "my_load_name", "my_cache_key");
             }
 
             @Override
-            public @Nullable String getChunkName(LuaState state, Void ctx) {
-                System.out.println("get_chunkname");
-                return "my_chunk_name";
-            }
-
-            @Override
-            public @Nullable String getLoadName(LuaState state, Void ctx) {
-                System.out.println("get_loadname");
-                return "my_load_name";
-            }
-
-            @Override
-            public @Nullable String getCacheKey(LuaState state, Void ctx) {
-                System.out.println("get_cache_key");
-                return "my_cache_key";
-            }
-
-            @Override
-            public ConfigStatus getConfigStatus(LuaState state, Void ctx) {
+            public Result getConfigStatus(LuaState state) {
                 System.out.println("get_config_status");
-                return ConfigStatus.PRESENT_JSON;
+                return Result.PRESENT;
             }
 
             @Override
-            public @Nullable String getAlias(LuaState state, Void ctx, String alias) {
+            public @Nullable String resolveAlias(LuaState state, String alias) {
                 System.out.println("get_alias(" + alias + ")");
                 return "./myfile";
             }
 
             @Override
-            public int load(LuaState state, Void ctx, String path, String chunkName, String loadName) {
+            public int load(LuaState state, String path, String chunkName, String loadName) {
                 System.out.println("load(" + path + ", " + chunkName + ", " + loadName + ")");
 
                 state.pushString("my string!!!");
                 return 1;
             }
-        }, null);
+        });
 
         eval(state, """
                 local mod = require('./my.luau')

@@ -1,6 +1,7 @@
 package net.hollowcube.luau.require;
 
 import net.hollowcube.luau.LuaState;
+import net.hollowcube.luau.require.RequireResolver.Result;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -15,11 +16,11 @@ public class Navigator {
         record ErrorReported(String error) implements Status {}
     }
 
-    private final RequireConfiguration<?> lrc;
+    private final RequireResolver lrc;
     private final LuaState state;
     private final String requirerChunkName;
 
-    public Navigator(RequireConfiguration<?> lrc, LuaState state, String requirerChunkName) {
+    public Navigator(RequireResolver lrc, LuaState state, String requirerChunkName) {
         this.lrc = lrc;
         this.state = state;
         this.requirerChunkName = requirerChunkName;
@@ -41,7 +42,7 @@ public class Navigator {
         final PathType pathType = PathType.fromString(path);
 
         return switch (pathType) {
-            case UNSUPPORTED -> "require path must start with a valid prefix: ./, ../, or @";
+            case UNKNOWN -> "require path must start with a valid prefix: ./, ../, or @";
             case ALIASED -> {
                 final String alias = extractAlias(path).toLowerCase(Locale.ROOT);
 
@@ -67,7 +68,7 @@ public class Navigator {
                 error = navigateThroughPath(path);
                 yield error;
             }
-            case RELATIVE_TO_CURRENT, RELATIVE_TO_PARENT -> {
+            case RELATIVE -> {
                 String error = navigateToParent(null);
                 if (error != null) yield error;
                 error = navigateThroughPath(path);
@@ -108,7 +109,7 @@ public class Navigator {
         final PathType pathType = PathType.fromString(value);
 
         return switch (pathType) {
-            case RELATIVE_TO_CURRENT, RELATIVE_TO_PARENT -> navigateThroughPath(value);
+            case RELATIVE -> navigateThroughPath(value);
             case ALIASED -> {
                 String error = cycleTracker.add(alias);
                 if (error != null) yield error;
@@ -129,24 +130,24 @@ public class Navigator {
 
                 yield navigateThroughPath(value);
             }
-            case UNSUPPORTED -> jumpToAlias(value);
+            case UNKNOWN -> jumpToAlias(value);
         };
     }
 
     private @Nullable String navigateToAndPopulateConfig(String desiredAlias, Map<String, @Nullable String> aliases) {
         while (!aliases.containsKey(desiredAlias)) {
-            final NavigationResult result = lrc.toParent(state, null);
-            if (result == NavigationResult.AMBIGUOUS)
+            final Result result = lrc.toParent(state);
+            if (result == Result.AMBIGUOUS)
                 return "could not navigate up the ancestry chain during search for alias \"" + desiredAlias + "\" (ambiguous)";
-            if (result == NavigationResult.NOT_FOUND)
+            if (result == Result.NOT_FOUND)
                 break; // Not treated as an error: interpreted as reaching the root.
 
-            ConfigStatus status = lrc.getConfigStatus(state, null);
-            if (status == ConfigStatus.ABSENT) continue;
-            if (status == ConfigStatus.AMBIGUOUS)
+            Result status = lrc.getConfigStatus(state);
+            if (status == Result.NOT_FOUND) continue;
+            if (status == Result.AMBIGUOUS)
                 return "could not resolve alias \"" + desiredAlias + "\" (ambiguous configuration file)";
 
-            aliases.put(desiredAlias, lrc.getAlias(state, null, desiredAlias));
+            aliases.put(desiredAlias, lrc.resolveAlias(state, desiredAlias));
             break;
         }
 
@@ -154,40 +155,40 @@ public class Navigator {
     }
 
     private @Nullable String resetToRequirer() {
-        final NavigationResult result = lrc.reset(state, null, requirerChunkName);
-        if (result == NavigationResult.SUCCESS) return null;
+        final Result result = lrc.reset(state, requirerChunkName);
+        if (result == Result.PRESENT) return null;
 
         String errorMessage = "could not reset to requiring context";
-        if (result == NavigationResult.AMBIGUOUS) errorMessage += " (ambiguous)";
+        if (result == Result.AMBIGUOUS) errorMessage += " (ambiguous)";
         return errorMessage;
     }
 
     private @Nullable String jumpToAlias(String aliasPath) {
-        final NavigationResult result = lrc.jumpToAlias(state, null, aliasPath);
-        if (result == NavigationResult.SUCCESS) return null;
+        final Result result = lrc.jumpToAlias(state, aliasPath);
+        if (result == Result.PRESENT) return null;
 
         String errorMessage = "could not jump to alias \"" + aliasPath + "\"";
-        if (result == NavigationResult.AMBIGUOUS) errorMessage += " (ambiguous)";
+        if (result == Result.AMBIGUOUS) errorMessage += " (ambiguous)";
         return errorMessage;
     }
 
     private @Nullable String navigateToParent(@Nullable String previousComponent) {
-        final NavigationResult result = lrc.toParent(state, null);
-        if (result == NavigationResult.SUCCESS) return null;
+        final Result result = lrc.toParent(state);
+        if (result == Result.PRESENT) return null;
 
         String errorMessage = previousComponent != null
                 ? "could not get parent of component \"" + previousComponent + "\""
                 : "could not get parent of requiring context";
-        if (result == NavigationResult.AMBIGUOUS) errorMessage += " (ambiguous)";
+        if (result == Result.AMBIGUOUS) errorMessage += " (ambiguous)";
         return errorMessage;
     }
 
     private @Nullable String navigateToChild(String component) {
-        final NavigationResult result = lrc.toChild(state, null, component);
-        if (result == NavigationResult.SUCCESS) return null;
+        final Result result = lrc.toChild(state, component);
+        if (result == Result.PRESENT) return null;
 
         String errorMessage = "could not resolve child component \"" + component + "\"";
-        if (result == NavigationResult.AMBIGUOUS) errorMessage += " (ambiguous)";
+        if (result == Result.AMBIGUOUS) errorMessage += " (ambiguous)";
         return errorMessage;
     }
 

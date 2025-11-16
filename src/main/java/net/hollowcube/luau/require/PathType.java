@@ -3,17 +3,16 @@ package net.hollowcube.luau.require;
 import java.util.Map;
 
 public enum PathType {
-    RELATIVE_TO_CURRENT,
-    RELATIVE_TO_PARENT,
+    RELATIVE,
     ALIASED,
-    UNSUPPORTED,
+    UNKNOWN,
     ;
 
     public static PathType fromString(String path) {
-        if (path.startsWith("./")) return RELATIVE_TO_CURRENT;
-        if (path.startsWith("../")) return RELATIVE_TO_PARENT;
+        if (path.startsWith("./") || path.startsWith("../"))
+            return RELATIVE;
         if (path.startsWith("@")) return ALIASED;
-        return UNSUPPORTED;
+        return UNKNOWN;
     }
 
     public static Map.Entry<String, String> split(String path) {
