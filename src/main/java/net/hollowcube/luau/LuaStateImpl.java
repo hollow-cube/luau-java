@@ -25,6 +25,10 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     static final int LIGHT_USERDATA_TAG_LIMIT = LUA_LUTAG_LIMIT();
     static final int USERDATA_TAG_LIMIT = LUA_UTAG_LIMIT();
     static final int MEMORY_CATEGORIES = LUA_MEMORY_CATEGORIES();
+
+    static final int REGISTRY_INDEX = LUA_REGISTRYINDEX();
+    static final int GLOBALS_INDEX = LUA_GLOBALSINDEX();
+
     private static final boolean SHOW_COMPLETE_BACKTRACE = Boolean.getBoolean(
             "luau.show-complete-backtrace"
     );
@@ -1258,6 +1262,18 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         typeError(argNum, LuaType.BUFFER.typeName());
         return null; // unreachable
+    }
+
+    // TODO: test me, fairly sure something is wrong. Maybe should just use c method.
+    @Override
+    public @Nullable String findTable(int index, String fieldName, int sizeHint) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment result = luaLW_findtable(L, index, arena.allocateFrom(fieldName), sizeHint);
+            propagateException();
+
+            if (result.equals(MemorySegment.NULL)) return fieldName;
+            return result.getString(0, StandardCharsets.UTF_8);
+        }
     }
 
     //region Exception Handling

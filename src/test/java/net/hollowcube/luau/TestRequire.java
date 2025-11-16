@@ -2,6 +2,11 @@ package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.require.luarequire_Configuration;
 import net.hollowcube.luau.internal.require.luarequire_Configuration_init;
+import net.hollowcube.luau.require.ConfigStatus;
+import net.hollowcube.luau.require.NavigationResult;
+import net.hollowcube.luau.require.Require;
+import net.hollowcube.luau.require.RequireConfiguration;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
@@ -102,7 +107,97 @@ class TestRequire {
         luarequire_registermodule(L);
 
         eval(state, """
-                local mod = require('@test2')
+                local mod = require('@test')
+                print(tostring(mod))
+                """);
+    }
+
+    @Test
+    void def(LuaState state, Arena arena) {
+        AtomicInteger maxParentCalls = new AtomicInteger(3);
+
+        state.openLibs();
+
+        Require.openRequire(state, new RequireConfiguration<Void>() {
+            @Override
+            public boolean isRequireAllowed(LuaState state, Void ctx, String requirerChunkName) {
+                System.out.println("is_require_allowed(" + requirerChunkName + ")");
+                return true;
+            }
+
+            @Override
+            public NavigationResult reset(LuaState state, Void ctx, String requirerChunkName) {
+                System.out.println("reset(" + requirerChunkName + ")");
+                return NavigationResult.SUCCESS;
+            }
+
+            @Override
+            public NavigationResult jumpToAlias(LuaState state, Void ctx, String aliasPath) {
+                System.out.println("jump_to_alias(" + aliasPath + ")");
+                return NavigationResult.SUCCESS;
+            }
+
+            @Override
+            public NavigationResult toParent(LuaState state, Void ctx) {
+                System.out.println("to_parent");
+                if (maxParentCalls.decrementAndGet() <= 0)
+                    return NavigationResult.NOT_FOUND;
+                return NavigationResult.SUCCESS;
+            }
+
+            @Override
+            public NavigationResult toChild(LuaState state, Void ctx, String name) {
+                System.out.println("to_child(" + name + ")");
+                return NavigationResult.SUCCESS;
+            }
+
+            @Override
+            public boolean isModulePresent(LuaState state, Void ctx) {
+                System.out.println("is_module_present");
+                return true;
+            }
+
+            @Override
+            public @Nullable String getChunkName(LuaState state, Void ctx) {
+                System.out.println("get_chunkname");
+                return "my_chunk_name";
+            }
+
+            @Override
+            public @Nullable String getLoadName(LuaState state, Void ctx) {
+                System.out.println("get_loadname");
+                return "my_load_name";
+            }
+
+            @Override
+            public @Nullable String getCacheKey(LuaState state, Void ctx) {
+                System.out.println("get_cache_key");
+                return "my_cache_key";
+            }
+
+            @Override
+            public ConfigStatus getConfigStatus(LuaState state, Void ctx) {
+                System.out.println("get_config_status");
+                return ConfigStatus.PRESENT_JSON;
+            }
+
+            @Override
+            public @Nullable String getAlias(LuaState state, Void ctx, String alias) {
+                System.out.println("get_alias(" + alias + ")");
+                return "./myfile";
+            }
+
+            @Override
+            public int load(LuaState state, Void ctx, String path, String chunkName, String loadName) {
+                System.out.println("load(" + path + ", " + chunkName + ", " + loadName + ")");
+
+                state.pushString("my string!!!");
+                return 1;
+            }
+        }, null);
+
+        eval(state, """
+                local mod = require('./my.luau')
                 print(tostring(mod))
                 """);
     }
