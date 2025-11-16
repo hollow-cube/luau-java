@@ -1,6 +1,5 @@
-module luau {
+module net.hollowcube.luau {
     requires org.jetbrains.annotations;
-    requires luau;
 
     exports net.hollowcube.luau;
     exports net.hollowcube.luau.compiler;
