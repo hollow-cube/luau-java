@@ -10,12 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class NativeLibraryLoader {
 
-    private static volatile boolean loaded = false;
-
     public static void loadLibrary(String name) {
-        if (loaded) return;
-        loaded = true;
-
         if (!loadEmbeddedLibrary(name)) {
             System.loadLibrary(name);
         }

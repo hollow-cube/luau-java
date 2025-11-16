@@ -24,7 +24,7 @@ record LuauCompilerImpl(
     List<String> userdataTypes
 ) implements LuauCompiler {
     static {
-        NativeLibraryLoader.loadLibrary("luau");
+        NativeLibraryLoader.loadLibrary("compiler");
     }
 
     @Override
