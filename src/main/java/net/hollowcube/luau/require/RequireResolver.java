@@ -22,7 +22,7 @@ public interface RequireResolver {
     Result toChild(LuaState state, String name);
 
     /// Resets the internal state to point at an aliased module, given its exact
-    /// path from [#getAlias(LuaState, String)]. This function is only called when an
+    /// path from [#resolveAlias(LuaState, String)]. This function is only called when an
     /// alias's path cannot be resolved relative to its configuration file.
     ///
     /// For example, a .luaurc alias entry of "@utils -> remote://abc" would end up calling

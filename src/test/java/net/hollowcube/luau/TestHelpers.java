@@ -1,23 +1,24 @@
 package net.hollowcube.luau;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import net.hollowcube.luau.compiler.LuauCompiler;
 import org.intellij.lang.annotations.Language;
 
-class TestHelpers {
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class TestHelpers {
 
     public static void eval(LuaState state, @Language("luau") String code) {
         eval(state, code, 0);
     }
 
     public static void eval(
-        LuaState state,
-        @Language("luau") String code,
-        int nret
+            LuaState state,
+            @Language("luau") String code,
+            int nret
     ) {
         load(state, code);
         state.call(0, nret);
@@ -25,7 +26,7 @@ class TestHelpers {
 
     public static void load(LuaState state, @Language("luau") String code) {
         var bytecode = assertDoesNotThrow(() ->
-            LuauCompiler.DEFAULT.compile(code)
+                LuauCompiler.DEFAULT.compile(code)
         );
         state.load("test.luau", bytecode);
     }
@@ -38,10 +39,10 @@ class TestHelpers {
         for (int i = 0; i < st.length; i++) {
             if ("lua".equals(st[i].getClassName())) continue;
             st[i] = new StackTraceElement(
-                st[i].getClassName(),
-                st[i].getMethodName(),
-                st[i].getFileName(),
-                0
+                    st[i].getClassName(),
+                    st[i].getMethodName(),
+                    st[i].getFileName(),
+                    0
             );
         }
         t.setStackTrace(st);

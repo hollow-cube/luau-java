@@ -1,13 +1,14 @@
 package net.hollowcube.luau;
 
-import static net.hollowcube.luau.LuaStateImpl.mergeBacktrace;
+import net.hollowcube.luau.internal.vm.lua_CFunction;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.ToIntFunction;
-import net.hollowcube.luau.internal.vm.lua_CFunction;
-import org.jetbrains.annotations.Nullable;
+
+import static net.hollowcube.luau.LuaStateImpl.mergeBacktrace;
 
 record LuaFuncImpl(
     MemorySegment funcRef,
@@ -68,7 +69,7 @@ record LuaFuncImpl(
                 if (t.getMessage() != null) message += ": " + t.getMessage();
 
                 final LuaError err = new LuaError(message);
-                err.setStackTrace(mergeBacktrace(L, t.getStackTrace(), false));
+                err.setStackTrace(mergeBacktrace(state, t.getStackTrace(), false));
                 return err.pushAndMark(state);
             }
         }

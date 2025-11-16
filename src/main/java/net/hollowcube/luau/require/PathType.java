@@ -2,7 +2,7 @@ package net.hollowcube.luau.require;
 
 import java.util.Map;
 
-public enum PathType {
+enum PathType {
     RELATIVE,
     ALIASED,
     UNKNOWN,

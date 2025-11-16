@@ -5,6 +5,7 @@ import net.hollowcube.luau.LuaStatus;
 import net.hollowcube.luau.internal.vm.lua_CFunction;
 import net.hollowcube.luau.internal.vm.lua_Continuation;
 import net.hollowcube.luau.internal.vm.lua_Debug;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -16,35 +17,68 @@ import static net.hollowcube.luau.LuaState.upvalueIndex;
 import static net.hollowcube.luau.internal.vm.lua_h.lua_getinfo;
 import static net.hollowcube.luau.internal.vm.luawrap_h.luaW_pushcclosurek;
 
-final class RequireImpl {
-    private static final String REQUIRED_CACHE_TABLE_KEYS = "_MODULES";
+@ApiStatus.Internal
+public final class RequireImpl {
     private static final String REGISTERED_CACHE_TABLE_KEY = "_REGISTEREDMODULES";
-
-    private static final int REQUIRE_STACK_VALUES = 4;
+    private static final String REQUIRED_CACHE_TABLE_KEY = "_MODULES";
 
     private static final MemorySegment REQUIRE_DEBUG_NAME = Arena.global().allocateFrom("require");
     private static final MemorySegment REQUIRE_IMPL = lua_CFunction.allocate(
-            L -> requireImpl(LuaState.wrap(L)),
-            Arena.global()
-    );
+        L -> requireImpl(LuaState.wrap(L)),
+        Arena.global());
     private static final MemorySegment REQUIRE_CONTINUATION_IMPL = lua_Continuation.allocate(
-            (L, status) -> requireContinuationImpl(LuaState.wrap(L), LuaStatus.byId(status)),
-            Arena.global()
-    );
+        (L, status) -> requireContinuationImpl(LuaState.wrap(L), LuaStatus.byId(status)),
+        Arena.global());
+    private static final MemorySegment DEBUG_WHAT = Arena.global().allocateFrom("s");
+
+    private static final int REQUIRE_STACK_VALUES = 4;
 
     public static void pushRequireClosure(LuaState state, RequireResolver lrc) {
         state.newUserData(lrc);
-        luaW_pushcclosurek(state.L(), REQUIRE_IMPL, REQUIRE_DEBUG_NAME, 1, REQUIRE_CONTINUATION_IMPL);
+        luaW_pushcclosurek(state.L(), REQUIRE_IMPL, REQUIRE_DEBUG_NAME, 1,
+            REQUIRE_CONTINUATION_IMPL);
+    }
+
+    public static void registerModule(LuaState state, String path) {
+        if (state.getTop() != 1)
+            state.error("expected 1 argument: aliased require path and desired result");
+        if (path.isEmpty() || path.charAt(0) != '@')
+            state.error("path must begin with '@'");
+
+        // Make path lowercase to ensure case-insensitive matching.
+        state.pushString(path.toLowerCase(Locale.ROOT));
+
+        state.findTable(REGISTRY_INDEX, REGISTERED_CACHE_TABLE_KEY, 1);
+        // (1) path, (2) result, (3) cache table
+
+        state.insert(1);
+        // (1) cache table, (2) path, (3) result
+
+        state.setTable(1);
+        // (1) cache table
+
+        state.pop(1);
+    }
+
+    public static void clearCacheEntry(LuaState state, String cacheKey) {
+        state.findTable(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEY, 1);
+        state.pushNil();
+        state.setField(-2, cacheKey);
+        state.pop(1); // remove cache table
+    }
+
+    public static void clearCache(LuaState state) {
+        state.newTable();
+        state.setField(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEY);
     }
 
     private static int requireImpl(LuaState state) {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment debug = lua_Debug.allocate(arena);
-            final MemorySegment what = arena.allocateFrom("s");
 
             int level = 0;
             do {
-                if (lua_getinfo(state.L(), level++, what, debug) == 0)
+                if (lua_getinfo(state.L(), level++, DEBUG_WHAT, debug) == 0)
                     state.error("require is not supported in this context");
             } while (lua_Debug.what(debug).get(ValueLayout.JAVA_BYTE, 0) != 'L');
 
@@ -66,7 +100,7 @@ final class RequireImpl {
             // Initial stack state
             // (-1) result
 
-            state.getField(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEYS);
+            state.getField(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEY);
             // (-2) result, (-1) cache table
 
             state.pushValue(-2);
@@ -126,7 +160,8 @@ final class RequireImpl {
     private sealed interface ResolvedRequire {
         record Cached() implements ResolvedRequire {}
 
-        record ModuleRead(String chunkName, String loadName, String cacheKey) implements ResolvedRequire {}
+        record ModuleRead(String chunkName, String loadName,
+                          String cacheKey) implements ResolvedRequire {}
 
         record ErrorReported(String error) implements ResolvedRequire {}
     }
@@ -147,7 +182,7 @@ final class RequireImpl {
             return new ResolvedRequire.ErrorReported("no module present at resolved path");
 
         // If module is cached already, return that version
-        state.findTable(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEYS, 1);
+        state.findTable(REGISTRY_INDEX, REQUIRED_CACHE_TABLE_KEY, 1);
         state.getField(-1, module.cacheKey());
         if (!state.isNil(-1)) { // The module is cached
             state.remove(-2); // remove cache table
@@ -156,9 +191,9 @@ final class RequireImpl {
         state.pop(2); // Remove cache table & nil
 
         return new ResolvedRequire.ModuleRead(
-                module.chunkName(),
-                module.loadName(),
-                module.cacheKey());
+            module.chunkName(),
+            module.loadName(),
+            module.cacheKey());
     }
 
     private static boolean checkRegisteredModules(LuaState state, String path) {

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class Navigator {
+final class Navigator {
 
     public sealed interface Status {
         record Success() implements Status {}
@@ -93,8 +93,8 @@ public class Navigator {
             }
 
             String error = "..".equals(components.getKey())
-                    ? navigateToParent(previous)
-                    : navigateToChild(components.getKey());
+                ? navigateToParent(previous)
+                : navigateToChild(components.getKey());
             if (error != null) return error;
 
             previous = components.getKey();
@@ -105,7 +105,8 @@ public class Navigator {
     }
 
     private @Nullable String navigateToAlias(String alias, Map<String, @Nullable String> aliases, AliasCycleTracker cycleTracker) {
-        final String value = aliases.get(alias).toLowerCase(Locale.ROOT); //todo why isnt this a nullability issue?
+        final String value = aliases.get(alias).toLowerCase(
+            Locale.ROOT); //todo why isnt this a nullability issue?
         final PathType pathType = PathType.fromString(value);
 
         return switch (pathType) {
@@ -124,8 +125,8 @@ public class Navigator {
                     if (error != null) yield error;
 
                     yield parentAliases.containsKey(nextAlias)
-                            ? navigateToAlias(nextAlias, parentAliases, new AliasCycleTracker())
-                            : "@" + nextAlias + " is not a valid alias";
+                        ? navigateToAlias(nextAlias, parentAliases, new AliasCycleTracker())
+                        : "@" + nextAlias + " is not a valid alias";
                 }
 
                 yield navigateThroughPath(value);
@@ -177,8 +178,8 @@ public class Navigator {
         if (result == Result.PRESENT) return null;
 
         String errorMessage = previousComponent != null
-                ? "could not get parent of component \"" + previousComponent + "\""
-                : "could not get parent of requiring context";
+            ? "could not get parent of component \"" + previousComponent + "\""
+            : "could not get parent of requiring context";
         if (result == Result.AMBIGUOUS) errorMessage += " (ambiguous)";
         return errorMessage;
     }

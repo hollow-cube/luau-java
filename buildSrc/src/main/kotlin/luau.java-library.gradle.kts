@@ -1,6 +1,5 @@
 plugins {
     `java-library`
-    alias(libs.plugins.spotless)
 
     `maven-publish`
     signing
@@ -55,27 +54,4 @@ signing {
     useInMemoryPgpKeys(privateKey, keyPassphrase)
 
     sign(publishing.publications)
-}
-
-spotless {
-    java {
-        target("src/**/*.java")
-        targetExclude("src/generated/**/*.java")
-
-        removeUnusedImports()
-
-        prettier(
-            mapOf(
-                "prettier" to "3.6.2",
-                "prettier-plugin-java" to "2.7.7",
-            )
-        ).config(
-            mapOf(
-                "plugins" to listOf("prettier-plugin-java"),
-                "parser" to "java",
-                "tabWidth" to 4,
-                "maxLineLength" to 80,
-            )
-        )
-    }
 }

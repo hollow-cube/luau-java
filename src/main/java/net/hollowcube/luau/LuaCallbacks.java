@@ -33,22 +33,6 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
     void interrupt(@Nullable Interrupt handler);
     void interrupt(MemorySegment functionAddress);
 
-    sealed interface UserThread permits LuaCallbacksImpl.UserThreadImpl {
-        @FunctionalInterface
-        interface Handler {
-            /// parent is present when creating a thread, null when destroying
-            void userThread(@Nullable LuaState parent, LuaState state);
-        }
-
-        static UserThread allocate(Handler handler, Arena arena) {
-            return new LuaCallbacksImpl.UserThreadImpl(handler, arena);
-        }
-    }
-
-    /// gets called when L is created (LP == parent) or destroyed (LP == NULL)
-    void userThread(@Nullable UserThread handler);
-    void userThread(MemorySegment functionAddress);
-
     sealed interface UserAtom permits LuaCallbacksImpl.UserAtomImpl {
         @FunctionalInterface
         interface Handler {

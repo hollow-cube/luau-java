@@ -1,17 +1,18 @@
 package net.hollowcube.luau;
 
+import net.hollowcube.luau.internal.vm.lua_Callbacks;
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
-import net.hollowcube.luau.internal.vm.lua_Callbacks;
-import org.jetbrains.annotations.Nullable;
 
 record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     record InterruptImpl(MemorySegment handle) implements Interrupt {
         public InterruptImpl(Handler handler, Arena arena) {
             final lua_Callbacks.interrupt.Function f = (L, gc) ->
-                handler.interrupt(new LuaStateImpl(L), gc);
+                    handler.interrupt(new LuaStateImpl(L), gc);
             this(lua_Callbacks.interrupt.allocate(f, arena));
         }
     }
@@ -19,8 +20,8 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     @Override
     public void interrupt(@Nullable Interrupt handler) {
         final MemorySegment handle = handler != null
-            ? ((InterruptImpl) handler).handle
-            : MemorySegment.NULL;
+                ? ((InterruptImpl) handler).handle
+                : MemorySegment.NULL;
         lua_Callbacks.interrupt(callbacks, handle);
     }
 
@@ -29,38 +30,14 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
         lua_Callbacks.interrupt(callbacks, functionAddress);
     }
 
-    record UserThreadImpl(MemorySegment handle) implements UserThread {
-        public UserThreadImpl(Handler handler, Arena arena) {
-            final lua_Callbacks.userthread.Function f = (LP, L) ->
-                handler.userThread(
-                    LP != null ? new LuaStateImpl(LP) : null,
-                    new LuaStateImpl(L)
-                );
-            this(lua_Callbacks.userthread.allocate(f, arena));
-        }
-    }
-
-    @Override
-    public void userThread(@Nullable UserThread handler) {
-        final MemorySegment handle = handler != null
-            ? ((UserThreadImpl) handler).handle
-            : MemorySegment.NULL;
-        lua_Callbacks.userthread(callbacks, handle);
-    }
-
-    @Override
-    public void userThread(MemorySegment functionAddress) {
-        lua_Callbacks.userthread(callbacks, functionAddress);
-    }
-
     record UserAtomImpl(MemorySegment handle) implements UserAtom {
         public UserAtomImpl(Handler handler, Arena arena) {
             final lua_Callbacks.useratom.Function f = (str, len) -> {
                 byte[] raw = str
-                    .reinterpret(len)
-                    .toArray(ValueLayout.JAVA_BYTE);
+                        .reinterpret(len)
+                        .toArray(ValueLayout.JAVA_BYTE);
                 return handler.userAtom(
-                    new String(raw, StandardCharsets.UTF_8)
+                        new String(raw, StandardCharsets.UTF_8)
                 );
             };
             this(lua_Callbacks.useratom.allocate(f, arena));
@@ -70,8 +47,8 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     @Override
     public void userAtom(@Nullable UserAtom handler) {
         final MemorySegment handle = handler != null
-            ? ((UserAtomImpl) handler).handle
-            : MemorySegment.NULL;
+                ? ((UserAtomImpl) handler).handle
+                : MemorySegment.NULL;
         lua_Callbacks.useratom(callbacks, handle);
     }
 
@@ -83,7 +60,7 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     record OnAllocateImpl(MemorySegment handle) implements OnAllocate {
         public OnAllocateImpl(Handler handler, Arena arena) {
             final lua_Callbacks.onallocate.Function f = (L, oldSize, newSize) ->
-                handler.onAllocate(new LuaStateImpl(L), oldSize, newSize);
+                    handler.onAllocate(new LuaStateImpl(L), oldSize, newSize);
             this(lua_Callbacks.onallocate.allocate(f, arena));
         }
     }
@@ -91,8 +68,8 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     @Override
     public void onAllocate(@Nullable OnAllocate handler) {
         final MemorySegment handle = handler != null
-            ? ((OnAllocateImpl) handler).handle
-            : MemorySegment.NULL;
+                ? ((OnAllocateImpl) handler).handle
+                : MemorySegment.NULL;
         lua_Callbacks.onallocate(callbacks, handle);
     }
 

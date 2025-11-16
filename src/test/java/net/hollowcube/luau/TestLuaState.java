@@ -1,12 +1,13 @@
 package net.hollowcube.luau;
 
-import static net.hollowcube.luau.TestHelpers.eval;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+
+import static net.hollowcube.luau.TestHelpers.eval;
+import static org.junit.jupiter.api.Assertions.*;
 
 @LuaStateParam
 class TestLuaState {
@@ -94,16 +95,16 @@ class TestLuaState {
 
         @Test
         void pushRead(LuaState state) {
-            state.pushVector(new float[] { 1, 2, 3 });
+            state.pushVector(new float[]{1, 2, 3});
             assertTrue(state.isVector(-1));
-            assertArrayEquals(new float[] { 1, 2, 3 }, state.toVector(-1));
+            assertArrayEquals(new float[]{1, 2, 3}, state.toVector(-1));
         }
 
         @Test
         void pushRead2(LuaState state) {
             state.pushVector(1, 2, 3);
             assertTrue(state.isVector(-1));
-            assertArrayEquals(new float[] { 1, 2, 3 }, state.toVector(-1));
+            assertArrayEquals(new float[]{1, 2, 3}, state.toVector(-1));
         }
 
         @Test
@@ -189,8 +190,8 @@ class TestLuaState {
             eval(
                 state,
                 """
-                buffer.writei32(theBuffer, 32, buffer.len(theBuffer))
-                """
+                    buffer.writei32(theBuffer, 32, buffer.len(theBuffer))
+                    """
             );
 
             state.getGlobal("theBuffer");
@@ -427,7 +428,8 @@ class TestLuaState {
     class ThreadValues {
 
         @Test
-        void abc() {}
+        void abc() {
+        }
     }
 
     @Test
@@ -443,6 +445,20 @@ class TestLuaState {
             "this shouldnt count, it should only be 8 bytes because java owns this string"
         );
         assertEquals(32, state.totalBytes(42));
+    }
+
+    @Test
+    void threadData(LuaState state) {
+        var obj = new Object();
+
+        state.setThreadData(obj);
+        assertSame(obj, state.getThreadData());
+
+        state.setThreadData(new Object());
+        assertNotSame(obj, state.getThreadData());
+
+        state.setThreadData(null);
+        assertNull(state.getThreadData());
     }
 
     //TODO test all the check and opt methods
