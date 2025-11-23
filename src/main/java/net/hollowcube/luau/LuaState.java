@@ -74,14 +74,28 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     @Override
     void close();
 
+    /// Creates a new thread, pushes it on the stack, and returns a pointer to a
+    /// [LuaState] that represents this new thread. The new thread returned by
+    /// this function shares with the original thread its global environment,
+    /// but has an independent execution stack.
+    ///
+    /// There is no need to explicit function to close a thread. Threads are
+    /// subject to garbage collection, like any other Lua object.
+    ///
+    /// @see #sandboxThread()
     LuaState newThread();
     LuaState mainThread();
     void resetThread();
     boolean isThreadReset();
 
+    /// Converts the acceptable index into an equivalent absolute index
+    /// (that is, one that does not depend on the stack top).
     int absIndex(int index);
-    int getTop();
-    void setTop(int index);
+    /// Returns the index of the top element in the stack. Because indices
+    /// start at 1, this result is equal to the number of elements in the
+    /// stack; in particular, 0 means an empty stack.
+    int top();
+    void top(int index);
     void pop(int n);
     void pushValue(int index);
     void remove(int index);
@@ -194,6 +208,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void setReadOnly(int index, boolean enabled);
 
     boolean getMetaTable(int index);
+    /// Pops a table from the stack and sets it as the new metatable for the
+    /// value at the given index.
     void setMetaTable(int index);
 
     void load(String chunkname, byte[] data);
@@ -204,7 +220,7 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     @CheckReturnValue
     int yield(int nresults);
     // TODO: resume can throw, need to decide how to handle that
-    //    int resume(LuaState from, int narg);
+    LuaStatus resume(@Nullable LuaState from, int narg);
     // TODO: unsure what resumeerror does
     //    int resumeerror(lua_State* from);
     LuaStatus status();
@@ -226,11 +242,10 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
 
     /// Throws, assumes that there is a value on the stack which becomes the thrown object.
     @Contract("-> fail")
-    void error();
-    @Contract("_ -> fail")
-    void error(String message);
+    LuaError error();
+    LuaError error(String message);
     @Contract("_, _ -> fail")
-    void error(@PrintFormat String message, Object... args);
+    LuaError error(@PrintFormat String message, @Nullable Object... args);
     @Contract("_, _ -> fail")
     void typeError(int narg, String tname);
     @Contract("_, _ -> fail")
@@ -253,7 +268,7 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void cloneTable(int index);
 
     int ref(int index);
-    void unRef(int ref);
+    void unref(int ref);
     LuaType getRef(int ref);
 
     void setGlobal(String s);

@@ -40,6 +40,11 @@ record LuaFuncImpl(
         ).close();
     }
 
+    @Override
+    public MemorySegment debugNameRef() {
+        return debugNameRef;
+    }
+
     record CFunctionWrapper(ToIntFunction<LuaState> impl) implements
         lua_CFunction.Function {
         @Override

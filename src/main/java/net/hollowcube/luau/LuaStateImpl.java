@@ -1,11 +1,13 @@
 package net.hollowcube.luau;
 
+import net.hollowcube.luau.LuaCallbacksImpl.JavaCallbacks;
 import net.hollowcube.luau.internal.vm.*;
 import net.hollowcube.luau.require.RequireImpl;
 import net.hollowcube.luau.require.RequireResolver;
 import net.hollowcube.luau.util.GlobalRef;
 import net.hollowcube.luau.util.NativeLibraryLoader;
 import org.intellij.lang.annotations.PrintFormat;
+import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
@@ -25,8 +27,30 @@ import static net.hollowcube.luau.internal.vm.luawrap_h.*;
 /// side.
 /// This is because we reconstruct instances simply from the pointer returned by c functions.
 record LuaStateImpl(MemorySegment L) implements LuaState {
+
+    /// Configures the assertion handler for native luau assertions.
+    ///
+    /// * setting to "dump" will cause the jvm to hard crash on an assertion, dumping both
+    ///   the native and jvm stack trace (at the downcall site).
+    /// * setting to "log" will log the assertion fail and continue executing.
+    /// * the defualt behavior is to do a debug trap.
+    ///
+    /// Note that release builds do not contain assertions at all, so this will have
+    /// no affect on the runtime behavior.
+    private static final String ASSERT_HANDLER = System.getProperty("luau.assert-handler");
+    private static final boolean SHOW_COMPLETE_BACKTRACE =
+        Boolean.getBoolean("luau.show-complete-backtrace");
+    private static final boolean NO_BACKTRACE_MERGE =
+        Boolean.getBoolean("luau.no-backtrace-merge");
+
     static {
         NativeLibraryLoader.loadLibrary("vm");
+
+        if ("dump".equals(ASSERT_HANDLER)) {
+            luaW_assertconf_log.makeInvoker().apply();
+        } else if ("log".equals(ASSERT_HANDLER)) {
+            luaW_assertconf_dump.makeInvoker().apply();
+        }
     }
 
     static final int LIGHT_USERDATA_TAG_LIMIT = LUA_LUTAG_LIMIT();
@@ -35,11 +59,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     static final int REGISTRY_INDEX = LUA_REGISTRYINDEX();
     static final int GLOBALS_INDEX = LUA_GLOBALSINDEX();
-
-    private static final boolean SHOW_COMPLETE_BACKTRACE =
-        Boolean.getBoolean("luau.show-complete-backtrace");
-    private static final boolean NO_BACKTRACE_MERGE =
-        Boolean.getBoolean("luau.no-backtrace-merge");
 
     private static final Pattern DEFAULT_ERROR_TRACE_REGEX = Pattern.compile("^\\[string \"" +
         ".*?\"]:\\d+:\\s");
@@ -55,7 +74,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         Arena.global());
     private static final MemorySegment USERTHREAD_CALLBACK = lua_Callbacks.userthread.allocate(
         (LP, L) -> userThreadCallback(
-            LP != null ? new LuaStateImpl(LP) : null, new LuaStateImpl(L)),
+            LP.equals(MemorySegment.NULL) ? null : new LuaStateImpl(LP),
+            new LuaStateImpl(L)),
         Arena.global());
     private static final MemorySegment LUA_DEBUG_WHAT = Arena.global().allocateFrom("sln");
 
@@ -67,6 +87,10 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         // Set up the userthread callback to clean up threaddata refs
         final MemorySegment callbacks = lua_callbacks(L);
+        lua_Callbacks.userthread(callbacks, USERTHREAD_CALLBACK);
+
+        final var javaCallbacks = GlobalRef.newref(new JavaCallbacks());
+        lua_Callbacks.userdata(callbacks, MemorySegment.ofAddress(javaCallbacks));
 
         // We use userdata destructors to remove the java object ref (so it may be GC'd).
         // So we must add a destructor for every tag immediately.
@@ -79,6 +103,14 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     @Override
     public void close() {
+        // Remove our reference to a threaddata object
+        setThreadData(null);
+
+        // Remove our reference to the JavaCallbacks object
+        final MemorySegment callbacks = lua_callbacks(L);
+        GlobalRef.unref(lua_Callbacks.userdata(callbacks).address());
+
+        // Finally, close the lua state itself.
         lua_close(L);
     }
 
@@ -115,14 +147,14 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     }
 
     @Override
-    public int getTop() {
+    public int top() {
         // TODO: might be faster for some simple methods to inline the reads from luastate directly.
         //       The jvm is able to optimize that much better than a downcall
         return lua_gettop(L);
     }
 
     @Override
-    public void setTop(int index) {
+    public void top(int index) {
         lua_settop(L, index);
     }
 
@@ -714,7 +746,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             final LuaStatus status = LuaStatus.byId(luau_load(L, chunkNameRef, bytecodeRef,
                 data.length, 0));
             if (status != LuaStatus.OK) {
-                final String message = toStringRepr(-1);
+                final String message = toString(-1);
                 throw new LuaError(status, message);
             }
         }
@@ -741,6 +773,12 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         int result = luaW_yield(L, nresults);
         propagateException();
         return result;
+    }
+
+    @Override
+    public LuaStatus resume(@Nullable LuaState from, int narg) {
+        final MemorySegment fromL = from != null ? ((LuaStateImpl) from).L : MemorySegment.NULL;
+        return LuaStatus.byId(lua_resume(L, fromL, narg));
     }
 
     //TODO: test me
@@ -798,18 +836,18 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     //region Error Throwing
 
     @Override
-    public void error() {
-        throw new LuaError((String) null);
+    public LuaError error() {
+        throw new LuaError(null);
     }
 
     @Override
-    public void error(String message) {
-        throw new LuaError(message);
+    public LuaError error(String message) {
+        return new LuaError(message);
     }
 
     @Override
-    public void error(@PrintFormat String message, Object... args) {
-        throw new LuaError(message.formatted(args));
+    public LuaError error(@PrintFormat String message, @Nullable Object... args) {
+        return new LuaError(message.formatted(args));
     }
 
     @Override
@@ -913,13 +951,13 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     //TODO: test me
     @Override
-    public int ref(int index) {
+    public @CheckReturnValue int ref(int index) {
         return lua_ref(L, index);
     }
 
     //TODO: test me
     @Override
-    public void unRef(int ref) {
+    public void unref(int ref) {
         lua_unref(L, ref);
     }
 
@@ -1172,8 +1210,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     // todo test me
     @Override
     public void requireRegisterModule() {
-        final String path = checkString(1);
-        remove(1); // remove path
+        final String path = checkString(-1);
+        remove(-1); // remove path
         requireRegisterModule(path);
     }
 
@@ -1200,6 +1238,12 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         // When destroying a thread we must clear any jni ref we have to the thread data.
         if (isDestruction) thread.setThreadData(null);
+
+        // Always call the java handle if set.
+        final MemorySegment threadL = ((LuaStateImpl) thread).L;
+        final LuaCallbacks.UserThread callback = JavaCallbacks.fromCallbacks(
+            lua_callbacks(threadL)).userThread;
+        if (callback != null) callback.userThread(parent, thread);
     }
 
     //region Exception Handling
@@ -1214,7 +1258,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         if (toUserData(-1) instanceof LuaError err) throw err;
 
         // Otherwise, start throwing with the message at index -1
-        final String message = isNil(-1) ? null : toStringRepr(-1);
+        final String message = toString(-1);
         pop(1); // Pop the message so the stack is clean.
 
         // In this case the initial trace was in lua, so start with that.
@@ -1234,7 +1278,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         // 2. we have a something at -1, in which case we should use it as the error message.
         //    We replace that with a LuaError object containing the initial lua stacktrace.
-        final String message = state.isNil(-1) ? null : state.toStringRepr(-1);
+        final String message = state.toString(-1);
         state.pop(1);
 
         // In this case the initial trace was in lua, so start with that.

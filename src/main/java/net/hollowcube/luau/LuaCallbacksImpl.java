@@ -1,6 +1,7 @@
 package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.vm.lua_Callbacks;
+import net.hollowcube.luau.util.GlobalRef;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
@@ -76,5 +77,19 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     @Override
     public void onAllocate(MemorySegment functionAddress) {
         lua_Callbacks.onallocate(callbacks, functionAddress);
+    }
+
+    @Override
+    public void userThread(@Nullable UserThread handler) {
+        JavaCallbacks.fromCallbacks(callbacks).userThread = handler;
+    }
+
+    static final class JavaCallbacks {
+        @Nullable UserThread userThread = null;
+
+        static JavaCallbacks fromCallbacks(MemorySegment callbacks) {
+            final MemorySegment javaCallbacks = lua_Callbacks.userdata(callbacks);
+            return (JavaCallbacks) GlobalRef.get(javaCallbacks.address());
+        }
     }
 }

@@ -1,8 +1,9 @@
 package net.hollowcube.luau;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import org.jetbrains.annotations.Nullable;
 
 /// Wraps the lua_Callbacks api for configuring the VM behavior at runtime.
 ///
@@ -66,4 +67,17 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
     /// gets called when memory is allocated
     void onAllocate(@Nullable OnAllocate handler);
     void onAllocate(MemorySegment functionAddress);
+
+    /// The userthread callback is proxied java side since luau-java uses the callback
+    /// for cleaning up java references on destroyed threads. As such, it does not need
+    /// to be allocated. The lifetime is managed by the LuaState.
+    @FunctionalInterface
+    interface UserThread {
+        /// parent is present when creating a thread, null when destroying
+        void userThread(@Nullable LuaState parent, LuaState state);
+    }
+
+    /// gets called when L is created (LP == parent) or destroyed (LP == NULL)
+    void userThread(@Nullable UserThread handler);
+
 }

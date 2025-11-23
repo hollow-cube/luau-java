@@ -202,6 +202,7 @@ final class Navigator {
         // the whole string after the alias symbol is the alias.
         int aliasLength = path.indexOf('/');
         if (aliasLength != -1) aliasLength -= aliasStartPos;
+        if (aliasLength == -1) aliasLength = path.length() - aliasStartPos;
 
         return path.substring(aliasStartPos, aliasLength);
     }

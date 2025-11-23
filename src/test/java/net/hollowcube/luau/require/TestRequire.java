@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static net.hollowcube.luau.TestHelpers.eval;
 
@@ -15,73 +14,63 @@ class TestRequire {
 
     @Test
     void def(LuaState state, Arena arena) {
-        AtomicInteger maxParentCalls = new AtomicInteger(3);
-
         state.openLibs();
 
-        Require.openRequire(state, new RequireResolver() {
-            @Override
-            public boolean isRequireAllowed(LuaState state, String requirerChunkName) {
-                System.out.println("is_require_allowed(" + requirerChunkName + ")");
-                return true;
-            }
-
+        state.openRequire(new RequireResolver() {
             @Override
             public Result reset(LuaState state, String requirerChunkName) {
-                System.out.println("reset(" + requirerChunkName + ")");
-                return Result.PRESENT;
-            }
-
-            @Override
-            public Result jumpToAlias(LuaState state, String aliasPath) {
-                System.out.println("jump_to_alias(" + aliasPath + ")");
+                System.out.println("reset to " + requirerChunkName);
                 return Result.PRESENT;
             }
 
             @Override
             public Result toParent(LuaState state) {
-                System.out.println("to_parent");
-                if (maxParentCalls.decrementAndGet() <= 0)
-                    return Result.NOT_FOUND;
-                return Result.PRESENT;
+                System.out.println("toparent");
+                return Result.NOT_FOUND;
             }
 
             @Override
             public Result toChild(LuaState state, String name) {
-                System.out.println("to_child(" + name + ")");
+                System.out.println("tochild " + name);
                 return Result.PRESENT;
             }
 
             @Override
-            public @Nullable Module getModule(LuaState state) {
-                System.out.println("get_module");
-                return new Module("my_chunk_name", "my_load_name", "my_cache_key");
+            public Result jumpToAlias(LuaState state, String aliasPath) {
+                return Result.NOT_FOUND;
             }
 
             @Override
             public Result getConfigStatus(LuaState state) {
-                System.out.println("get_config_status");
-                return Result.PRESENT;
+                return Result.NOT_FOUND;
             }
 
             @Override
             public @Nullable String resolveAlias(LuaState state, String alias) {
-                System.out.println("get_alias(" + alias + ")");
-                return "./myfile";
+                return null;
+            }
+
+            @Override
+            public @Nullable Module getModule(LuaState state) {
+                return null;
             }
 
             @Override
             public int load(LuaState state, String path, String chunkName, String loadName) {
-                System.out.println("load(" + path + ", " + chunkName + ", " + loadName + ")");
-
-                state.pushString("my string!!!");
-                return 1;
+                return 0;
             }
         });
 
+        state.newTable();
+        state.pushString("world");
+        state.setField(-2, "hello");
+
+        state.pushString("@test");
+        state.requireRegisterModule();
+
         eval(state, """
-                local mod = require('./my.luau')
-                print(tostring(mod))
-                """);
+            local mod = require('@test')
+            print(mod.hello)
+            """);
     }
 }

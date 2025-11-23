@@ -1,7 +1,10 @@
 package net.hollowcube.luau;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.io.Closeable;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.util.function.ToIntFunction;
 
 public sealed interface LuaFunc extends Closeable permits LuaFuncImpl {
@@ -25,4 +28,12 @@ public sealed interface LuaFunc extends Closeable permits LuaFuncImpl {
     }
 
     void close();
+
+    @Deprecated //todo remove me
+    @ApiStatus.Internal
+    MemorySegment funcRef();
+
+    @Deprecated //todo remove me
+    @ApiStatus.Internal
+    MemorySegment debugNameRef();
 }

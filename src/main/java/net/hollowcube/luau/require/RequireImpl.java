@@ -1,8 +1,8 @@
 package net.hollowcube.luau.require;
 
+import net.hollowcube.luau.LuaFunc;
 import net.hollowcube.luau.LuaState;
 import net.hollowcube.luau.LuaStatus;
-import net.hollowcube.luau.internal.vm.lua_CFunction;
 import net.hollowcube.luau.internal.vm.lua_Continuation;
 import net.hollowcube.luau.internal.vm.lua_Debug;
 import org.jetbrains.annotations.ApiStatus;
@@ -22,42 +22,39 @@ public final class RequireImpl {
     private static final String REGISTERED_CACHE_TABLE_KEY = "_REGISTEREDMODULES";
     private static final String REQUIRED_CACHE_TABLE_KEY = "_MODULES";
 
-    private static final MemorySegment REQUIRE_DEBUG_NAME = Arena.global().allocateFrom("require");
-    private static final MemorySegment REQUIRE_IMPL = lua_CFunction.allocate(
-        L -> requireImpl(LuaState.wrap(L)),
-        Arena.global());
+    private static final LuaFunc REQUIRE_IMPL = LuaFunc.wrap(RequireImpl::requireImpl, "require");
     private static final MemorySegment REQUIRE_CONTINUATION_IMPL = lua_Continuation.allocate(
         (L, status) -> requireContinuationImpl(LuaState.wrap(L), LuaStatus.byId(status)),
-        Arena.global());
+        Arena.global()); //todo exception handling in continuation
     private static final MemorySegment DEBUG_WHAT = Arena.global().allocateFrom("s");
 
     private static final int REQUIRE_STACK_VALUES = 4;
 
     public static void pushRequireClosure(LuaState state, RequireResolver lrc) {
         state.newUserData(lrc);
-        luaW_pushcclosurek(state.L(), REQUIRE_IMPL, REQUIRE_DEBUG_NAME, 1,
-            REQUIRE_CONTINUATION_IMPL);
+
+        final MemorySegment funcRef = REQUIRE_IMPL.funcRef();
+        final MemorySegment debugNameRef = REQUIRE_IMPL.debugNameRef();
+        luaW_pushcclosurek(state.L(), funcRef, debugNameRef, 1, REQUIRE_CONTINUATION_IMPL);
     }
 
     public static void registerModule(LuaState state, String path) {
-        if (state.getTop() != 1)
-            state.error("expected 1 argument: aliased require path and desired result");
         if (path.isEmpty() || path.charAt(0) != '@')
             state.error("path must begin with '@'");
 
+        state.findTable(REGISTRY_INDEX, REGISTERED_CACHE_TABLE_KEY, 1);
+
         // Make path lowercase to ensure case-insensitive matching.
         state.pushString(path.toLowerCase(Locale.ROOT));
+        // Stack: [cache_table, path_key]
 
-        state.findTable(REGISTRY_INDEX, REGISTERED_CACHE_TABLE_KEY, 1);
-        // (1) path, (2) result, (3) cache table
+        state.pushValue(-3);
+        // Stack: [cache_table, path_key, module_result]
 
-        state.insert(1);
-        // (1) cache table, (2) path, (3) result
+        state.setTable(-3);
+        // Stack: [cache_table]
 
-        state.setTable(1);
-        // (1) cache table
-
-        state.pop(1);
+        state.pop(1); // Remove cache_table
     }
 
     public static void clearCacheEntry(LuaState state, String cacheKey) {
@@ -88,11 +85,11 @@ public final class RequireImpl {
     }
 
     private static int requireContinuationImpl(LuaState state, LuaStatus ignored) {
-        assert state.getTop() >= REQUIRE_STACK_VALUES;
-        int numResults = state.getTop() - REQUIRE_STACK_VALUES;
+        assert state.top() >= REQUIRE_STACK_VALUES;
+        int numResults = state.top() - REQUIRE_STACK_VALUES;
         final String cacheKey = state.checkString(2);
 
-        if (numResults > 1)
+        if (numResults < 1)
             state.error("module must return a single value");
 
         // Cache the results
@@ -117,7 +114,7 @@ public final class RequireImpl {
     }
 
     private static int requireInternal(LuaState state, String requirerChunkName) {
-        state.setTop(1); // Discard extra arguments, we only use path
+        state.top(1); // Discard extra arguments, we only use path
 
         final RequireResolver lrc = (RequireResolver) state.toUserData(upvalueIndex(1));
         if (lrc == null) state.error("unable to find require configuration");
@@ -140,7 +137,7 @@ public final class RequireImpl {
             }
         }
 
-        int stackValues = state.getTop();
+        int stackValues = state.top();
         assert stackValues == REQUIRE_STACK_VALUES;
 
         // TODO why re-pop these, we have them right above...
@@ -149,7 +146,7 @@ public final class RequireImpl {
 
         int numResults = lrc.load(state, path, chunkName, loadName);
         if (numResults == -1) {
-            if (state.getTop() != stackValues)
+            if (state.top() != stackValues)
                 state.error("stack cannot be modified when require yields");
             return state.yield(0);
         }

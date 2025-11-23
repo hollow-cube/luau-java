@@ -107,7 +107,9 @@ tasks.named<JextractTask>("jextract") {
             "luaW_clonefunction", "luaW_cleartable", "luaW_clonetable",
             "luaLW_newmetatable", "luaLW_tolstring", "luaLW_findtable",
             "luaLW_typename", "luaLW_typeerror", "luaLW_argerror",
-            "luaW_lessthan", "luaLW_checkboolean", "luaLW_checkudata"
+            "luaW_lessthan", "luaLW_checkboolean", "luaLW_checkudata",
+
+            "luaW_assertconf_log", "luaW_assertconf_dump",
         )
     }
 }
