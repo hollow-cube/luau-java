@@ -47,9 +47,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         NativeLibraryLoader.loadLibrary("vm");
 
         if ("dump".equals(ASSERT_HANDLER)) {
-            luaW_assertconf_log.makeInvoker().apply();
-        } else if ("log".equals(ASSERT_HANDLER)) {
             luaW_assertconf_dump.makeInvoker().apply();
+        } else if ("log".equals(ASSERT_HANDLER)) {
+            luaW_assertconf_log.makeInvoker().apply();
         }
     }
 
@@ -778,7 +778,10 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public LuaStatus resume(@Nullable LuaState from, int narg) {
         final MemorySegment fromL = from != null ? ((LuaStateImpl) from).L : MemorySegment.NULL;
-        return LuaStatus.byId(lua_resume(L, fromL, narg));
+        final LuaStatus status = LuaStatus.byId(lua_resume(L, fromL, narg));
+        if (status != LuaStatus.OK && status != LuaStatus.YIELD)
+            propagateExceptionInner(status);
+        return status;
     }
 
     //TODO: test me
@@ -1114,6 +1117,20 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     //endregion
 
     @Override
+    public boolean newMetaTable(String typeName) {
+        try (var arena = Arena.ofConfined()) {
+            final int result = luaLW_newmetatable(L, arena.allocateFrom(typeName));
+            propagateException();
+            return result != 0;
+        }
+    }
+
+    @Override
+    public LuaType getMetaTable(String typeName) {
+        return getField(REGISTRY_INDEX, typeName);
+    }
+
+    @Override
     public @Nullable String findTable(int index, String fieldName, int sizeHint) {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment fname = arena.allocateFrom(fieldName);
@@ -1306,12 +1323,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
                 luaTraceIndex = readLuaTracePart(L, luaElem, mergedTrace, luaTraceIndex) - 1;
 
             for (final StackTraceElement javaElem : javaTrace) {
-                // lua_h.lua_pcall is our downcall marker, we expect no other downcalls to occur.
-                // At every downcall point, we need to get the 'next' lua trace segment.
-                boolean isDowncall =
-                    lua_h.class.getName().equals(javaElem.getClassName()) && "lua_pcall".equals(
-                        javaElem.getMethodName());
-                if (isDowncall) {
+                if (isDowncall(javaElem)) {
                     luaTraceIndex = readLuaTracePart(L, luaElem, mergedTrace, luaTraceIndex);
                 }
 
@@ -1319,6 +1331,16 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             }
         }
         return mergedTrace.toArray(new StackTraceElement[0]);
+    }
+
+    private static boolean isDowncall(StackTraceElement elem) {
+        // lua_h.lua_pcall is our downcall marker, we expect no other downcalls to occur.
+        // At every downcall point, we need to get the 'next' lua trace segment.
+        if (lua_h.class.getName().equals(elem.getClassName())
+            && "lua_pcall".equals(elem.getMethodName())) return true;
+        if (LuaStateImpl.class.getName().equals(elem.getClassName())
+            && "resume".equals(elem.getMethodName())) return true;
+        return false;
     }
 
     private static int readLuaTracePart(
@@ -1362,7 +1384,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
                 LuaStateImpl.class.getName() +
                     "-propagateException", LuaStateImpl.class.getName() +
                     "-propagateExceptionInner",
-                LuaStateImpl.class.getName() + "-pcallErrFunc");
+                LuaStateImpl.class.getName() + "-pcallErrFunc",
+                LuaStateImpl.class.getName() + "-lambda$static$2");
         }
         return Exclusions.SET.contains("%s-%s".formatted(elem.getClassName(),
             elem.getMethodName()));

@@ -296,12 +296,11 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     Object checkUserData(int argNum, String typeName);
     ByteBuffer checkBuffer(int argNum);
 
-    //    LUALIB_API void luaL_register(lua_State* L, const char* libname, const luaL_Reg* l);
     //    LUALIB_API int luaL_getmetafield(lua_State* L, int obj, const char* e);
     //    LUALIB_API int luaL_callmeta(lua_State* L, int obj, const char* e);
 
-    //    LUALIB_API int luaL_newmetatable(lua_State* L, const char* tname);
-    //    #define luaL_getmetatable(L, n) (lua_getfield(L, LUA_REGISTRYINDEX, (n)))
+    boolean newMetaTable(String typeName);
+    LuaType getMetaTable(String typeName);
 
     // TODO: idk below
     //    LUALIB_API void luaL_where(lua_State* L, int lvl);
