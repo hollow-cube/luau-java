@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static net.hollowcube.luau.LuaCallbacksImpl.JavaCallbacks.fromCallbacks;
 import static net.hollowcube.luau.internal.vm.lua_h.*;
 import static net.hollowcube.luau.internal.vm.lualib_h.*;
 import static net.hollowcube.luau.internal.vm.luawrap_h.*;
@@ -39,9 +40,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     /// no affect on the runtime behavior.
     private static final String ASSERT_HANDLER = System.getProperty("luau.assert-handler");
     private static final boolean SHOW_COMPLETE_BACKTRACE =
-        Boolean.getBoolean("luau.show-complete-backtrace");
+            Boolean.getBoolean("luau.show-complete-backtrace");
     private static final boolean NO_BACKTRACE_MERGE =
-        Boolean.getBoolean("luau.no-backtrace-merge");
+            Boolean.getBoolean("luau.no-backtrace-merge");
 
     static {
         NativeLibraryLoader.loadLibrary("vm");
@@ -61,22 +62,22 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     static final int GLOBALS_INDEX = LUA_GLOBALSINDEX();
 
     private static final Pattern DEFAULT_ERROR_TRACE_REGEX = Pattern.compile("^\\[string \"" +
-        ".*?\"]:\\d+:\\s");
+                                                                                     ".*?\"]:\\d+:\\s");
 
     private static final MemorySegment UNTAGGED_UDATA_DTOR = luaW_newuserdatadtor$dtor.allocate(
-        ud -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)),
-        Arena.global());
+            ud -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)),
+            Arena.global());
     private static final MemorySegment TAGGED_UDATA_DTOR = lua_Destructor.allocate(
-        (_, ud) -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)),
-        Arena.global());
+            (_, ud) -> GlobalRef.unref(ud.get(ValueLayout.JAVA_LONG, 0)),
+            Arena.global());
     private static final MemorySegment PCALL_ERRFUNC_REF = lua_CFunction.allocate(
-        (L) -> pcallErrFunc(new LuaStateImpl(L)),
-        Arena.global());
+            (L) -> pcallErrFunc(new LuaStateImpl(L)),
+            Arena.global());
     private static final MemorySegment USERTHREAD_CALLBACK = lua_Callbacks.userthread.allocate(
-        (LP, L) -> userThreadCallback(
-            LP.equals(MemorySegment.NULL) ? null : new LuaStateImpl(LP),
-            new LuaStateImpl(L)),
-        Arena.global());
+            (LP, L) -> userThreadCallback(
+                    LP.equals(MemorySegment.NULL) ? null : new LuaStateImpl(LP),
+                    new LuaStateImpl(L)),
+            Arena.global());
     private static final MemorySegment LUA_DEBUG_WHAT = Arena.global().allocateFrom("sln");
 
     static LuaState newState(@Nullable MemorySegment allocator) {
@@ -106,12 +107,15 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         // Remove our reference to a threaddata object
         setThreadData(null);
 
-        // Remove our reference to the JavaCallbacks object
+        // Get our reference to the JavaCallbacks object, but keep it so closing threads have it.
         final MemorySegment callbacks = lua_callbacks(L);
-        GlobalRef.unref(lua_Callbacks.userdata(callbacks).address());
+        final MemorySegment javaCallbacks = lua_Callbacks.userdata(callbacks);
 
         // Finally, close the lua state itself.
         lua_close(L);
+
+        // Destroy the ref
+        GlobalRef.unref(javaCallbacks.address());
     }
 
     //TODO: test me
@@ -369,9 +373,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     public float @Nullable [] toVector(int index) {
         final MemorySegment value = lua_tovector(L, index);
         return value.equals(MemorySegment.NULL) ? null : new float[]{
-            value.getAtIndex(ValueLayout.JAVA_FLOAT, 0),
-            value.getAtIndex(ValueLayout.JAVA_FLOAT, 1),
-            value.getAtIndex(ValueLayout.JAVA_FLOAT, 2),
+                value.getAtIndex(ValueLayout.JAVA_FLOAT, 0),
+                value.getAtIndex(ValueLayout.JAVA_FLOAT, 1),
+                value.getAtIndex(ValueLayout.JAVA_FLOAT, 2),
         };
     }
 
@@ -431,7 +435,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             if (atom >= 0) return new LuaString.Atom(atom);
 
             byte[] text = str.reinterpret(lenRef.get(ValueLayout.JAVA_INT, 0))
-                .toArray(ValueLayout.JAVA_BYTE);
+                    .toArray(ValueLayout.JAVA_BYTE);
             return new LuaString.Str(new String(text, StandardCharsets.UTF_8));
         }
     }
@@ -576,15 +580,15 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     public void pushLightUserDataTagged(long value, int tag) {
         if (tag < 0 || tag > LIGHT_USERDATA_TAG_LIMIT)
             throw new LuaError(
-                "light userdata tag must be between 0 and " + LIGHT_USERDATA_TAG_LIMIT);
+                    "light userdata tag must be between 0 and " + LIGHT_USERDATA_TAG_LIMIT);
         lua_pushlightuserdatatagged(L, MemorySegment.ofAddress(value), tag);
     }
 
     @Override
     public void newUserData(Object value) {
         final MemorySegment ud = luaW_newuserdatadtor(L,
-            ValueLayout.JAVA_LONG.byteSize(),
-            UNTAGGED_UDATA_DTOR);
+                                                      ValueLayout.JAVA_LONG.byteSize(),
+                                                      UNTAGGED_UDATA_DTOR);
         propagateException();
         ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(value));
     }
@@ -599,7 +603,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public void newUserDataTaggedWithMetatable(Object value, int tag) {
         final MemorySegment ud = luaW_newuserdatataggedwithmetatable(L,
-            ValueLayout.JAVA_LONG.byteSize(), tag);
+                                                                     ValueLayout.JAVA_LONG.byteSize(), tag);
         propagateException();
         ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(value));
     }
@@ -622,7 +626,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         // The switch is here as an exhaustivity check :)
         switch (func) {
             case LuaFuncImpl(
-                MemorySegment funcRef, MemorySegment debugNameRef, _
+                    MemorySegment funcRef, MemorySegment debugNameRef, _
             ) -> luaW_pushcclosurek(L, funcRef, debugNameRef, 0, MemorySegment.NULL);
         }
     }
@@ -744,7 +748,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             final MemorySegment chunkNameRef = arena.allocateFrom(chunkName);
             final MemorySegment bytecodeRef = arena.allocateFrom(ValueLayout.JAVA_BYTE, data);
             final LuaStatus status = LuaStatus.byId(luau_load(L, chunkNameRef, bytecodeRef,
-                data.length, 0));
+                                                              data.length, 0));
             if (status != LuaStatus.OK) {
                 final String message = toString(-1);
                 throw new LuaError(status, message);
@@ -816,8 +820,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             GlobalRef.unref(oldRef.address());
 
         lua_setthreaddata(L, data != null
-            ? MemorySegment.ofAddress(GlobalRef.newref(data))
-            : MemorySegment.NULL);
+                ? MemorySegment.ofAddress(GlobalRef.newref(data))
+                : MemorySegment.NULL);
     }
 
     //TODO: test me
@@ -880,7 +884,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     public void checkStack(int size, @Nullable String message) {
         if (!checkStack(size)) {
             final String msg = message != null ? "stack overflow (%s)".formatted(message) :
-                "stack overflow";
+                    "stack overflow";
             throw new LuaError(msg);
         }
     }
@@ -1258,8 +1262,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         // Always call the java handle if set.
         final MemorySegment threadL = ((LuaStateImpl) thread).L;
-        final LuaCallbacks.UserThread callback = JavaCallbacks.fromCallbacks(
-            lua_callbacks(threadL)).userThread;
+        final LuaCallbacks.UserThread callback = fromCallbacks(lua_callbacks(threadL)).userThread;
         if (callback != null) callback.userThread(parent, thread);
     }
 
@@ -1306,8 +1309,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     }
 
     static StackTraceElement[] mergeBacktrace(
-        LuaState state, StackTraceElement[] javaTrace,
-        boolean startInLua
+            LuaState state, StackTraceElement[] javaTrace,
+            boolean startInLua
     ) {
         if (NO_BACKTRACE_MERGE) return javaTrace;
 
@@ -1337,16 +1340,16 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         // lua_h.lua_pcall is our downcall marker, we expect no other downcalls to occur.
         // At every downcall point, we need to get the 'next' lua trace segment.
         if (lua_h.class.getName().equals(elem.getClassName())
-            && "lua_pcall".equals(elem.getMethodName())) return true;
+                && "lua_pcall".equals(elem.getMethodName())) return true;
         if (LuaStateImpl.class.getName().equals(elem.getClassName())
-            && "resume".equals(elem.getMethodName())) return true;
+                && "resume".equals(elem.getMethodName())) return true;
         return false;
     }
 
     private static int readLuaTracePart(
-        MemorySegment L, MemorySegment luaElem,
-        List<StackTraceElement> mergedTrace,
-        int index
+            MemorySegment L, MemorySegment luaElem,
+            List<StackTraceElement> mergedTrace,
+            int index
     ) {
         while (lua_getinfo(L, index++, LUA_DEBUG_WHAT, luaElem) != 0) {
             char what = (char) lua_Debug.what(luaElem).get(ValueLayout.JAVA_BYTE, 0);
@@ -1363,14 +1366,14 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             int currentLine = !isLua ? -1 : lua_Debug.currentline(luaElem);
 
             mergedTrace.add(new StackTraceElement(
-                // declaring class
-                "lua",
-                // method name
-                name,
-                // file name
-                Objects.requireNonNullElse(source, "<native>"),
-                // line number
-                currentLine));
+                    // declaring class
+                    "lua",
+                    // method name
+                    name,
+                    // file name
+                    Objects.requireNonNullElse(source, "<native>"),
+                    // line number
+                    currentLine));
         }
         return index;
     }
@@ -1380,15 +1383,15 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         class Exclusions {
             static final Set<String> SET = Set.of(lua_h.class.getName() + "-lua_pcall",
-                LuaFuncImpl.CFunctionWrapper.class.getName() + "-apply",
-                LuaStateImpl.class.getName() +
-                    "-propagateException", LuaStateImpl.class.getName() +
-                    "-propagateExceptionInner",
-                LuaStateImpl.class.getName() + "-pcallErrFunc",
-                LuaStateImpl.class.getName() + "-lambda$static$2");
+                                                  LuaFuncImpl.CFunctionWrapper.class.getName() + "-apply",
+                                                  LuaStateImpl.class.getName() +
+                                                          "-propagateException", LuaStateImpl.class.getName() +
+                                                          "-propagateExceptionInner",
+                                                  LuaStateImpl.class.getName() + "-pcallErrFunc",
+                                                  LuaStateImpl.class.getName() + "-lambda$static$2");
         }
         return Exclusions.SET.contains("%s-%s".formatted(elem.getClassName(),
-            elem.getMethodName()));
+                                                         elem.getMethodName()));
     }
 
     static @Nullable String stripDefaultErrorPrefix(@Nullable String raw) {

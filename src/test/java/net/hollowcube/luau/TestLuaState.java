@@ -188,10 +188,10 @@ class TestLuaState {
             state.setGlobal("theBuffer");
 
             eval(
-                state,
-                """
-                    buffer.writei32(theBuffer, 32, buffer.len(theBuffer))
+                    state,
                     """
+                            buffer.writei32(theBuffer, 32, buffer.len(theBuffer))
+                            """
             );
 
             state.getGlobal("theBuffer");
@@ -284,13 +284,13 @@ class TestLuaState {
         @Test
         void functionParamReturn(LuaState state, Arena arena) {
             var func = LuaFunc.wrap(
-                L -> {
-                    boolean b = L.type(1) == LuaType.TABLE;
-                    L.pushString(b ? "yes" : "no");
-                    return 1;
-                },
-                "func",
-                arena
+                    L -> {
+                        boolean b = L.type(1) == LuaType.TABLE;
+                        L.pushString(b ? "yes" : "no");
+                        return 1;
+                    },
+                    "func",
+                    arena
             );
 
             state.pushFunction(func);
@@ -313,12 +313,12 @@ class TestLuaState {
 
             public MockLuaFunc(Arena arena) {
                 this.ref = LuaFunc.wrap(
-                    _ -> {
-                        callCount.incrementAndGet();
-                        return 0;
-                    },
-                    "mockFunc",
-                    arena
+                        _ -> {
+                            callCount.incrementAndGet();
+                            return 0;
+                        },
+                        "mockFunc",
+                        arena
                 );
             }
 
@@ -328,9 +328,9 @@ class TestLuaState {
 
             public void assertCalled(int times) {
                 assertEquals(
-                    times,
-                    callCount.get(),
-                    "was not called " + times + " times"
+                        times,
+                        callCount.get(),
+                        "was not called " + times + " times"
                 );
             }
         }
@@ -442,7 +442,7 @@ class TestLuaState {
         state.setMemCat(42);
         assertEquals(0, state.totalBytes(42));
         state.newUserData(
-            "this shouldnt count, it should only be 8 bytes because java owns this string"
+                "this shouldnt count, it should only be 8 bytes because java owns this string"
         );
         assertEquals(32, state.totalBytes(42));
     }
@@ -462,4 +462,20 @@ class TestLuaState {
     }
 
     //TODO test all the check and opt methods
+
+    @Test
+    void regressionCloseWithThreadsDestroyingCallbacksEarly() {
+        // Covers a regression where the JavaCallbacks instance is destroyed too early,
+        // so threads closed from a LuaState#close did not have access to the instance.
+        // Not throwing is the expected output
+
+        var state = LuaState.newState();
+        state.openLibs();
+        var thread = state.newThread();
+        eval(thread, "local x = 1 + 2");
+
+        // Thread left alive
+
+        assertDoesNotThrow(state::close);
+    }
 }
