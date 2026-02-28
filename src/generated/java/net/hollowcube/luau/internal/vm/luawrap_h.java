@@ -12,62 +12,17 @@ import java.util.stream.*;
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 
-public class luawrap_h {
+public class luawrap_h extends luawrap_h$shared {
 
     luawrap_h() {
         // Should not be called directly
     }
 
     static final Arena LIBRARY_ARENA = Arena.ofAuto();
-    static final boolean TRACE_DOWNCALLS = Boolean.getBoolean("jextract.trace.downcalls");
-
-    static void traceDowncall(String name, Object... args) {
-         String traceArgs = Arrays.stream(args)
-                       .map(Object::toString)
-                       .collect(Collectors.joining(", "));
-         System.out.printf("%s(%s)\n", name, traceArgs);
-    }
-
-    static MemorySegment findOrThrow(String symbol) {
-        return SYMBOL_LOOKUP.find(symbol)
-            .orElseThrow(() -> new UnsatisfiedLinkError("unresolved symbol: " + symbol));
-    }
-
-    static MethodHandle upcallHandle(Class<?> fi, String name, FunctionDescriptor fdesc) {
-        try {
-            return MethodHandles.lookup().findVirtual(fi, name, fdesc.toMethodType());
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
-    static MemoryLayout align(MemoryLayout layout, long align) {
-        return switch (layout) {
-            case PaddingLayout p -> p;
-            case ValueLayout v -> v.withByteAlignment(align);
-            case GroupLayout g -> {
-                MemoryLayout[] alignedMembers = g.memberLayouts().stream()
-                        .map(m -> align(m, align)).toArray(MemoryLayout[]::new);
-                yield g instanceof StructLayout ?
-                        MemoryLayout.structLayout(alignedMembers) : MemoryLayout.unionLayout(alignedMembers);
-            }
-            case SequenceLayout s -> MemoryLayout.sequenceLayout(s.elementCount(), align(s.elementLayout(), align));
-        };
-    }
 
     static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
             .or(Linker.nativeLinker().defaultLookup());
 
-    public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
-    public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
-    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
-    public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
 
     private static class lua_xmove {
         public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
@@ -76,7 +31,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("lua_xmove");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("lua_xmove");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -123,6 +78,8 @@ public class luawrap_h {
                 traceDowncall("lua_xmove", from, to, n);
             }
             mh$.invokeExact(from, to, n);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -135,7 +92,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("lua_xpush");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("lua_xpush");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -182,6 +139,8 @@ public class luawrap_h {
                 traceDowncall("lua_xpush", from, to, idx);
             }
             mh$.invokeExact(from, to, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -193,7 +152,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_getstatus");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_getstatus");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -240,6 +199,8 @@ public class luawrap_h {
                 traceDowncall("luaW_getstatus", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -253,7 +214,7 @@ public class luawrap_h {
      */
     public static class luaW_assertconf_log {
         private static final FunctionDescriptor BASE_DESC = FunctionDescriptor.ofVoid(        );
-        private static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_assertconf_log");
+        private static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_assertconf_log");
 
         private final MethodHandle handle;
         private final FunctionDescriptor descriptor;
@@ -305,7 +266,7 @@ public class luawrap_h {
                 if (TRACE_DOWNCALLS) {
                     traceDowncall("luaW_assertconf_log", x0);
                 }
-                spreader.invokeExact(x0);
+                 spreader.invokeExact(x0);
             } catch(IllegalArgumentException | ClassCastException ex$)  {
                 throw ex$; // rethrow IAE from passing wrong number/type of args
             } catch (Throwable ex$) {
@@ -322,7 +283,7 @@ public class luawrap_h {
      */
     public static class luaW_assertconf_dump {
         private static final FunctionDescriptor BASE_DESC = FunctionDescriptor.ofVoid(        );
-        private static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_assertconf_dump");
+        private static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_assertconf_dump");
 
         private final MethodHandle handle;
         private final FunctionDescriptor descriptor;
@@ -374,7 +335,7 @@ public class luawrap_h {
                 if (TRACE_DOWNCALLS) {
                     traceDowncall("luaW_assertconf_dump", x0);
                 }
-                spreader.invokeExact(x0);
+                 spreader.invokeExact(x0);
             } catch(IllegalArgumentException | ClassCastException ex$)  {
                 throw ex$; // rethrow IAE from passing wrong number/type of args
             } catch (Throwable ex$) {
@@ -389,7 +350,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_newstate");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_newstate");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -436,6 +397,8 @@ public class luawrap_h {
                 traceDowncall("luaW_newstate", f);
             }
             return (MemorySegment)mh$.invokeExact(f);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -447,7 +410,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_newthread");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_newthread");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -494,6 +457,8 @@ public class luawrap_h {
                 traceDowncall("luaW_newthread", L);
             }
             return (MemorySegment)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -504,7 +469,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_resetthread");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_resetthread");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -551,6 +516,8 @@ public class luawrap_h {
                 traceDowncall("luaW_resetthread", L);
             }
             mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -564,7 +531,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_equal");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_equal");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -611,6 +578,8 @@ public class luawrap_h {
                 traceDowncall("luaW_equal", L, idx1, idx2);
             }
             return (int)mh$.invokeExact(L, idx1, idx2);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -624,7 +593,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_lessthan");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_lessthan");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -671,6 +640,8 @@ public class luawrap_h {
                 traceDowncall("luaW_lessthan", L, idx1, idx2);
             }
             return (int)mh$.invokeExact(L, idx1, idx2);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -684,7 +655,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_tolstring");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_tolstring");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -731,6 +702,8 @@ public class luawrap_h {
                 traceDowncall("luaW_tolstring", L, idx, len);
             }
             return (MemorySegment)mh$.invokeExact(L, idx, len);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -743,7 +716,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_objlen");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_objlen");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -790,6 +763,8 @@ public class luawrap_h {
                 traceDowncall("luaW_objlen", L, idx);
             }
             return (int)mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -802,7 +777,7 @@ public class luawrap_h {
             luawrap_h.C_LONG
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_pushlstring");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_pushlstring");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -849,6 +824,8 @@ public class luawrap_h {
                 traceDowncall("luaW_pushlstring", L, s, l);
             }
             mh$.invokeExact(L, s, l);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -863,7 +840,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_pushcclosurek");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_pushcclosurek");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -910,6 +887,8 @@ public class luawrap_h {
                 traceDowncall("luaW_pushcclosurek", L, fn, debugname, nup, cont);
             }
             mh$.invokeExact(L, fn, debugname, nup, cont);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -923,7 +902,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_newuserdatatagged");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_newuserdatatagged");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -970,6 +949,8 @@ public class luawrap_h {
                 traceDowncall("luaW_newuserdatatagged", L, sz, tag);
             }
             return (MemorySegment)mh$.invokeExact(L, sz, tag);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -983,7 +964,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_newuserdatataggedwithmetatable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_newuserdatataggedwithmetatable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1030,6 +1011,8 @@ public class luawrap_h {
                 traceDowncall("luaW_newuserdatataggedwithmetatable", L, sz, tag);
             }
             return (MemorySegment)mh$.invokeExact(L, sz, tag);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1043,7 +1026,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_newuserdatadtor");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_newuserdatadtor");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1090,6 +1073,8 @@ public class luawrap_h {
                 traceDowncall("luaW_newuserdatadtor", L, sz, dtor);
             }
             return (MemorySegment)mh$.invokeExact(L, sz, dtor);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1102,7 +1087,7 @@ public class luawrap_h {
             luawrap_h.C_LONG
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_newbuffer");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_newbuffer");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1149,6 +1134,8 @@ public class luawrap_h {
                 traceDowncall("luaW_newbuffer", L, sz);
             }
             return (MemorySegment)mh$.invokeExact(L, sz);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1161,7 +1148,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_gettable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_gettable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1208,6 +1195,8 @@ public class luawrap_h {
                 traceDowncall("luaW_gettable", L, idx);
             }
             return (int)mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1221,7 +1210,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_getfield");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_getfield");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1268,6 +1257,8 @@ public class luawrap_h {
                 traceDowncall("luaW_getfield", L, idx, k);
             }
             return (int)mh$.invokeExact(L, idx, k);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1280,7 +1271,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_createtable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_createtable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1327,6 +1318,8 @@ public class luawrap_h {
                 traceDowncall("luaW_createtable", L, narr, nrec);
             }
             mh$.invokeExact(L, narr, nrec);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1338,7 +1331,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_settable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_settable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1385,6 +1378,8 @@ public class luawrap_h {
                 traceDowncall("luaW_settable", L, idx);
             }
             mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1397,7 +1392,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_setfield");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_setfield");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1444,6 +1439,8 @@ public class luawrap_h {
                 traceDowncall("luaW_setfield", L, idx, k);
             }
             mh$.invokeExact(L, idx, k);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1456,7 +1453,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_rawsetfield");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_rawsetfield");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1503,6 +1500,8 @@ public class luawrap_h {
                 traceDowncall("luaW_rawsetfield", L, idx, k);
             }
             mh$.invokeExact(L, idx, k);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1514,7 +1513,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_rawset");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_rawset");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1561,6 +1560,8 @@ public class luawrap_h {
                 traceDowncall("luaW_rawset", L, idx);
             }
             mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1573,7 +1574,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_rawseti");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_rawseti");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1620,6 +1621,8 @@ public class luawrap_h {
                 traceDowncall("luaW_rawseti", L, idx, n);
             }
             mh$.invokeExact(L, idx, n);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1632,7 +1635,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_setmetatable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_setmetatable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1679,6 +1682,8 @@ public class luawrap_h {
                 traceDowncall("luaW_setmetatable", L, objindex);
             }
             return (int)mh$.invokeExact(L, objindex);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1691,7 +1696,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_yield");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_yield");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1738,6 +1743,8 @@ public class luawrap_h {
                 traceDowncall("luaW_yield", L, nresults);
             }
             return (int)mh$.invokeExact(L, nresults);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1749,7 +1756,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_break");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_break");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1796,6 +1803,8 @@ public class luawrap_h {
                 traceDowncall("luaW_break", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1808,7 +1817,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_next");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_next");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1855,6 +1864,8 @@ public class luawrap_h {
                 traceDowncall("luaW_next", L, idx);
             }
             return (int)mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1866,7 +1877,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_concat");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_concat");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1913,6 +1924,8 @@ public class luawrap_h {
                 traceDowncall("luaW_concat", L, n);
             }
             mh$.invokeExact(L, n);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1925,7 +1938,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_setlightuserdataname");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_setlightuserdataname");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -1972,6 +1985,8 @@ public class luawrap_h {
                 traceDowncall("luaW_setlightuserdataname", L, tag, name);
             }
             mh$.invokeExact(L, tag, name);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -1983,7 +1998,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_clonefunction");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_clonefunction");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2030,6 +2045,8 @@ public class luawrap_h {
                 traceDowncall("luaW_clonefunction", L, idx);
             }
             mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2041,7 +2058,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_cleartable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_cleartable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2088,6 +2105,8 @@ public class luawrap_h {
                 traceDowncall("luaW_cleartable", L, idx);
             }
             mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2099,7 +2118,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaW_clonetable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_clonetable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2146,6 +2165,8 @@ public class luawrap_h {
                 traceDowncall("luaW_clonetable", L, idx);
             }
             mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2158,7 +2179,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_newmetatable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_newmetatable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2205,6 +2226,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_newmetatable", L, tname);
             }
             return (int)mh$.invokeExact(L, tname);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2218,7 +2241,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_tolstring");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_tolstring");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2265,6 +2288,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_tolstring", L, idx, len);
             }
             return (MemorySegment)mh$.invokeExact(L, idx, len);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2279,7 +2304,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_findtable");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_findtable");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2326,6 +2351,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_findtable", L, idx, fname, szhint);
             }
             return (MemorySegment)mh$.invokeExact(L, idx, fname, szhint);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2338,7 +2365,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_typename");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_typename");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2385,6 +2412,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_typename", L, idx);
             }
             return (MemorySegment)mh$.invokeExact(L, idx);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2397,7 +2426,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_typeerror");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_typeerror");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2444,6 +2473,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_typeerror", L, narg, tname);
             }
             mh$.invokeExact(L, narg, tname);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2456,7 +2487,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_argerror");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_argerror");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2503,6 +2534,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_argerror", L, narg, extramsg);
             }
             mh$.invokeExact(L, narg, extramsg);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2515,7 +2548,7 @@ public class luawrap_h {
             luawrap_h.C_INT
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_checkboolean");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_checkboolean");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2562,6 +2595,8 @@ public class luawrap_h {
                 traceDowncall("luaLW_checkboolean", L, narg);
             }
             return (int)mh$.invokeExact(L, narg);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -2575,7 +2610,7 @@ public class luawrap_h {
             luawrap_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = luawrap_h.findOrThrow("luaLW_checkudata");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaLW_checkudata");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -2622,6 +2657,68 @@ public class luawrap_h {
                 traceDowncall("luaLW_checkudata", L, ud, tname);
             }
             return (MemorySegment)mh$.invokeExact(L, ud, tname);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaW_interrupt_preempt_handler {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luawrap_h.C_POINTER,
+            luawrap_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaW_interrupt_preempt_handler");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaW_interrupt_preempt_handler(lua_State *L, int gc)
+     * }
+     */
+    public static FunctionDescriptor luaW_interrupt_preempt_handler$descriptor() {
+        return luaW_interrupt_preempt_handler.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaW_interrupt_preempt_handler(lua_State *L, int gc)
+     * }
+     */
+    public static MethodHandle luaW_interrupt_preempt_handler$handle() {
+        return luaW_interrupt_preempt_handler.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaW_interrupt_preempt_handler(lua_State *L, int gc)
+     * }
+     */
+    public static MemorySegment luaW_interrupt_preempt_handler$address() {
+        return luaW_interrupt_preempt_handler.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaW_interrupt_preempt_handler(lua_State *L, int gc)
+     * }
+     */
+    public static void luaW_interrupt_preempt_handler(MemorySegment L, int gc) {
+        var mh$ = luaW_interrupt_preempt_handler.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaW_interrupt_preempt_handler", L, gc);
+            }
+            mh$.invokeExact(L, gc);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }

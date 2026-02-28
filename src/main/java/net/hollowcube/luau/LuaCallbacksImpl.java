@@ -1,6 +1,7 @@
 package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.vm.lua_Callbacks;
+import net.hollowcube.luau.internal.vm.luawrap_h;
 import net.hollowcube.luau.util.GlobalRef;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +30,30 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     @Override
     public void interrupt(MemorySegment functionAddress) {
         lua_Callbacks.interrupt(callbacks, functionAddress);
+    }
+
+    record PreemptImpl(MemorySegment handle) implements Preempt {
+        public PreemptImpl(Handler handler, Arena arena) {
+            final lua_Callbacks.preempt.Function f = (L, gc) ->
+                    handler.preempt(new LuaStateImpl(L), gc).value();
+
+            this(lua_Callbacks.preempt.allocate(f, arena));
+        }
+    }
+
+    @Override
+    public void preempt(MemorySegment functionAddress) {
+        lua_Callbacks.interrupt(callbacks, luawrap_h.luaW_interrupt_preempt_handler$address());
+        lua_Callbacks.preempt(callbacks, functionAddress);
+    }
+
+    @Override
+    public void preempt(@Nullable LuaCallbacks.Preempt handler) {
+        final MemorySegment handle = handler != null
+                ? ((PreemptImpl) handler).handle
+                : MemorySegment.NULL;
+
+        preempt(handle);
     }
 
     record UserAtomImpl(MemorySegment handle) implements UserAtom {
@@ -84,8 +109,19 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
         JavaCallbacks.fromCallbacks(callbacks).userThread = handler;
     }
 
+    @Override
+    public void userData(@Nullable Object userData) {
+        JavaCallbacks.fromCallbacks(callbacks).userData = userData;
+    }
+
+    @Override
+    public @Nullable Object userData() {
+        return JavaCallbacks.fromCallbacks(callbacks).userData;
+    }
+
     static final class JavaCallbacks {
         @Nullable UserThread userThread = null;
+        @Nullable Object userData = null;
 
         static JavaCallbacks fromCallbacks(MemorySegment callbacks) {
             final MemorySegment javaCallbacks = lua_Callbacks.userdata(callbacks);

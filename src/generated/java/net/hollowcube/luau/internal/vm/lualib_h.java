@@ -12,62 +12,17 @@ import java.util.stream.*;
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 
-public class lualib_h {
+public class lualib_h extends lualib_h$shared {
 
     lualib_h() {
         // Should not be called directly
     }
 
     static final Arena LIBRARY_ARENA = Arena.ofAuto();
-    static final boolean TRACE_DOWNCALLS = Boolean.getBoolean("jextract.trace.downcalls");
-
-    static void traceDowncall(String name, Object... args) {
-         String traceArgs = Arrays.stream(args)
-                       .map(Object::toString)
-                       .collect(Collectors.joining(", "));
-         System.out.printf("%s(%s)\n", name, traceArgs);
-    }
-
-    static MemorySegment findOrThrow(String symbol) {
-        return SYMBOL_LOOKUP.find(symbol)
-            .orElseThrow(() -> new UnsatisfiedLinkError("unresolved symbol: " + symbol));
-    }
-
-    static MethodHandle upcallHandle(Class<?> fi, String name, FunctionDescriptor fdesc) {
-        try {
-            return MethodHandles.lookup().findVirtual(fi, name, fdesc.toMethodType());
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
-    static MemoryLayout align(MemoryLayout layout, long align) {
-        return switch (layout) {
-            case PaddingLayout p -> p;
-            case ValueLayout v -> v.withByteAlignment(align);
-            case GroupLayout g -> {
-                MemoryLayout[] alignedMembers = g.memberLayouts().stream()
-                        .map(m -> align(m, align)).toArray(MemoryLayout[]::new);
-                yield g instanceof StructLayout ?
-                        MemoryLayout.structLayout(alignedMembers) : MemoryLayout.unionLayout(alignedMembers);
-            }
-            case SequenceLayout s -> MemoryLayout.sequenceLayout(s.elementCount(), align(s.elementLayout(), align));
-        };
-    }
 
     static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
             .or(Linker.nativeLinker().defaultLookup());
 
-    public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
-    public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
-    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
-    public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
 
     private static class luaL_optboolean {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
@@ -77,7 +32,7 @@ public class lualib_h {
             lualib_h.C_INT
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_optboolean");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaL_optboolean");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -124,8 +79,82 @@ public class lualib_h {
                 traceDowncall("luaL_optboolean", L, narg, def);
             }
             return (int)mh$.invokeExact(L, narg, def);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    /**
+     * Variadic invoker class for:
+     * {@snippet lang=c :
+     * extern void luaL_errorL(lua_State *L, const char *fmt, ...)
+     * }
+     */
+    public static class luaL_errorL {
+        private static final FunctionDescriptor BASE_DESC = FunctionDescriptor.ofVoid(
+                lualib_h.C_POINTER,
+                lualib_h.C_POINTER
+            );
+        private static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaL_errorL");
+
+        private final MethodHandle handle;
+        private final FunctionDescriptor descriptor;
+        private final MethodHandle spreader;
+
+        private luaL_errorL(MethodHandle handle, FunctionDescriptor descriptor, MethodHandle spreader) {
+            this.handle = handle;
+            this.descriptor = descriptor;
+            this.spreader = spreader;
+        }
+
+        /**
+         * Variadic invoker factory for:
+         * {@snippet lang=c :
+         * extern void luaL_errorL(lua_State *L, const char *fmt, ...)
+         * }
+         */
+        public static luaL_errorL makeInvoker(MemoryLayout... layouts) {
+            FunctionDescriptor desc$ = BASE_DESC.appendArgumentLayouts(layouts);
+            Linker.Option fva$ = Linker.Option.firstVariadicArg(BASE_DESC.argumentLayouts().size());
+            var mh$ = Linker.nativeLinker().downcallHandle(ADDR, desc$, fva$);
+            var spreader$ = mh$.asSpreader(Object[].class, layouts.length);
+            return new luaL_errorL(mh$, desc$, spreader$);
+        }
+
+        /**
+         * {@return the address}
+         */
+        public static MemorySegment address() {
+            return ADDR;
+        }
+
+        /**
+         * {@return the specialized method handle}
+         */
+        public MethodHandle handle() {
+            return handle;
+        }
+
+        /**
+         * {@return the specialized descriptor}
+         */
+        public FunctionDescriptor descriptor() {
+            return descriptor;
+        }
+
+        public void apply(MemorySegment L, MemorySegment fmt, Object... x2) {
+            try {
+                if (TRACE_DOWNCALLS) {
+                    traceDowncall("luaL_errorL", L, fmt, x2);
+                }
+                 spreader.invokeExact(L, fmt, x2);
+            } catch(IllegalArgumentException | ClassCastException ex$)  {
+                throw ex$; // rethrow IAE from passing wrong number/type of args
+            } catch (Throwable ex$) {
+               throw new AssertionError("should not reach here", ex$);
+            }
         }
     }
 
@@ -135,7 +164,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_base");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_base");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -182,6 +211,8 @@ public class lualib_h {
                 traceDowncall("luaopen_base", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -193,7 +224,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_coroutine");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_coroutine");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -240,6 +271,8 @@ public class lualib_h {
                 traceDowncall("luaopen_coroutine", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -251,7 +284,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_table");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_table");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -298,6 +331,8 @@ public class lualib_h {
                 traceDowncall("luaopen_table", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -309,7 +344,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_os");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_os");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -356,6 +391,8 @@ public class lualib_h {
                 traceDowncall("luaopen_os", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -367,7 +404,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_string");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_string");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -414,6 +451,8 @@ public class lualib_h {
                 traceDowncall("luaopen_string", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -425,7 +464,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_bit32");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_bit32");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -472,6 +511,8 @@ public class lualib_h {
                 traceDowncall("luaopen_bit32", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -483,7 +524,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_buffer");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_buffer");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -530,6 +571,8 @@ public class lualib_h {
                 traceDowncall("luaopen_buffer", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -541,7 +584,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_utf8");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_utf8");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -588,6 +631,8 @@ public class lualib_h {
                 traceDowncall("luaopen_utf8", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -599,7 +644,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_math");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_math");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -646,6 +691,8 @@ public class lualib_h {
                 traceDowncall("luaopen_math", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -657,7 +704,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_debug");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_debug");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -704,6 +751,8 @@ public class lualib_h {
                 traceDowncall("luaopen_debug", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -715,7 +764,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaopen_vector");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaopen_vector");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -762,6 +811,8 @@ public class lualib_h {
                 traceDowncall("luaopen_vector", L);
             }
             return (int)mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -772,7 +823,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_openlibs");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaL_openlibs");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -819,6 +870,8 @@ public class lualib_h {
                 traceDowncall("luaL_openlibs", L);
             }
             mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -829,7 +882,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_sandbox");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaL_sandbox");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -876,6 +929,8 @@ public class lualib_h {
                 traceDowncall("luaL_sandbox", L);
             }
             mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
@@ -886,7 +941,7 @@ public class lualib_h {
             lualib_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = lualib_h.findOrThrow("luaL_sandboxthread");
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("luaL_sandboxthread");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -933,6 +988,8 @@ public class lualib_h {
                 traceDowncall("luaL_sandboxthread", L);
             }
             mh$.invokeExact(L);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }

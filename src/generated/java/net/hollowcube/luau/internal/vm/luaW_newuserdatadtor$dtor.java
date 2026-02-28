@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * void (*dtor)(void *)
  * }
  */
-public class luaW_newuserdatadtor$dtor {
+public final class luaW_newuserdatadtor$dtor {
 
-    luaW_newuserdatadtor$dtor() {
+    private luaW_newuserdatadtor$dtor() {
         // Should not be called directly
     }
 
@@ -56,9 +56,11 @@ public class luaW_newuserdatadtor$dtor {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static void invoke(MemorySegment funcPtr,MemorySegment _x0) {
+    public static void invoke(MemorySegment funcPtr, MemorySegment _x0) {
         try {
              DOWN$MH.invokeExact(funcPtr, _x0);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

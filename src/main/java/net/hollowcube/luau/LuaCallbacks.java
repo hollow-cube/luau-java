@@ -34,6 +34,33 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
     void interrupt(@Nullable Interrupt handler);
     void interrupt(MemorySegment functionAddress);
 
+    sealed interface Preempt permits LuaCallbacksImpl.PreemptImpl {
+
+        enum PreemptType {
+            NONE(0), YIELD(-1), ERROR(-2);
+
+            final int value;
+
+            PreemptType(int value) {this.value = value;}
+
+            public int value() { return value; }
+        }
+
+        @FunctionalInterface
+        interface Handler {
+            PreemptType preempt(LuaState state, int gc);
+        }
+
+        static Preempt allocate(Preempt.Handler handler, Arena arena) {
+            return new LuaCallbacksImpl.PreemptImpl(handler, arena);
+        }
+    }
+
+    /// gets called at safepoints (loop back edges, call/ret, gc) if set AND
+    /// interrupt() is set to luaW_interrupt_preempt_handler
+    void preempt(@Nullable LuaCallbacks.Preempt handler);
+    void preempt(MemorySegment functionAddress);
+
     sealed interface UserAtom permits LuaCallbacksImpl.UserAtomImpl {
         @FunctionalInterface
         interface Handler {
@@ -79,5 +106,8 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
 
     /// gets called when L is created (LP == parent) or destroyed (LP == NULL)
     void userThread(@Nullable UserThread handler);
+
+    void userData(@Nullable Object userData);
+    @Nullable Object userData();
 
 }
