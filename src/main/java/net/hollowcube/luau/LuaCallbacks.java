@@ -107,7 +107,4 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
     /// gets called when L is created (LP == parent) or destroyed (LP == NULL)
     void userThread(@Nullable UserThread handler);
 
-    void userData(@Nullable Object userData);
-    @Nullable Object userData();
-
 }

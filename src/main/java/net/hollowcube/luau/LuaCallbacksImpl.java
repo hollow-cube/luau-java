@@ -109,19 +109,8 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
         JavaCallbacks.fromCallbacks(callbacks).userThread = handler;
     }
 
-    @Override
-    public void userData(@Nullable Object userData) {
-        JavaCallbacks.fromCallbacks(callbacks).userData = userData;
-    }
-
-    @Override
-    public @Nullable Object userData() {
-        return JavaCallbacks.fromCallbacks(callbacks).userData;
-    }
-
     static final class JavaCallbacks {
         @Nullable UserThread userThread = null;
-        @Nullable Object userData = null;
 
         static JavaCallbacks fromCallbacks(MemorySegment callbacks) {
             final MemorySegment javaCallbacks = lua_Callbacks.userdata(callbacks);

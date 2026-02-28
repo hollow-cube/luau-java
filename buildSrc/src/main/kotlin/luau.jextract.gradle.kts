@@ -36,7 +36,7 @@ tasks.named<JextractTask>("jextract") {
             "LUA_UTAG_LIMIT", "LUA_LUTAG_LIMIT", "LUA_MEMORY_CATEGORIES",
         )
         functions.addAll(
-            "lua_close", "lua_error", "lua_yield", "lua_mainthread", "lua_isthreadreset",
+            "lua_close", "lua_mainthread", "lua_isthreadreset",
             "lua_absindex", "lua_gettop", "lua_settop", "lua_pushvalue",
             "lua_remove", "lua_insert", "lua_replace", "lua_checkstack",
             "lua_rawcheckstack", "lua_isnumber", "lua_isstring", "lua_iscfunction",
@@ -73,8 +73,7 @@ tasks.named<JextractTask>("jextract") {
             "luaopen_utf8", "luaopen_math", "luaopen_debug",
             "luaopen_vector", "luaL_openlibs", "luaL_optboolean",
 
-            "luaL_sandbox", "luaL_sandboxthread",
-            "luaL_errorL"
+            "luaL_sandbox", "luaL_sandboxthread"
         )
     }
 
