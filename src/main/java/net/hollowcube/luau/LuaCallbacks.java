@@ -36,19 +36,9 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
 
     sealed interface Preempt permits LuaCallbacksImpl.PreemptImpl {
 
-        enum PreemptType {
-            NONE(0), YIELD(-1), ERROR(-2);
-
-            final int value;
-
-            PreemptType(int value) {this.value = value;}
-
-            public int value() { return value; }
-        }
-
         @FunctionalInterface
         interface Handler {
-            PreemptType preempt(LuaState state, int gc);
+            boolean preempt(LuaState state, int gc) throws LuaError;
         }
 
         static Preempt allocate(Preempt.Handler handler, Arena arena) {

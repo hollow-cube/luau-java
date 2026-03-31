@@ -34,8 +34,15 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
 
     record PreemptImpl(MemorySegment handle) implements Preempt {
         public PreemptImpl(Handler handler, Arena arena) {
-            final lua_Callbacks.preempt.Function f = (L, gc) ->
-                    handler.preempt(new LuaStateImpl(L), gc).value();
+            final lua_Callbacks.preempt.Function f = (L, gc) -> {
+                var state = new LuaStateImpl(L);
+                try{
+                    var shouldYield = handler.preempt(state, gc);
+                    return shouldYield ? -1 : 0;
+                } catch (Throwable t) {
+                    return ErrorHelper.handleError(state, t);
+                }
+            };
 
             this(lua_Callbacks.preempt.allocate(f, arena));
         }
