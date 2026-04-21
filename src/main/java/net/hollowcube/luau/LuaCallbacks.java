@@ -34,6 +34,49 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
     void interrupt(@Nullable Interrupt handler);
     void interrupt(MemorySegment functionAddress);
 
+    sealed interface Preempt permits LuaCallbacksImpl.PreemptImpl {
+
+        @FunctionalInterface
+        interface Handler {
+            /**
+             * This callback works in conjunction with the interrupt() callback (with a robust implementation
+             * supplied by default unless explicitly overridden) to support preempting running Luau scripts
+             * by either yielding them or throwing an error. Note that usual yieldability rules apply - Luau
+             * does not support yielding across metamethod or C-call boundaries, and an attempt to do so
+             * will result in an error.
+             *
+             * Note that just like the interrupt() callback, this function is extremely restricted in how
+             * it can interact with Lua state. You should never modify the Lua stack or any other state
+             * from this function, and you should not attempt to either yield or error without using
+             * the return/throw API provided for that purpose.
+             *
+             * @param state the LuaState that triggered this call
+             * @param gc the gc operation flag
+             * @return true to preempt with a yield, false otherwise
+             * @throws LuaError throws a LuaError to preempt with an error
+             */
+            boolean preempt(LuaState state, int gc) throws LuaError;
+        }
+
+        static Preempt allocate(Preempt.Handler handler, Arena arena) {
+            return new LuaCallbacksImpl.PreemptImpl(handler, arena);
+        }
+    }
+
+    void preempt(@Nullable LuaCallbacks.Preempt handler);
+
+    /**
+     * The preempt() callback gets called at safepoints (loop back edges, call/ret, gc) if set AND
+     * the interrupt() callback is set to luaW_interrupt_preempt_handler. Note that the current
+     * implementation of this method overwrites the interrupt() callback luaW_interrupt_preempt_handler.
+     * You may use your own interrupt() callback, but to do so you must set it after calling preempt().
+     * Note that if at all possible you should avoid using your own interrupt() handler, as it is
+     * subtle and highly specific in what it is and is not allowed to do with the Lua state. Furthermore,
+     * it must generally be native code due to how Lua propagates errors. If you are using preemption,
+     * virtually all of what interrupt() can do is already exposed via the preemption yield/error API.
+     */
+    void preempt(MemorySegment functionAddress);
+
     sealed interface UserAtom permits LuaCallbacksImpl.UserAtomImpl {
         @FunctionalInterface
         interface Handler {

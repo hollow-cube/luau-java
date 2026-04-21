@@ -69,7 +69,7 @@ public class lua_Debug {
         return name$LAYOUT;
     }
 
-    private static final long name$OFFSET = 0;
+    private static final long name$OFFSET = $LAYOUT.byteOffset(groupElement("name"));
 
     /**
      * Offset for field:
@@ -113,7 +113,7 @@ public class lua_Debug {
         return what$LAYOUT;
     }
 
-    private static final long what$OFFSET = 8;
+    private static final long what$OFFSET = $LAYOUT.byteOffset(groupElement("what"));
 
     /**
      * Offset for field:
@@ -157,7 +157,7 @@ public class lua_Debug {
         return source$LAYOUT;
     }
 
-    private static final long source$OFFSET = 16;
+    private static final long source$OFFSET = $LAYOUT.byteOffset(groupElement("source"));
 
     /**
      * Offset for field:
@@ -201,7 +201,7 @@ public class lua_Debug {
         return short_src$LAYOUT;
     }
 
-    private static final long short_src$OFFSET = 24;
+    private static final long short_src$OFFSET = $LAYOUT.byteOffset(groupElement("short_src"));
 
     /**
      * Offset for field:
@@ -245,7 +245,7 @@ public class lua_Debug {
         return linedefined$LAYOUT;
     }
 
-    private static final long linedefined$OFFSET = 32;
+    private static final long linedefined$OFFSET = $LAYOUT.byteOffset(groupElement("linedefined"));
 
     /**
      * Offset for field:
@@ -289,7 +289,7 @@ public class lua_Debug {
         return currentline$LAYOUT;
     }
 
-    private static final long currentline$OFFSET = 36;
+    private static final long currentline$OFFSET = $LAYOUT.byteOffset(groupElement("currentline"));
 
     /**
      * Offset for field:
@@ -333,7 +333,7 @@ public class lua_Debug {
         return nupvals$LAYOUT;
     }
 
-    private static final long nupvals$OFFSET = 40;
+    private static final long nupvals$OFFSET = $LAYOUT.byteOffset(groupElement("nupvals"));
 
     /**
      * Offset for field:
@@ -377,7 +377,7 @@ public class lua_Debug {
         return nparams$LAYOUT;
     }
 
-    private static final long nparams$OFFSET = 41;
+    private static final long nparams$OFFSET = $LAYOUT.byteOffset(groupElement("nparams"));
 
     /**
      * Offset for field:
@@ -421,7 +421,7 @@ public class lua_Debug {
         return isvararg$LAYOUT;
     }
 
-    private static final long isvararg$OFFSET = 42;
+    private static final long isvararg$OFFSET = $LAYOUT.byteOffset(groupElement("isvararg"));
 
     /**
      * Offset for field:
@@ -465,7 +465,7 @@ public class lua_Debug {
         return userdata$LAYOUT;
     }
 
-    private static final long userdata$OFFSET = 48;
+    private static final long userdata$OFFSET = $LAYOUT.byteOffset(groupElement("userdata"));
 
     /**
      * Offset for field:
@@ -509,7 +509,7 @@ public class lua_Debug {
         return ssbuf$LAYOUT;
     }
 
-    private static final long ssbuf$OFFSET = 56;
+    private static final long ssbuf$OFFSET = $LAYOUT.byteOffset(groupElement("ssbuf"));
 
     /**
      * Offset for field:
@@ -561,7 +561,7 @@ public class lua_Debug {
      * }
      */
     public static byte ssbuf(MemorySegment struct, long index0) {
-        return (byte)ssbuf$ELEM_HANDLE.get(struct, 0L, index0);
+        return (byte)ssbuf$ELEM_HANDLE.get(struct, ssbuf$OFFSET, index0);
     }
 
     /**
@@ -571,7 +571,7 @@ public class lua_Debug {
      * }
      */
     public static void ssbuf(MemorySegment struct, long index0, byte fieldValue) {
-        ssbuf$ELEM_HANDLE.set(struct, 0L, index0, fieldValue);
+        ssbuf$ELEM_HANDLE.set(struct, ssbuf$OFFSET, index0, fieldValue);
     }
 
     /**

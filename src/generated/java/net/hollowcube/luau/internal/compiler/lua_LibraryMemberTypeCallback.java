@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * typedef int (*lua_LibraryMemberTypeCallback)(const char *, const char *)
  * }
  */
-public class lua_LibraryMemberTypeCallback {
+public final class lua_LibraryMemberTypeCallback {
 
-    lua_LibraryMemberTypeCallback() {
+    private lua_LibraryMemberTypeCallback() {
         // Should not be called directly
     }
 
@@ -58,9 +58,11 @@ public class lua_LibraryMemberTypeCallback {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static int invoke(MemorySegment funcPtr,MemorySegment library, MemorySegment member) {
+    public static int invoke(MemorySegment funcPtr, MemorySegment library, MemorySegment member) {
         try {
             return (int) DOWN$MH.invokeExact(funcPtr, library, member);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

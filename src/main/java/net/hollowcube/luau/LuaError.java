@@ -7,11 +7,11 @@ public class LuaError extends RuntimeException {
 
     private final LuaStatus status;
 
-    LuaError(@Nullable String message) {
+    public LuaError(@Nullable String message) {
         this(LuaStatus.ERRRUN, message);
     }
 
-    LuaError(LuaStatus status, @Nullable String message) {
+    public LuaError(LuaStatus status, @Nullable String message) {
         super(message);
         this.status = status;
     }

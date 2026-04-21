@@ -58,6 +58,7 @@ tasks.named<JextractTask>("jextract") {
             "lua_rawgetfield", "lua_rawget", "lua_rawgeti", "lua_getinfo",
             "lua_setuserdatametatable", "lua_pcall", "lua_call",
             "lua_tolstringatom", "lua_namecallatom",
+            "lua_debugtrace"
         )
         typedefs.addAll("lua_Alloc", "lua_CFunction", "lua_Destructor", "lua_Continuation")
         structs.addAll("lua_Callbacks", "lua_Debug")
@@ -73,7 +74,7 @@ tasks.named<JextractTask>("jextract") {
             "luaopen_utf8", "luaopen_math", "luaopen_debug",
             "luaopen_vector", "luaL_openlibs", "luaL_optboolean",
 
-            "luaL_sandbox", "luaL_sandboxthread",
+            "luaL_sandbox", "luaL_sandboxthread"
         )
     }
 
@@ -110,6 +111,7 @@ tasks.named<JextractTask>("jextract") {
             "luaW_lessthan", "luaLW_checkboolean", "luaLW_checkudata",
 
             "luaW_assertconf_log", "luaW_assertconf_dump",
+            "luaW_interrupt_preempt_handler"
         )
     }
 }

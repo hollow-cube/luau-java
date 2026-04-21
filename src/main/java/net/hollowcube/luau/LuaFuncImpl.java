@@ -52,30 +52,8 @@ record LuaFuncImpl(
             final LuaState state = new LuaStateImpl(L);
             try {
                 return impl.applyAsInt(state);
-            } catch (LuaError err) {
-                // If we are OOM-ing, dont attempt to resolve a stacktrace.
-                if (err.status() == LuaStatus.ERRMEM) return (
-                    -100 - LuaStatus.ERRMEM.id()
-                );
-                // If we have no more stack space, ignore the nice error propagation and just continue throwing.
-                if (!state.checkStack(1)) return -100 - err.status().id();
-
-                return err.pushAndMark(state); // Continue unwinding
-            } catch (Throwable t) {
-                if (t instanceof Error e) {
-                    System.err.println(
-                        "An unrecoverable error occurred within a LuaFunc, the VM will crash."
-                    );
-                    throw e;
-                }
-
-                // We got an error in java, merge with the lua stacktrace then put it on the stack and continue.
-                String message = t.getClass().getName();
-                if (t.getMessage() != null) message += ": " + t.getMessage();
-
-                final LuaError err = new LuaError(message);
-                err.setStackTrace(mergeBacktrace(state, t.getStackTrace(), false));
-                return err.pushAndMark(state);
+            }catch (Throwable t){
+                return ErrorHelper.handleError(state, t);
             }
         }
     }

@@ -1,6 +1,7 @@
 package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.vm.lua_Callbacks;
+import net.hollowcube.luau.internal.vm.luawrap_h;
 import net.hollowcube.luau.util.GlobalRef;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +30,37 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     @Override
     public void interrupt(MemorySegment functionAddress) {
         lua_Callbacks.interrupt(callbacks, functionAddress);
+    }
+
+    record PreemptImpl(MemorySegment handle) implements Preempt {
+        public PreemptImpl(Handler handler, Arena arena) {
+            final lua_Callbacks.preempt.Function f = (L, gc) -> {
+                var state = new LuaStateImpl(L);
+                try{
+                    var shouldYield = handler.preempt(state, gc);
+                    return shouldYield ? -1 : 0;
+                } catch (Throwable t) {
+                    return ErrorHelper.handleError(state, t);
+                }
+            };
+
+            this(lua_Callbacks.preempt.allocate(f, arena));
+        }
+    }
+
+    @Override
+    public void preempt(MemorySegment functionAddress) {
+        lua_Callbacks.interrupt(callbacks, luawrap_h.luaW_interrupt_preempt_handler$address());
+        lua_Callbacks.preempt(callbacks, functionAddress);
+    }
+
+    @Override
+    public void preempt(@Nullable LuaCallbacks.Preempt handler) {
+        final MemorySegment handle = handler != null
+                ? ((PreemptImpl) handler).handle
+                : MemorySegment.NULL;
+
+        preempt(handle);
     }
 
     record UserAtomImpl(MemorySegment handle) implements UserAtom {
