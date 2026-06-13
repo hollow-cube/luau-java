@@ -240,11 +240,12 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void setMemCat(int category);
     long totalBytes(int category);
 
-    /// Throws, assumes that there is a value on the stack which becomes the thrown object.
-    @Contract("-> fail")
+    /// Creates a LuaError for the caller to throw
+    @CheckReturnValue
     LuaError error();
+    @CheckReturnValue
     LuaError error(String message);
-    @Contract("_, _ -> fail")
+    @CheckReturnValue
     LuaError error(@PrintFormat String message, @Nullable Object... args);
     @Contract("_, _ -> fail")
     void typeError(int narg, String tname);

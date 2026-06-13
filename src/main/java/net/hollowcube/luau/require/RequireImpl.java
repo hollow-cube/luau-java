@@ -40,7 +40,7 @@ public final class RequireImpl {
 
     public static void registerModule(LuaState state, String path) {
         if (path.isEmpty() || path.charAt(0) != '@')
-            state.error("path must begin with '@'");
+            throw state.error("path must begin with '@'");
 
         state.findTable(REGISTRY_INDEX, REGISTERED_CACHE_TABLE_KEY, 1);
 
@@ -76,7 +76,7 @@ public final class RequireImpl {
             int level = 0;
             do {
                 if (lua_getinfo(state.L(), level++, DEBUG_WHAT, debug) == 0)
-                    state.error("require is not supported in this context");
+                    throw state.error("require is not supported in this context");
             } while (lua_Debug.what(debug).get(ValueLayout.JAVA_BYTE, 0) != 'L');
 
             final String source = lua_Debug.source(debug).getString(0);
@@ -90,7 +90,7 @@ public final class RequireImpl {
         final String cacheKey = state.checkString(2);
 
         if (numResults < 1)
-            state.error("module must return a single value");
+            throw state.error("module must return a single value");
 
         // Cache the results
         if (numResults == 1) {
@@ -117,7 +117,7 @@ public final class RequireImpl {
         state.top(1); // Discard extra arguments, we only use path
 
         final RequireResolver lrc = (RequireResolver) state.toUserData(upvalueIndex(1));
-        if (lrc == null) state.error("unable to find require configuration");
+        if (lrc == null) throw state.error("unable to find require configuration");
 
         final String path = state.checkString(1);
         if (checkRegisteredModules(state, path))
@@ -128,7 +128,7 @@ public final class RequireImpl {
             case ResolvedRequire.Cached _ -> {
                 return 1;
             }
-            case ResolvedRequire.ErrorReported(String error) -> state.error(error);
+            case ResolvedRequire.ErrorReported(String error) -> throw state.error(error);
             case ResolvedRequire.ModuleRead(String chunkName, String loadName, String cacheKey) -> {
                 // (1) path, ..., cacheKey, chunkname, loadname
                 state.pushString(cacheKey);
@@ -147,7 +147,7 @@ public final class RequireImpl {
         int numResults = lrc.load(state, path, chunkName, loadName);
         if (numResults == -1) {
             if (state.top() != stackValues)
-                state.error("stack cannot be modified when require yields");
+                throw state.error("stack cannot be modified when require yields");
             return state.yield(0);
         }
 
@@ -165,7 +165,7 @@ public final class RequireImpl {
 
     private static ResolvedRequire resolveRequire(RequireResolver lrc, LuaState state, String requirerChunkName, String path) {
         if (!lrc.isRequireAllowed(state, requirerChunkName))
-            state.error("require is not supported in this context");
+            throw state.error("require is not supported in this context");
 
         final Navigator navigator = new Navigator(lrc, state, requirerChunkName);
 

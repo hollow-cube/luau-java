@@ -844,7 +844,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     @Override
     public LuaError error() {
-        throw new LuaError(null);
+        return new LuaError(null);
     }
 
     @Override
@@ -994,7 +994,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public void checkAny(int argNum) {
         if (lua_type(L, argNum) == LuaType.NONE.id()) return;
-        error("missing argument #%d", argNum);
+        throw error("missing argument #%d", argNum);
     }
 
     @Override

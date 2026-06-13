@@ -24,7 +24,9 @@ public class TestLuaError {
 
     @Test
     void errorShouldThrowLuaError(LuaState state) {
-        assertThrows(LuaError.class, state::error);
+        assertThrows(LuaError.class, () -> {
+            throw state.error();
+        });
     }
 
     @Test
@@ -98,8 +100,7 @@ public class TestLuaError {
     void throwInUpcallNoMessage(LuaState state, Arena arena) {
         var func = LuaFunc.wrap(
             L -> {
-                L.error();
-                return 0;
+                throw L.error();
             },
             "errfunc",
             arena
