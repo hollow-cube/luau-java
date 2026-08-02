@@ -3987,6 +3987,67 @@ public class lua_h {
         }
     }
 
+    private static class lua_setpointerencodekey {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_LONG_LONG,
+            lua_h.C_LONG_LONG,
+            lua_h.C_LONG_LONG,
+            lua_h.C_LONG_LONG
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_setpointerencodekey");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_setpointerencodekey(lua_State *L, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+     * }
+     */
+    public static FunctionDescriptor lua_setpointerencodekey$descriptor() {
+        return lua_setpointerencodekey.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_setpointerencodekey(lua_State *L, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+     * }
+     */
+    public static MethodHandle lua_setpointerencodekey$handle() {
+        return lua_setpointerencodekey.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_setpointerencodekey(lua_State *L, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+     * }
+     */
+    public static MemorySegment lua_setpointerencodekey$address() {
+        return lua_setpointerencodekey.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_setpointerencodekey(lua_State *L, uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+     * }
+     */
+    public static void lua_setpointerencodekey(MemorySegment L, long a, long b, long c, long d) {
+        var mh$ = lua_setpointerencodekey.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_setpointerencodekey", L, a, b, c, d);
+            }
+            mh$.invokeExact(L, a, b, c, d);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class lua_setuserdatatag {
         public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
             lua_h.C_POINTER,

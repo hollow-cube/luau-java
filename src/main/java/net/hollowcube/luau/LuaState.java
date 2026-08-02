@@ -352,6 +352,18 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void sandbox();
     void sandboxThread();
 
+    /// Sets the key used to obfuscate pointers where they are visible to scripts, which is
+    /// everywhere `tostring` falls back to an address (`table: 0x...`, functions, userdata).
+    ///
+    /// A random key is installed for every new state, because Luau's own default is the
+    /// identity function and would hand scripts real heap addresses. Set `luau.mask-pointers`
+    /// to `false` to keep that default, or call this to pin a key of your own - useful if
+    /// you need stringified addresses to be reproducible across runs.
+    ///
+    /// Whatever key is given, the encoding stays one to one, so distinct objects never
+    /// stringify to the same address.
+    void setPointerEncodeKey(long a, long b, long c, long d);
+
     /// Reads back the execution counts recorded by the Lua function at index.
     ///
     /// Coverage is collected by the compiler, not the VM: a chunk only records anything if

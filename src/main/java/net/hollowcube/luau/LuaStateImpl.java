@@ -16,6 +16,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -43,6 +44,12 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             Boolean.getBoolean("luau.show-complete-backtrace");
     private static final boolean NO_BACKTRACE_MERGE =
             Boolean.getBoolean("luau.no-backtrace-merge");
+
+    /// Set to false to leave Luau's pointer encoding key at its default, which is the
+    /// identity function. Only useful when debugging against real addresses.
+    private static final boolean MASK_POINTERS =
+            !"false".equalsIgnoreCase(System.getProperty("luau.mask-pointers"));
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     static {
         NativeLibraryLoader.loadLibrary("luaujava");
@@ -107,6 +114,14 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         // So we must add a destructor for every tag immediately.
         for (int i = 0; i < USERDATA_TAG_LIMIT; i++) {
             lua_setuserdatadtor(L, i, TAGGED_UDATA_DTOR);
+        }
+
+        if (MASK_POINTERS) {
+            // Luau's default key is the identity function, so tostring(t) hands scripts the
+            // raw heap address. lua_setpointerencodekey forces the parities which keep the
+            // mapping one to one, so distinct objects still stringify distinctly.
+            lua_setpointerencodekey(L, RANDOM.nextLong(), RANDOM.nextLong(),
+                    RANDOM.nextLong(), RANDOM.nextLong());
         }
 
         return new LuaStateImpl(L);
@@ -1223,6 +1238,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public void sandboxThread() {
         luaL_sandboxthread(L);
+    }
+
+    @Override
+    public void setPointerEncodeKey(long a, long b, long c, long d) {
+        lua_setpointerencodekey(L, a, b, c, d);
     }
 
     @Override

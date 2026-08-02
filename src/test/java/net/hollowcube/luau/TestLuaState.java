@@ -413,8 +413,10 @@ class TestLuaState {
             state.setLightUserDataName(123, "test");
             assertEquals("test", state.getLightUserDataName(123));
 
+            // The address is masked (see LuaState#setPointerEncodeKey), so only the name
+            // the tag was given is predictable here.
             state.pushLightUserDataTagged(12345, 123);
-            assertEquals("test: 0x0000000000003039", state.toStringRepr(-1));
+            assertTrue(state.toStringRepr(-1).startsWith("test: 0x"));
         }
 
         @Test

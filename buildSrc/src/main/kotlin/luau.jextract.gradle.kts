@@ -64,6 +64,7 @@ tasks.named<JextractTask>("jextract") {
             "luau_load", "lua_resume", "lua_resumeerror", "lua_status",
             "lua_isyieldable", "lua_getthreaddata", "lua_setthreaddata", "lua_costatus",
             "lua_gc", "lua_setmemcat", "lua_totalbytes", "lua_rawiter",
+            "lua_setpointerencodekey",
             "lua_setuserdatatag", "lua_setuserdatadtor", "lua_getuserdatametatable",
             "lua_weakref", "lua_weakunref", "lua_getweakref",
             "lua_getlightuserdataname", "lua_ref", "lua_unref", "lua_callbacks",

@@ -584,6 +584,16 @@
         "returnType": "void",
         "parameterTypes": [
           "void*",
+          "jlong",
+          "jlong",
+          "jlong",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
           "jint",
           "void*",
           "void*"
