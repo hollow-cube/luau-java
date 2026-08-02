@@ -300,6 +300,12 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return type(index) == LuaType.THREAD;
     }
 
+    @Override
+    public boolean isInteger64(int index) {
+        // lua_isinteger64 is a macro over lua_type, so there is no symbol to bind.
+        return type(index) == LuaType.INTEGER;
+    }
+
     //TODO: test me
     @Override
     public boolean equal(int index1, int index2) {
@@ -379,6 +385,20 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             final MemorySegment isNum = arena.allocate(ValueLayout.JAVA_INT);
             final int value = lua_tounsignedx(L, index, isNum);
             return isNum.get(ValueLayout.JAVA_INT, 0) != 0 ? Integer.toUnsignedLong(value) : null;
+        }
+    }
+
+    @Override
+    public long toInteger64(int index) {
+        return lua_tointeger64(L, index, MemorySegment.NULL);
+    }
+
+    @Override
+    public @Nullable Long toInteger64OrNull(int index) {
+        try (Arena arena = Arena.ofConfined()) {
+            final MemorySegment isInteger = arena.allocate(ValueLayout.JAVA_INT);
+            final long value = lua_tointeger64(L, index, isInteger);
+            return isInteger.get(ValueLayout.JAVA_INT, 0) != 0 ? value : null;
         }
     }
 
@@ -557,6 +577,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public void pushInteger(int value) {
         lua_pushinteger(L, value);
+    }
+
+    @Override
+    public void pushInteger64(long value) {
+        lua_pushinteger64(L, value);
     }
 
     @Override
@@ -1055,6 +1080,21 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public int optInteger(int argNum, int def) {
         final Integer integer = toIntegerOrNull(argNum);
+        return integer != null ? integer : def;
+    }
+
+    @Override
+    public long checkInteger64(int argNum) {
+        final Long integer = toInteger64OrNull(argNum);
+        if (integer != null) return integer;
+
+        typeError(argNum, LuaType.INTEGER.typeName());
+        return 0; // unreachable
+    }
+
+    @Override
+    public long optInteger64(int argNum, long def) {
+        final Long integer = toInteger64OrNull(argNum);
         return integer != null ? integer : def;
     }
 

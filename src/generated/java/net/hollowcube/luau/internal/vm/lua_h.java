@@ -1505,6 +1505,66 @@ public class lua_h {
         }
     }
 
+    private static class lua_tointeger64 {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_LONG_LONG,
+            lua_h.C_POINTER,
+            lua_h.C_INT,
+            lua_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_tointeger64");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int64_t lua_tointeger64(lua_State *L, int idx, int *isinteger)
+     * }
+     */
+    public static FunctionDescriptor lua_tointeger64$descriptor() {
+        return lua_tointeger64.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int64_t lua_tointeger64(lua_State *L, int idx, int *isinteger)
+     * }
+     */
+    public static MethodHandle lua_tointeger64$handle() {
+        return lua_tointeger64.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int64_t lua_tointeger64(lua_State *L, int idx, int *isinteger)
+     * }
+     */
+    public static MemorySegment lua_tointeger64$address() {
+        return lua_tointeger64.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int64_t lua_tointeger64(lua_State *L, int idx, int *isinteger)
+     * }
+     */
+    public static long lua_tointeger64(MemorySegment L, int idx, MemorySegment isinteger) {
+        var mh$ = lua_tointeger64.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_tointeger64", L, idx, isinteger);
+            }
+            return (long)mh$.invokeExact(L, idx, isinteger);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class lua_tolstringatom {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             lua_h.C_POINTER,
@@ -2384,6 +2444,64 @@ public class lua_h {
         try {
             if (TRACE_DOWNCALLS) {
                 traceDowncall("lua_pushinteger", L, n);
+            }
+            mh$.invokeExact(L, n);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_pushinteger64 {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_LONG_LONG
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_pushinteger64");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_pushinteger64(lua_State *L, int64_t n)
+     * }
+     */
+    public static FunctionDescriptor lua_pushinteger64$descriptor() {
+        return lua_pushinteger64.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_pushinteger64(lua_State *L, int64_t n)
+     * }
+     */
+    public static MethodHandle lua_pushinteger64$handle() {
+        return lua_pushinteger64.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_pushinteger64(lua_State *L, int64_t n)
+     * }
+     */
+    public static MemorySegment lua_pushinteger64$address() {
+        return lua_pushinteger64.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_pushinteger64(lua_State *L, int64_t n)
+     * }
+     */
+    public static void lua_pushinteger64(MemorySegment L, long n) {
+        var mh$ = lua_pushinteger64.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_pushinteger64", L, n);
             }
             mh$.invokeExact(L, n);
         } catch (Throwable ex$) {

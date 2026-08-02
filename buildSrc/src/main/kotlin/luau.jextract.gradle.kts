@@ -26,6 +26,7 @@ tasks.named<JextractTask>("jextract") {
             "luau_set_compile_constant_nil",
             "luau_set_compile_constant_boolean",
             "luau_set_compile_constant_number",
+            "luau_set_compile_constant_integer64",
             "luau_set_compile_constant_vector",
             "luau_set_compile_constant_string",
         )
@@ -47,13 +48,16 @@ tasks.named<JextractTask>("jextract") {
             "lua_close", "lua_mainthread", "lua_isthreadreset",
             "lua_absindex", "lua_gettop", "lua_settop", "lua_pushvalue",
             "lua_remove", "lua_insert", "lua_replace", "lua_checkstack",
+            // note: lua_isinteger64 is declared in lua.h but also #defined as a macro over
+            // lua_type, so it is never emitted as a symbol - see LuaStateImpl#isInteger64
             "lua_rawcheckstack", "lua_isnumber", "lua_isstring", "lua_iscfunction",
             "lua_isLfunction", "lua_isuserdata", "lua_rawequal",
             "lua_tonumberx", "lua_tointegerx", "lua_tounsignedx", "lua_tovector",
-            "lua_toboolean", "lua_tocfunction", "lua_tolightuserdata",
+            "lua_toboolean", "lua_tointeger64", "lua_tocfunction", "lua_tolightuserdata",
             "lua_tolightuserdatatagged", "lua_touserdata", "lua_touserdatatagged",
             "lua_userdatatag", "lua_lightuserdatatag", "lua_tothread", "lua_tobuffer",
             "lua_topointer", "lua_pushnil", "lua_pushnumber", "lua_pushinteger",
+            "lua_pushinteger64",
             "lua_pushunsigned", "lua_pushvector", "lua_pushboolean", "lua_pushthread",
             "lua_pushlightuserdatatagged",
             "lua_setreadonly", "lua_getreadonly", "lua_getmetatable",

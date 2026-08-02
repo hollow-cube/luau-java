@@ -132,6 +132,12 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     boolean isUserData(int index);
     boolean isLightUserData(int index);
     boolean isThread(int index);
+    /// Returns true if the value at index is a Luau `integer`, false otherwise.
+    ///
+    /// [LuaType#INTEGER] is a distinct type from [LuaType#NUMBER], and the VM does not
+    /// coerce between them: [#isNumber(int)] is false for an integer, and [#toNumber(int)]
+    /// returns 0. Use [#toInteger64(int)] to read one.
+    boolean isInteger64(int index);
 
     boolean equal(int index1, int index2);
     boolean rawEqual(int index1, int index2);
@@ -149,6 +155,12 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     /// Returns the unsigned integer at index, or 0 if the value is not a number.
     long toUnsigned(int index);
     @Nullable Long toUnsignedOrNull(int index);
+    /// Returns the Luau `integer` at index, or 0 if the value is not an integer.
+    ///
+    /// Note this is not [#toInteger(int)] with a wider result: that one reads a *number*
+    /// and truncates it, and returns 0 for an integer. See [#isInteger64(int)].
+    long toInteger64(int index);
+    @Nullable Long toInteger64OrNull(int index);
     float @Nullable [] toVector(int index);
     /// Returns the string at index, or null if the value is not a string.
     ///
@@ -182,6 +194,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void pushBoolean(boolean value);
     void pushNumber(double value);
     void pushInteger(int value);
+    /// Pushes a Luau `integer`, the 64 bit integer type provided by the `integer` library.
+    void pushInteger64(long value);
     void pushUnsigned(long value);
     void pushVector(float x, float y, float z);
     void pushVector(float[] value);
@@ -291,6 +305,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     double optNumber(int argNum, double def);
     int checkInteger(int argNum);
     int optInteger(int argNum, int def);
+    long checkInteger64(int argNum);
+    long optInteger64(int argNum, long def);
     long checkUnsigned(int argNum);
     long optUnsigned(int argNum, long def);
     float[] checkVector(int argNum);
