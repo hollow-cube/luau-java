@@ -46,10 +46,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     static {
         NativeLibraryLoader.loadLibrary("luaujava");
-
-        // Luau ships most functionality behind fast flags which default to off in the
-        // library build; its own CLI turns the stable ones on at startup, so do the same.
-        // Must happen before any state is created.
         luaW_setflagsdefault();
 
         if ("dump".equals(ASSERT_HANDLER)) {

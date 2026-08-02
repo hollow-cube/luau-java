@@ -9,7 +9,6 @@ tasks.named<JextractTask>("jextract") {
 
     val nativeDir = project(":native").projectDir
     val nativeBuild = nativeDir.resolve("luau")
-    // luau-java's own bridge headers, compiled into the upstream targets. See native/CMakeLists.txt.
     val bridgeInclude = nativeDir.resolve("include")
 
     header("$bridgeInclude/luaujavac.h") {

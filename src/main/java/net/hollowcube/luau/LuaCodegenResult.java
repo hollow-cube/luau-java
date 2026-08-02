@@ -1,9 +1,5 @@
 package net.hollowcube.luau;
 
-/// Outcome of a [LuaState#codegenCompile(int)] call.
-///
-/// Mirrors Luau's `CodeGenCompilationResult`, which is documented as additive, so an
-/// unrecognised value maps to [#UNKNOWN] rather than failing.
 public enum LuaCodegenResult {
     /// Native code was generated for at least one function
     SUCCESS,
@@ -28,6 +24,8 @@ public enum LuaCodegenResult {
     /// Executable memory could not be allocated
     ALLOCATION_FAILED,
     /// A result Luau reported which this binding does not know about
+    ///
+    /// This type is documented-additive, so we need to handle unknown values.
     UNKNOWN;
 
     private static final LuaCodegenResult[] VALUES = values();

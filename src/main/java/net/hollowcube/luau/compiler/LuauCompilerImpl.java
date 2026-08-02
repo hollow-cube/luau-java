@@ -1,33 +1,32 @@
 package net.hollowcube.luau.compiler;
 
-import static net.hollowcube.luau.internal.compiler.luaujavac_h.luau_ext_free;
-import static net.hollowcube.luau.internal.vm.luaujava_h.luaW_setflagsdefault;
+import net.hollowcube.luau.internal.compiler.lua_CompileOptions;
+import net.hollowcube.luau.internal.compiler.luacode_h;
+import net.hollowcube.luau.util.NativeLibraryLoader;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import net.hollowcube.luau.internal.compiler.lua_CompileOptions;
-import net.hollowcube.luau.internal.compiler.luacode_h;
-import net.hollowcube.luau.util.NativeLibraryLoader;
-import org.jetbrains.annotations.Nullable;
+
+import static net.hollowcube.luau.internal.compiler.luaujavac_h.luau_ext_free;
+import static net.hollowcube.luau.internal.vm.luaujava_h.luaW_setflagsdefault;
 
 record LuauCompilerImpl(
-    OptimizationLevel optimizationLevel,
-    DebugLevel debugLevel,
-    TypeInfoLevel typeInfoLevel,
-    CoverageLevel coverageLevel,
-    @Nullable String vectorLib,
-    @Nullable String vectorCtor,
-    @Nullable String vectorType,
-    List<String> mutableGlobals,
-    List<String> userdataTypes
+        OptimizationLevel optimizationLevel,
+        DebugLevel debugLevel,
+        TypeInfoLevel typeInfoLevel,
+        CoverageLevel coverageLevel,
+        @Nullable String vectorLib,
+        @Nullable String vectorCtor,
+        @Nullable String vectorType,
+        List<String> mutableGlobals,
+        List<String> userdataTypes
 ) implements LuauCompiler {
     static {
         NativeLibraryLoader.loadLibrary("luaujava");
-        // The compiler shares a library, and therefore a fast flag list, with the VM, but
-        // it can be used without ever creating a state. Enabling flags twice is harmless.
         luaW_setflagsdefault();
     }
 
@@ -35,24 +34,24 @@ record LuauCompilerImpl(
     public byte[] compile(byte[] source) throws LuauCompileException {
         try (Arena arena = Arena.ofConfined()) {
             final MemorySegment sourceStr = arena.allocateFrom(
-                ValueLayout.JAVA_BYTE,
-                source
+                    ValueLayout.JAVA_BYTE,
+                    source
             );
             final MemorySegment bytecodeSize = arena.allocate(
-                ValueLayout.JAVA_LONG
+                    ValueLayout.JAVA_LONG
             );
             final MemorySegment compileOpts = createCompileOptions(arena);
 
             final MemorySegment result = luacode_h.luau_compile(
-                sourceStr,
-                source.length,
-                compileOpts,
-                bytecodeSize
+                    sourceStr,
+                    source.length,
+                    compileOpts,
+                    bytecodeSize
             );
             final long length = bytecodeSize.get(ValueLayout.JAVA_LONG, 0);
             final byte[] bytecode = result
-                .asSlice(0, length)
-                .toArray(ValueLayout.JAVA_BYTE);
+                    .asSlice(0, length)
+                    .toArray(ValueLayout.JAVA_BYTE);
             luau_ext_free(result);
 
             // Bytecode now contains either an error or valid luau bytecode.
@@ -62,10 +61,10 @@ record LuauCompilerImpl(
 
             // There was an error.
             final String errorMessage = new String(
-                bytecode,
-                1,
-                bytecode.length - 1,
-                StandardCharsets.UTF_8
+                    bytecode,
+                    1,
+                    bytecode.length - 1,
+                    StandardCharsets.UTF_8
             );
             throw new LuauCompileException(errorMessage);
         }
@@ -78,29 +77,27 @@ record LuauCompilerImpl(
         lua_CompileOptions.typeInfoLevel(opts, typeInfoLevel.ordinal());
         lua_CompileOptions.coverageLevel(opts, coverageLevel.ordinal());
         if (vectorLib != null) lua_CompileOptions.vectorLib(
-            opts,
-            arena.allocateFrom(vectorLib)
+                opts,
+                arena.allocateFrom(vectorLib)
         );
         if (vectorCtor != null) lua_CompileOptions.vectorCtor(
-            opts,
-            arena.allocateFrom(vectorCtor)
+                opts,
+                arena.allocateFrom(vectorCtor)
         );
         if (vectorType != null) lua_CompileOptions.vectorType(
-            opts,
-            arena.allocateFrom(vectorType)
+                opts,
+                arena.allocateFrom(vectorType)
         );
-        // 0 = 32-bit float components, matching the shipped VM build (LUA_VECTOR_DOUBLE=0)
-        // and the float-based vector API on LuaState.
-        lua_CompileOptions.vectorPrecision(opts, 0);
+        lua_CompileOptions.vectorPrecision(opts, 0); // float-based vectors
         if (!mutableGlobals.isEmpty()) {
             // size + 1 because the array is null terminated.
             final MemorySegment mutableGlobals = arena.allocate(
-                ValueLayout.ADDRESS,
-                this.mutableGlobals.size() + 1
+                    ValueLayout.ADDRESS,
+                    this.mutableGlobals.size() + 1
             );
             for (int i = 0; i < this.mutableGlobals.size(); i++) {
                 final MemorySegment str = arena.allocateFrom(
-                    this.mutableGlobals.get(i)
+                        this.mutableGlobals.get(i)
                 );
                 mutableGlobals.setAtIndex(ValueLayout.ADDRESS, i, str);
             }
@@ -109,12 +106,12 @@ record LuauCompilerImpl(
         if (!userdataTypes.isEmpty()) {
             // size + 1 because the array is null terminated.
             final MemorySegment userdataTypes = arena.allocate(
-                ValueLayout.ADDRESS,
-                this.userdataTypes.size() + 1
+                    ValueLayout.ADDRESS,
+                    this.userdataTypes.size() + 1
             );
             for (int i = 0; i < this.userdataTypes.size(); i++) {
                 final MemorySegment str = arena.allocateFrom(
-                    this.userdataTypes.get(i)
+                        this.userdataTypes.get(i)
                 );
                 userdataTypes.setAtIndex(ValueLayout.ADDRESS, i, str);
             }
@@ -126,7 +123,7 @@ record LuauCompilerImpl(
     static final class BuilderImpl implements Builder {
 
         private OptimizationLevel optimizationLevel =
-            OptimizationLevel.BASELINE;
+                OptimizationLevel.BASELINE;
         private DebugLevel debugLevel = DebugLevel.BACKTRACE;
         private TypeInfoLevel typeInfoLevel = TypeInfoLevel.NATIVE_MODULES;
         private CoverageLevel coverageLevel = CoverageLevel.NONE;
@@ -193,15 +190,15 @@ record LuauCompilerImpl(
         @Override
         public LuauCompiler build() {
             return new LuauCompilerImpl(
-                optimizationLevel,
-                debugLevel,
-                typeInfoLevel,
-                coverageLevel,
-                vectorLib,
-                vectorCtor,
-                vectorType,
-                mutableGlobals,
-                userdataTypes
+                    optimizationLevel,
+                    debugLevel,
+                    typeInfoLevel,
+                    coverageLevel,
+                    vectorLib,
+                    vectorCtor,
+                    vectorType,
+                    mutableGlobals,
+                    userdataTypes
             );
         }
     }
