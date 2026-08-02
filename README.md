@@ -131,10 +131,11 @@ in `native/include` and `native/src`, and is compiled into the Luau target by
   once the Java frame is off the stack.
 * `luau_ext_free`, freeing bytecode inside the library rather than across the CRT boundary.
 
-The build ships two libraries: `luau` and `globalref`. Upstream's `LUAU_BUILD_SHARED` produces
-about ten separate libraries, but that split does not link - see the comment in
-`native/CMakeLists.txt` - so all of Luau, including the native codegen (JIT) backend and the
-runtime bytecode inliner, goes into `luau`.
+The build ships a single library, `luaujava`. Upstream's `LUAU_BUILD_SHARED` produces about ten
+separate libraries, but that split does not link - see the comment in `native/CMakeLists.txt` -
+so all of Luau goes in, including the native codegen (JIT) backend and the runtime bytecode
+inliner, alongside the bridge and the one JNI helper (`GlobalRef`) the binding needs. It is named
+for the binding rather than for Luau because it is not just Luau built as a shared library.
 
 Both optimizers are off by default and are effectively exclusive; see `LuaState.codegenCreate()`
 and `LuaState.jitInlinerCreate()`.

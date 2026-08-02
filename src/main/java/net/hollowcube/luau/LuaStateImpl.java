@@ -45,7 +45,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             Boolean.getBoolean("luau.no-backtrace-merge");
 
     static {
-        NativeLibraryLoader.loadLibrary("luau");
+        NativeLibraryLoader.loadLibrary("luaujava");
 
         // Luau ships most functionality behind fast flags which default to off in the
         // library build; its own CLI turns the stable ones on at startup, so do the same.

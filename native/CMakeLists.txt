@@ -19,11 +19,13 @@ set(LUAU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/luau)
 #
 target_sources(Luau.VM PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/luaujava.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/luaujavac.cpp)
-target_include_directories(Luau.VM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-add_library(globalref SHARED src/net_hollowcube_luau_util_GlobalRef.cc)
-target_include_directories(globalref PRIVATE ${JNI_INCLUDE_DIRS})
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/luaujavac.cpp
+        # Plain JNI rather than FFM, and so nothing to do with the rest of the bridge, but
+        # it rides along to keep the binding down to one library to load.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/net_hollowcube_luau_util_GlobalRef.cc)
+target_include_directories(Luau.VM PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${JNI_INCLUDE_DIRS})
 
 #
 # LUAU_BUILD_SHARED is on for its export macros (extern "C" + default visibility on
@@ -88,11 +90,8 @@ foreach (unused Luau.CLI.lib Luau.Config Luau.Analysis Luau.Require isocline)
     set_target_properties(${unused} PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endforeach ()
 
-function(luaujava_ship target name)
-    set_target_properties(${target} PROPERTIES OUTPUT_NAME ${name}
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-endfunction()
-
-luaujava_ship(Luau.VM luau)
-luaujava_ship(globalref globalref)
+# The one shipped library. Named for the binding rather than for Luau, since it is not
+# just Luau built as a shared library - see NativeLibraryLoader on the Java side.
+set_target_properties(Luau.VM PROPERTIES OUTPUT_NAME luaujava
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

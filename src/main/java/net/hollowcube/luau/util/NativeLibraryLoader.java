@@ -12,8 +12,9 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class NativeLibraryLoader {
 
-    /// Loads each library in order, skipping any already loaded. The shipped libraries do
-    /// not depend on each other, so the order between separate calls does not matter.
+    /// Loads each library in order, skipping any already loaded. Everything native lives in
+    /// a single `luaujava` library, but several entry points can be the first one touched
+    /// (a state, the compiler, a global ref), so they all ask for it.
     public static synchronized void loadLibrary(String... names) {
         for (final String name : names) {
             if (!LOADED.add(name)) continue;

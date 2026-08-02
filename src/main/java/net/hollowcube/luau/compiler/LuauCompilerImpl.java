@@ -25,7 +25,7 @@ record LuauCompilerImpl(
     List<String> userdataTypes
 ) implements LuauCompiler {
     static {
-        NativeLibraryLoader.loadLibrary("luau");
+        NativeLibraryLoader.loadLibrary("luaujava");
         // The compiler shares a library, and therefore a fast flag list, with the VM, but
         // it can be used without ever creating a state. Enabling flags twice is harmless.
         luaW_setflagsdefault();

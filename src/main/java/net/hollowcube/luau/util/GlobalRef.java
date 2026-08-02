@@ -6,7 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 public class GlobalRef {
 
     static {
-        NativeLibraryLoader.loadLibrary("globalref");
+        NativeLibraryLoader.loadLibrary("luaujava");
     }
 
     public static native long newref(Object obj);
