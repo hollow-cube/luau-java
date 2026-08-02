@@ -31,6 +31,7 @@ public final class NativeLibraryLoader {
     static {
         try {
             NATIVES_DIR = Files.createTempDirectory("luau-natives");
+            NATIVES_DIR.toFile().deleteOnExit();
         } catch (IOException e) {
             throw new RuntimeException(
                 "Failed to create temporary directory for native libraries",
@@ -55,6 +56,7 @@ public final class NativeLibraryLoader {
         );
         try (InputStream in = innerPath.openStream()) {
             Files.copy(in, targetPath);
+            targetPath.toFile().deleteOnExit();
             System.load(targetPath.toString());
             return true;
         } catch (IOException e) {
