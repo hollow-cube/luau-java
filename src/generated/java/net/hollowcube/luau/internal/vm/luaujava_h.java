@@ -469,6 +469,65 @@ public class luaujava_h {
         }
     }
 
+    private static class luaW_isinlined {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            luaujava_h.C_INT,
+            luaujava_h.C_POINTER,
+            luaujava_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = luaujava_h.findOrThrow("luaW_isinlined");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaW_isinlined(lua_State *L, int idx)
+     * }
+     */
+    public static FunctionDescriptor luaW_isinlined$descriptor() {
+        return luaW_isinlined.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaW_isinlined(lua_State *L, int idx)
+     * }
+     */
+    public static MethodHandle luaW_isinlined$handle() {
+        return luaW_isinlined.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaW_isinlined(lua_State *L, int idx)
+     * }
+     */
+    public static MemorySegment luaW_isinlined$address() {
+        return luaW_isinlined.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaW_isinlined(lua_State *L, int idx)
+     * }
+     */
+    public static int luaW_isinlined(MemorySegment L, int idx) {
+        var mh$ = luaW_isinlined.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaW_isinlined", L, idx);
+            }
+            return (int)mh$.invokeExact(L, idx);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaW_newstate {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             luaujava_h.C_POINTER,

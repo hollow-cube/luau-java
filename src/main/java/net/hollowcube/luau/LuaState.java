@@ -333,6 +333,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     /// [#codegenSupported()] is true. Does nothing if codegen is already enabled.
     /// Functions still need to be compiled individually with [#codegenCompile(int)];
     /// this only installs the machinery.
+    ///
+    /// Effectively exclusive with the runtime inliner - see [#jitInlinerCreate()].
     void codegenCreate();
 
     /// Natively compile the Lua function at index, and all functions nested inside it.
@@ -347,6 +349,29 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     ///
     /// @throws IllegalArgumentException if the value at index is not a Lua function
     LuaCodegenResult codegenCompile(int index);
+
+    /// Enable the runtime bytecode inliner for this state.
+    ///
+    /// Unlike [#codegenCompile(int)] this is not driven by the caller: the VM counts call
+    /// sites, and once one is monomorphic and hot the inliner splices the callee into a
+    /// re-optimized copy of the caller's bytecode and constant folds the result. It emits
+    /// bytecode rather than machine code, so it speeds up the interpreter and does not
+    /// require [#codegenSupported()]. Inlining is transparent: stack traces and
+    /// `debug.info` are unaffected.
+    ///
+    /// Effectively exclusive with native codegen, so pick one. Natively compiled functions
+    /// do not record call feedback, so the inliner never fires for them; enabling both is
+    /// harmless but only whichever functions were left to the interpreter can be inlined.
+    ///
+    /// Only some calls are candidates - the callee must have no upvalues, and the call
+    /// must be a non-multret call inside a nested function. `return f(x)` is a multret
+    /// call and never inlines; `local v = f(x) return v` does.
+    void jitInlinerCreate();
+
+    /// Disable the runtime bytecode inliner for this state.
+    ///
+    /// Functions already re-optimized stay re-optimized; this only stops further inlining.
+    void jitInlinerDisable();
 
     //endregion
 

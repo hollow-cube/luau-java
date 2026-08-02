@@ -10,7 +10,9 @@
 #include "Luau/Common.h"
 #include "Luau/ExperimentalFlags.h"
 
+#include "lapi.h"
 #include "ldo.h"
+#include "lobject.h"
 #include "lstate.h"
 
 // use POSIX versions of setjmp/longjmp if possible: they don't save/restore signal mask and are therefore faster
@@ -94,6 +96,16 @@ LUA_API int luaW_codegen_compile(lua_State* L, int idx)
 
     Luau::CodeGen::CompilationOptions options;
     return int(Luau::CodeGen::compile(L, idx, options).result);
+}
+
+LUA_API int luaW_isinlined(lua_State* L, int idx)
+{
+    if (!lua_isLfunction(L, idx))
+        return 0;
+
+    // The runtime inliner replaces a hot function's proto with a re-optimized copy and
+    // leaves a backlink to the original, so this is how you tell that it has run.
+    return clvalue(luaA_toobject(L, idx))->l.p->deoptimized != nullptr;
 }
 
 //

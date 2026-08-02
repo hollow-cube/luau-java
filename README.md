@@ -122,19 +122,22 @@ git clone git@github.com:hollow-cube/luau-java.git --recurse-submodules && cd lu
 
 `native/luau` tracks [upstream Luau](https://github.com/luau-lang/luau) unmodified, built with
 `LUAU_EXTERN_C` and `LUAU_BUILD_SHARED`. Everything luau-java needs on top of the public C API lives
-in `native/include` and `native/src`, and is compiled into the Luau VM and compiler targets by
+in `native/include` and `native/src`, and is compiled into the Luau target by
 `native/CMakeLists.txt` (it needs VM internals, which are hidden-visibility in a shared build):
 
 * `luaW_*` barrier wrappers, so an error raised inside a Lua API called from Java does not longjmp
   over the FFM downcall stub.
 * `luaW_dispatch`, the native trampoline every Java closure is registered as, which raises errors
   once the Java frame is off the stack.
-* `luau_ext_free`, freeing bytecode inside the compiler library rather than across the CRT boundary.
+* `luau_ext_free`, freeing bytecode inside the library rather than across the CRT boundary.
 
-The build ships three libraries: `vm`, `compiler` and `globalref`. `Luau.CodeGen`, the native
-codegen (JIT) backend, is part of `vm` rather than a library of its own, for the same reason -
-it reaches into VM internals, so it can only be compiled in, never linked against. See
-`LuaState.codegenCreate()`.
+The build ships two libraries: `luau` and `globalref`. Upstream's `LUAU_BUILD_SHARED` produces
+about ten separate libraries, but that split does not link - see the comment in
+`native/CMakeLists.txt` - so all of Luau, including the native codegen (JIT) backend and the
+runtime bytecode inliner, goes into `luau`.
+
+Both optimizers are off by default and are effectively exclusive; see `LuaState.codegenCreate()`
+and `LuaState.jitInlinerCreate()`.
 
 ### Updating Bindings
 

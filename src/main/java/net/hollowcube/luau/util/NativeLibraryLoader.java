@@ -12,10 +12,8 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class NativeLibraryLoader {
 
-    /// Loads each library in order, skipping any already loaded. Dependencies must be
-    /// listed before their dependents: every library is extracted into the same
-    /// directory and resolved through an `@loader_path`/`$ORIGIN` rpath, so a
-    /// dependency must be on disk before its dependent is loaded.
+    /// Loads each library in order, skipping any already loaded. The shipped libraries do
+    /// not depend on each other, so the order between separate calls does not matter.
     public static synchronized void loadLibrary(String... names) {
         for (final String name : names) {
             if (!LOADED.add(name)) continue;

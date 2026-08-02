@@ -35,6 +35,10 @@ struct luaW_userdata
 // Attempts to compile the function at idx, returning the CodeGenCompilationResult
 LUA_API int luaW_codegen_compile(lua_State* L, int idx);
 
+// True if the function at idx has been re-optimized by the runtime inliner. Diagnostic
+// only - inlining is otherwise transparent, and this reaches into VM internals.
+LUA_API int luaW_isinlined(lua_State* L, int idx);
+
 //
 // BEGIN LUA WRAPPERS
 //

@@ -1,7 +1,7 @@
 package net.hollowcube.luau.compiler;
 
 import static net.hollowcube.luau.internal.compiler.luaujavac_h.luau_ext_free;
-import static net.hollowcube.luau.internal.compiler.luaujavac_h.luauC_setflagsdefault;
+import static net.hollowcube.luau.internal.vm.luaujava_h.luaW_setflagsdefault;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -25,10 +25,10 @@ record LuauCompilerImpl(
     List<String> userdataTypes
 ) implements LuauCompiler {
     static {
-        // libcompiler links libvm: Luau.Bytecode reads two fast flags the VM defines.
-        NativeLibraryLoader.loadLibrary("vm", "compiler");
-        // The compiler library owns its own fast flag list, separate from the VM's.
-        luauC_setflagsdefault();
+        NativeLibraryLoader.loadLibrary("luau");
+        // The compiler shares a library, and therefore a fast flag list, with the VM, but
+        // it can be used without ever creating a state. Enabling flags twice is harmless.
+        luaW_setflagsdefault();
     }
 
     @Override

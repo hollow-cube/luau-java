@@ -45,7 +45,7 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             Boolean.getBoolean("luau.no-backtrace-merge");
 
     static {
-        NativeLibraryLoader.loadLibrary("vm");
+        NativeLibraryLoader.loadLibrary("luau");
 
         // Luau ships most functionality behind fast flags which default to off in the
         // library build; its own CLI turns the stable ones on at startup, so do the same.
@@ -1190,6 +1190,16 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
                     "value at index " + index + " is not a Lua function: " + typeName(index));
         }
         return LuaCodegenResult.byId(luaW_codegen_compile(L, index));
+    }
+
+    @Override
+    public void jitInlinerCreate() {
+        luajitinliner_h.luau_enable_jit_inliner(L);
+    }
+
+    @Override
+    public void jitInlinerDisable() {
+        luajitinliner_h.luau_disable_jit_inliner(L);
     }
 
     @Override

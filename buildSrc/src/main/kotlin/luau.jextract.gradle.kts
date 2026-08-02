@@ -16,7 +16,7 @@ tasks.named<JextractTask>("jextract") {
         targetPackage = "net.hollowcube.luau.internal.compiler"
         includes.add("$nativeBuild/Compiler/include")
 
-        functions.addAll("luau_ext_free", "luauC_setflagsdefault")
+        functions.addAll("luau_ext_free")
     }
 
     header("$nativeBuild/Compiler/include/luacode.h") {
@@ -94,6 +94,12 @@ tasks.named<JextractTask>("jextract") {
         functions.addAll("luau_codegen_supported", "luau_codegen_create")
     }
 
+    header("$nativeBuild/Inliner/include/luajitinliner.h") {
+        targetPackage = "net.hollowcube.luau.internal.vm"
+
+        functions.addAll("luau_enable_jit_inliner", "luau_disable_jit_inliner")
+    }
+
     header("$bridgeInclude/luaujava.h") {
         targetPackage = "net.hollowcube.luau.internal.vm"
         includes.add("$nativeBuild/VM/include")
@@ -101,7 +107,7 @@ tasks.named<JextractTask>("jextract") {
         structs.addAll("luaW_userdata")
         functions.addAll(
             "luaW_getstatus", "luaW_setflagsdefault", "luaW_isjavaframe",
-            "luaW_codegen_compile",
+            "luaW_codegen_compile", "luaW_isinlined",
 
             "luaW_newstate", "luaW_newthread", "luaW_resetthread",
             "lua_xmove", "lua_xpush", "luaW_equal",
