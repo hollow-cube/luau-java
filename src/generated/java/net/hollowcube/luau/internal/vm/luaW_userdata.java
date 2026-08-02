@@ -50,7 +50,7 @@ public class luaW_userdata {
         return javadata$LAYOUT;
     }
 
-    private static final long javadata$OFFSET = 0;
+    private static final long javadata$OFFSET = $LAYOUT.byteOffset(groupElement("javadata"));
 
     /**
      * Offset for field:
@@ -87,9 +87,9 @@ public class luaW_userdata {
      * int (*preempt)(lua_State *, int)
      * }
      */
-    public static class preempt {
+    public final static class preempt {
 
-        preempt() {
+        private preempt() {
             // Should not be called directly
         }
 
@@ -128,9 +128,11 @@ public class luaW_userdata {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static int invoke(MemorySegment funcPtr,MemorySegment _x0, int _x1) {
+        public static int invoke(MemorySegment funcPtr, MemorySegment _x0, int _x1) {
             try {
                 return (int) DOWN$MH.invokeExact(funcPtr, _x0, _x1);
+            } catch (Error | RuntimeException ex) {
+                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -149,7 +151,7 @@ public class luaW_userdata {
         return preempt$LAYOUT;
     }
 
-    private static final long preempt$OFFSET = 8;
+    private static final long preempt$OFFSET = $LAYOUT.byteOffset(groupElement("preempt"));
 
     /**
      * Offset for field:

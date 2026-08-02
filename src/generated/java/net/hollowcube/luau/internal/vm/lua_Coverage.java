@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * typedef void (*lua_Coverage)(void *, const char *, int, int, const int *, size_t)
  * }
  */
-public class lua_Coverage {
+public final class lua_Coverage {
 
-    lua_Coverage() {
+    private lua_Coverage() {
         // Should not be called directly
     }
 
@@ -61,9 +61,11 @@ public class lua_Coverage {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static void invoke(MemorySegment funcPtr,MemorySegment context, MemorySegment function, int linedefined, int depth, MemorySegment hits, long size) {
+    public static void invoke(MemorySegment funcPtr, MemorySegment context, MemorySegment function, int linedefined, int depth, MemorySegment hits, long size) {
         try {
              DOWN$MH.invokeExact(funcPtr, context, function, linedefined, depth, hits, size);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

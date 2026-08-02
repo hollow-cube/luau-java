@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * typedef int (*lua_Continuation)(lua_State *, int)
  * }
  */
-public class lua_Continuation {
+public final class lua_Continuation {
 
-    lua_Continuation() {
+    private lua_Continuation() {
         // Should not be called directly
     }
 
@@ -58,9 +58,11 @@ public class lua_Continuation {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static int invoke(MemorySegment funcPtr,MemorySegment L, int status) {
+    public static int invoke(MemorySegment funcPtr, MemorySegment L, int status) {
         try {
             return (int) DOWN$MH.invokeExact(funcPtr, L, status);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

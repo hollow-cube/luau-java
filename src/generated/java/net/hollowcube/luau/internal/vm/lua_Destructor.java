@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * typedef void (*lua_Destructor)(lua_State *, void *)
  * }
  */
-public class lua_Destructor {
+public final class lua_Destructor {
 
-    lua_Destructor() {
+    private lua_Destructor() {
         // Should not be called directly
     }
 
@@ -57,9 +57,11 @@ public class lua_Destructor {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static void invoke(MemorySegment funcPtr,MemorySegment L, MemorySegment userdata) {
+    public static void invoke(MemorySegment funcPtr, MemorySegment L, MemorySegment userdata) {
         try {
              DOWN$MH.invokeExact(funcPtr, L, userdata);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
