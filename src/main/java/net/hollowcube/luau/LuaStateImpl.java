@@ -721,6 +721,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     }
 
     @Override
+    public LuaType rawGetP(int index, long pointer, int tag) {
+        return LuaType.byId(lua_rawgetptagged(L, index, MemorySegment.ofAddress(pointer), tag));
+    }
+
+    @Override
     public void createTable(int narr, int nrec) {
         luaW_createtable(L, narr, nrec);
         propagateException();
@@ -779,6 +784,12 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public void rawSetI(int index, int n) {
         luaW_rawseti(L, index, n);
+        propagateException();
+    }
+
+    @Override
+    public void rawSetP(int index, long pointer, int tag) {
+        luaW_rawsetptagged(L, index, MemorySegment.ofAddress(pointer), tag);
         propagateException();
     }
 
@@ -972,6 +983,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     }
 
     @Override
+    public String getUserDataName(int tag) {
+        return lua_getuserdataname(L, tag).getString(0, StandardCharsets.UTF_8);
+    }
+
+    @Override
     public void setLightUserDataName(int tag, String name) {
         try (Arena arena = Arena.ofConfined()) {
             luaW_setlightuserdataname(L, tag, arena.allocateFrom(name));
@@ -993,6 +1009,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     public void cloneFunction(int index) {
         luaW_clonefunction(L, index);
         propagateException();
+    }
+
+    @Override
+    public boolean usesExport(int index) {
+        return lua_usesexport(L, index) != 0;
     }
 
     //TODO: test me
@@ -1191,6 +1212,13 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             propagateException();
             return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
         }
+    }
+
+    @Override
+    public Object checkUserDataTagged(int argNum, int tag) {
+        final MemorySegment ud = luaLW_checkudatatagged(L, argNum, tag);
+        propagateException();
+        return GlobalRef.get(ud.get(ValueLayout.JAVA_LONG, 0));
     }
 
     @Override

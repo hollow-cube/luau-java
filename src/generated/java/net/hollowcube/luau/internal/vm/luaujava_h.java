@@ -1770,6 +1770,66 @@ public class luaujava_h {
         }
     }
 
+    private static class luaW_rawsetptagged {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            luaujava_h.C_POINTER,
+            luaujava_h.C_INT,
+            luaujava_h.C_POINTER,
+            luaujava_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = luaujava_h.findOrThrow("luaW_rawsetptagged");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void luaW_rawsetptagged(lua_State *L, int idx, void *p, int tag)
+     * }
+     */
+    public static FunctionDescriptor luaW_rawsetptagged$descriptor() {
+        return luaW_rawsetptagged.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void luaW_rawsetptagged(lua_State *L, int idx, void *p, int tag)
+     * }
+     */
+    public static MethodHandle luaW_rawsetptagged$handle() {
+        return luaW_rawsetptagged.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void luaW_rawsetptagged(lua_State *L, int idx, void *p, int tag)
+     * }
+     */
+    public static MemorySegment luaW_rawsetptagged$address() {
+        return luaW_rawsetptagged.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void luaW_rawsetptagged(lua_State *L, int idx, void *p, int tag)
+     * }
+     */
+    public static void luaW_rawsetptagged(MemorySegment L, int idx, MemorySegment p, int tag) {
+        var mh$ = luaW_rawsetptagged.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaW_rawsetptagged", L, idx, p, tag);
+            }
+            mh$.invokeExact(L, idx, p, tag);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaW_setmetatable {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             luaujava_h.C_INT,
@@ -2767,6 +2827,66 @@ public class luaujava_h {
                 traceDowncall("luaLW_checkudata", L, ud, tname);
             }
             return (MemorySegment)mh$.invokeExact(L, ud, tname);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class luaLW_checkudatatagged {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            luaujava_h.C_POINTER,
+            luaujava_h.C_POINTER,
+            luaujava_h.C_INT,
+            luaujava_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = luaujava_h.findOrThrow("luaLW_checkudatatagged");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void *luaLW_checkudatatagged(lua_State *L, int ud, int tag)
+     * }
+     */
+    public static FunctionDescriptor luaLW_checkudatatagged$descriptor() {
+        return luaLW_checkudatatagged.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void *luaLW_checkudatatagged(lua_State *L, int ud, int tag)
+     * }
+     */
+    public static MethodHandle luaLW_checkudatatagged$handle() {
+        return luaLW_checkudatatagged.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void *luaLW_checkudatatagged(lua_State *L, int ud, int tag)
+     * }
+     */
+    public static MemorySegment luaLW_checkudatatagged$address() {
+        return luaLW_checkudatatagged.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void *luaLW_checkudatatagged(lua_State *L, int ud, int tag)
+     * }
+     */
+    public static MemorySegment luaLW_checkudatatagged(MemorySegment L, int ud, int tag) {
+        var mh$ = luaLW_checkudatatagged.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaLW_checkudatatagged", L, ud, tag);
+            }
+            return (MemorySegment)mh$.invokeExact(L, ud, tag);
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }

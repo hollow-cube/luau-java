@@ -398,6 +398,15 @@ LUA_API void luaW_rawseti(lua_State* L, int idx, int n)
     luaW_exit(L, &jb);
 }
 
+LUA_API void luaW_rawsetptagged(lua_State* L, int idx, void* p, int tag)
+{
+    lua_jmpbuf jb;
+    luaW_enter(L, &jb);
+    if (LUAU_SETJMP(jb.buf) == 0)
+        lua_rawsetptagged(L, idx, p, tag);
+    luaW_exit(L, &jb);
+}
+
 LUA_API int luaW_setmetatable(lua_State* L, int objindex)
 {
     lua_jmpbuf jb;
@@ -574,3 +583,15 @@ LUA_API void* luaLW_checkudata(lua_State* L, int ud, const char* tname)
     luaW_exit(L, &jb);
     return ret;
 }
+
+LUA_API void* luaLW_checkudatatagged(lua_State* L, int ud, int tag)
+{
+    lua_jmpbuf jb;
+    void* ret = nullptr;
+    luaW_enter(L, &jb);
+    if (LUAU_SETJMP(jb.buf) == 0)
+        ret = luaL_checkudatatagged(L, ud, tag);
+    luaW_exit(L, &jb);
+    return ret;
+}
+

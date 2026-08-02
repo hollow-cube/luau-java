@@ -215,6 +215,11 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     LuaType rawGetField(int index, String key);
     LuaType rawGet(int index);
     LuaType rawGetI(int index, int n);
+    /// Raw get from the table at index, keyed by a tagged light userdata.
+    ///
+    /// Useful for a registry keyed by a native address rather than by a string, since it
+    /// avoids interning a key. The pointer is compared by value, not dereferenced.
+    LuaType rawGetP(int index, long pointer, int tag);
     boolean getReadOnly(int index);
 
     void createTable(int narr, int nrec);
@@ -224,6 +229,8 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void rawSetField(int index, String key);
     void rawSet(int index);
     void rawSetI(int index, int n);
+    /// Raw set into the table at index, keyed by a tagged light userdata. See [#rawGetP(int, long, int)].
+    void rawSetP(int index, long pointer, int tag);
     void setReadOnly(int index, boolean enabled);
 
     boolean getMetaTable(int index);
@@ -279,10 +286,18 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void setUserDataTag(int index, int tag);
     void setUserDataMetaTable(int tag);
     void getUserDataMetaTable(int tag);
+    /// The name reported for userdata of the given tag, taken from the `__type` field of
+    /// the tag's metatable, or `"userdata"` if it has none.
+    String getUserDataName(int tag);
     void setLightUserDataName(int tag, String name);
     @Nullable String getLightUserDataName(int tag);
 
     void cloneFunction(int index);
+    /// True if the Lua function at index is a chunk which declares `export` values.
+    ///
+    /// Lets a require implementation tell a module that publishes exports from one that
+    /// returns a value, without running it first.
+    boolean usesExport(int index);
     void clearTable(int index);
     void cloneTable(int index);
 
@@ -334,6 +349,10 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     String optString(int argNum, String def);
     int checkOption(int argNum, @Nullable String def, List<String> lst);
     Object checkUserData(int argNum, String typeName);
+    /// Checks the argument is userdata carrying the given tag, rather than matching it by
+    /// metatable as [#checkUserData(int, String)] does. Reports the type error using
+    /// [#getUserDataName(int)].
+    Object checkUserDataTagged(int argNum, int tag);
     ByteBuffer checkBuffer(int argNum);
 
     //    LUALIB_API int luaL_getmetafield(lua_State* L, int obj, const char* e);

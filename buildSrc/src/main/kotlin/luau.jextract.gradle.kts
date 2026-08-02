@@ -67,9 +67,11 @@ tasks.named<JextractTask>("jextract") {
             "lua_setpointerencodekey",
             "lua_setuserdatatag", "lua_setuserdatadtor", "lua_getuserdatametatable",
             "lua_weakref", "lua_weakunref", "lua_getweakref",
+            "lua_getuserdataname", "lua_usesexport",
             "lua_getlightuserdataname", "lua_ref", "lua_unref", "lua_callbacks",
             "lua_type", "lua_iscfunction", "lua_isFfunction",
-            "lua_rawgetfield", "lua_rawget", "lua_rawgeti", "lua_getinfo",
+            "lua_rawgetfield", "lua_rawget", "lua_rawgeti", "lua_rawgetptagged",
+            "lua_getinfo",
             "lua_setuserdatametatable", "lua_pcall", "lua_call",
             "lua_tolstringatom", "lua_namecallatom",
             "lua_debugtrace", "lua_getcoverage"
@@ -122,13 +124,14 @@ tasks.named<JextractTask>("jextract") {
             "luaW_newuserdatadtor", "luaW_newbuffer", "luaW_gettable",
             "luaW_getfield", "luaW_createtable", "luaW_settable",
             "luaW_setfield", "luaW_rawsetfield", "luaW_rawset",
-            "luaW_rawseti", "luaW_setmetatable",
+            "luaW_rawseti", "luaW_rawsetptagged", "luaW_setmetatable",
             "luaW_yield", "luaW_break", "luaW_next",
             "luaW_concat", "luaW_setlightuserdataname",
             "luaW_clonefunction", "luaW_cleartable", "luaW_clonetable",
             "luaLW_newmetatable", "luaLW_tolstring", "luaLW_findtable",
             "luaLW_typename", "luaLW_typeerror", "luaLW_argerror",
             "luaW_lessthan", "luaLW_checkboolean", "luaLW_checkudata",
+            "luaLW_checkudatatagged",
 
             "luaW_assertconf_log", "luaW_assertconf_dump",
             "luaW_interrupt_preempt_handler"

@@ -118,6 +118,7 @@ LUA_API int luaW_getfield(lua_State* L, int idx, const char* k);
 // lua_rawgetfield
 // lua_rawget
 // lua_rawgeti
+// lua_rawgetptagged
 LUA_API void luaW_createtable(lua_State* L, int narr, int nrec);
 // lua_setreadonly
 // lua_getreadonly
@@ -130,6 +131,7 @@ LUA_API void luaW_setfield(lua_State* L, int idx, const char* k);
 LUA_API void luaW_rawsetfield(lua_State* L, int idx, const char* k);
 LUA_API void luaW_rawset(lua_State* L, int idx);
 LUA_API void luaW_rawseti(lua_State* L, int idx, int n);
+LUA_API void luaW_rawsetptagged(lua_State* L, int idx, void* p, int tag);
 LUA_API int luaW_setmetatable(lua_State* L, int objindex);
 // lua_setfenv
 
@@ -194,6 +196,7 @@ LUA_API void luaLW_argerror(lua_State* L, int narg, const char* extramsg);
 LUA_API int luaLW_checkboolean(lua_State* L, int narg);
 
 LUA_API void* luaLW_checkudata(lua_State* L, int ud, const char* tname);
+LUA_API void* luaLW_checkudatatagged(lua_State* L, int ud, int tag);
 
 // luaL_sandbox is not wrapped (should not fail in practical conditions)
 // luaL_sandboxthread is not wrapped (should not fail in practical conditions)
