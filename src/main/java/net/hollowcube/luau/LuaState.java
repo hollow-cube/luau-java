@@ -383,6 +383,55 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     /// stringify to the same address.
     void setPointerEncodeKey(long a, long b, long c, long d);
 
+    //region Debug introspection
+
+    /// Number of call frames on this thread's stack. Frames are addressed by *level*, where
+    /// 0 is the running function and higher numbers are its callers, so the deepest valid
+    /// level is `stackDepth() - 1`.
+    int stackDepth();
+
+    /// Pushes the `n`th (1-based) local of the frame at `level` and returns its name, or
+    /// returns null and pushes nothing if there is no such local.
+    ///
+    /// Locals are found *by name*, so this only reports anything for a chunk compiled at
+    /// [net.hollowcube.luau.compiler.DebugLevel#DEBUGGER] - the default keeps line info
+    /// but no local names, and every lookup returns null. Only locals in scope at the
+    /// frame's current instruction are visible, and natively compiled frames report null
+    /// because their registers need not hold what the bytecode says they do.
+    @Nullable String getLocal(int level, int n);
+
+    /// Pops a value and assigns it to the `n`th (1-based) local of the frame at `level`,
+    /// returning its name. The value is popped either way; null means nothing was assigned.
+    ///
+    /// @see #getLocal(int, int)
+    @Nullable String setLocal(int level, int n);
+
+    /// Pushes the `n`th (1-based) argument of the frame at `level`, returning whether there
+    /// was one. Covers varargs beyond the declared parameters.
+    ///
+    /// @see #getLocal(int, int)
+    boolean getArgument(int level, int n);
+
+    /// Pushes the `n`th (1-based) upvalue of the function at `funcIndex` and returns its
+    /// name, or returns null and pushes nothing if there is no such upvalue.
+    ///
+    /// Unlike [#getLocal(int, int)] this does not need debugger-level debug info: upvalues
+    /// are addressed positionally, so without it the upvalue is still found and its name
+    /// reported as `""`. Upvalues of a Java closure are offset by the two slots the
+    /// dispatch trampoline reserves; see [#upvalueIndex(int)].
+    @Nullable String getUpvalue(int funcIndex, int n);
+
+    /// Pops a value and assigns it to the `n`th (1-based) upvalue of the function at
+    /// `funcIndex`, returning its name. The value is popped either way.
+    ///
+    /// `funcIndex` is resolved before the pop, so a relative index has to account for the
+    /// value sitting on top of the function.
+    ///
+    /// @see #getUpvalue(int, int)
+    @Nullable String setUpvalue(int funcIndex, int n);
+
+    //endregion
+
     /// Reads back the execution counts recorded by the Lua function at index.
     ///
     /// Coverage is collected by the compiler, not the VM: a chunk only records anything if

@@ -1274,6 +1274,40 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     }
 
     @Override
+    public int stackDepth() {
+        return lua_stackdepth(L);
+    }
+
+    @Override
+    public @Nullable String getLocal(int level, int n) {
+        return readName(lua_getlocal(L, level, n));
+    }
+
+    @Override
+    public @Nullable String setLocal(int level, int n) {
+        return readName(lua_setlocal(L, level, n));
+    }
+
+    @Override
+    public boolean getArgument(int level, int n) {
+        return lua_getargument(L, level, n) != 0;
+    }
+
+    @Override
+    public @Nullable String getUpvalue(int funcIndex, int n) {
+        return readName(lua_getupvalue(L, funcIndex, n));
+    }
+
+    @Override
+    public @Nullable String setUpvalue(int funcIndex, int n) {
+        return readName(lua_setupvalue(L, funcIndex, n));
+    }
+
+    private static @Nullable String readName(MemorySegment name) {
+        return name.equals(MemorySegment.NULL) ? null : name.getString(0, StandardCharsets.UTF_8);
+    }
+
+    @Override
     public List<LuaCoverage> getCoverage(int index) {
         // Luau only asserts on this, so it is undefined behaviour in a release build.
         if (!isLuaFunction(index)) {

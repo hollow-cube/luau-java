@@ -71,7 +71,8 @@ tasks.named<JextractTask>("jextract") {
             "lua_getlightuserdataname", "lua_ref", "lua_unref", "lua_callbacks",
             "lua_type", "lua_iscfunction", "lua_isFfunction",
             "lua_rawgetfield", "lua_rawget", "lua_rawgeti", "lua_rawgetptagged",
-            "lua_getinfo",
+            "lua_getinfo", "lua_stackdepth", "lua_getargument",
+            "lua_getlocal", "lua_setlocal", "lua_getupvalue", "lua_setupvalue",
             "lua_setuserdatametatable", "lua_pcall", "lua_call",
             "lua_tolstringatom", "lua_namecallatom",
             "lua_debugtrace", "lua_getcoverage"
