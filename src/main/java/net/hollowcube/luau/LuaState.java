@@ -317,6 +317,39 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void sandbox();
     void sandboxThread();
 
+    //region Codegen
+
+    /// Whether native code generation is available for the current platform and build.
+    ///
+    /// Only x86-64 and arm64 are supported, and the process must be able to allocate
+    /// executable memory, so this may be false at runtime even on a supported architecture.
+    static boolean codegenSupported() {
+        return LuaStateImpl.codegenSupported();
+    }
+
+    /// Enable native code generation for this state.
+    ///
+    /// Must be called on the main thread, before loading any code, and only if
+    /// [#codegenSupported()] is true. Does nothing if codegen is already enabled.
+    /// Functions still need to be compiled individually with [#codegenCompile(int)];
+    /// this only installs the machinery.
+    void codegenCreate();
+
+    /// Natively compile the Lua function at index, and all functions nested inside it.
+    ///
+    /// Requires a preceding [#codegenCreate()], otherwise this returns
+    /// [LuaCodegenResult#NOT_INITIALIZED]. Compilation is best effort: a nested function
+    /// which cannot be lowered is silently left to the interpreter without affecting the
+    /// result, and native and interpreted functions are otherwise indistinguishable.
+    ///
+    /// Bytecode compiled with a [net.hollowcube.luau.compiler.TypeInfoLevel] above `NONE`
+    /// produces better native code.
+    ///
+    /// @throws IllegalArgumentException if the value at index is not a Lua function
+    LuaCodegenResult codegenCompile(int index);
+
+    //endregion
+
     /// Load the specified builtin libraries in the current state.
     ///
     /// Builtin libraries often have fastcalls so should always be preferred

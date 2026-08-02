@@ -32,6 +32,9 @@ struct luaW_userdata
     int (*preempt)(lua_State* L, int gc); // nullable
 };
 
+// Attempts to compile the function at idx, returning the CodeGenCompilationResult
+LUA_API int luaW_codegen_compile(lua_State* L, int idx);
+
 //
 // BEGIN LUA WRAPPERS
 //

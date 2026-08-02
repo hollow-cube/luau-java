@@ -63,12 +63,22 @@ function(luaujava_absorb target)
     endforeach ()
 endfunction()
 
-luaujava_absorb(Luau.VM Luau.Common)
+# Luau.CodeGen is the native codegen (JIT) backend. It reaches into hidden-visibility VM
+# internals, so it can only be absorbed into Luau.VM, never linked against it.
+luaujava_absorb(Luau.VM Luau.Common Luau.CodeGen)
 luaujava_absorb(Luau.Compiler Luau.Common Luau.Ast Luau.Bytecode)
 
 set_target_properties(Luau.VM Luau.Compiler PROPERTIES
         LINK_LIBRARIES "" INTERFACE_LINK_LIBRARIES "")
-target_include_directories(Luau.VM PRIVATE ${LUAU_DIR}/Common/include)
+target_include_directories(Luau.VM PRIVATE
+        ${LUAU_DIR}/Common/include
+        ${LUAU_DIR}/CodeGen/include
+        ${LUAU_DIR}/CodeGen/src)
+if (MSVC)
+    target_compile_definitions(Luau.VM PRIVATE "LUACODEGEN_API=extern \"C\" __declspec(dllexport)")
+else ()
+    target_compile_definitions(Luau.VM PRIVATE "LUACODEGEN_API=extern \"C\" __attribute__((visibility(\"default\")))")
+endif ()
 target_include_directories(Luau.Compiler PRIVATE
         ${LUAU_DIR}/Common/include
         ${LUAU_DIR}/Ast/include
@@ -79,9 +89,8 @@ target_include_directories(Luau.Compiler PRIVATE
 # so the compiler library is not standalone. Load "vm" before "compiler" on the Java side.
 target_link_libraries(Luau.Compiler PRIVATE Luau.VM)
 
-# Nothing else upstream builds is bound, and several of them cannot link in a shared
-# build anyway: Luau.CodeGen and Luau.Inliner reach into hidden-visibility VM internals.
-foreach (unused Luau.CLI.lib Luau.Config Luau.Analysis Luau.CodeGen Luau.Require Luau.Inliner isocline)
+# Exclude other libs we dont use from build
+foreach (unused Luau.CLI.lib Luau.Config Luau.Analysis Luau.Require Luau.Inliner isocline)
     set_target_properties(${unused} PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endforeach ()
 

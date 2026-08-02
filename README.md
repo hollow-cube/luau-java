@@ -131,8 +131,10 @@ in `native/include` and `native/src`, and is compiled into the Luau VM and compi
   once the Java frame is off the stack.
 * `luau_ext_free`, freeing bytecode inside the compiler library rather than across the CRT boundary.
 
-The build ships three libraries: `vm`, `compiler` and `globalref`. Upstream's `Luau.CodeGen` is not
-built or bound - it cannot link in a shared build.
+The build ships three libraries: `vm`, `compiler` and `globalref`. `Luau.CodeGen`, the native
+codegen (JIT) backend, is part of `vm` rather than a library of its own, for the same reason -
+it reaches into VM internals, so it can only be compiled in, never linked against. See
+`LuaState.codegenCreate()`.
 
 ### Updating Bindings
 

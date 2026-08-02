@@ -410,6 +410,65 @@ public class luaujava_h {
         }
     }
 
+    private static class luaW_codegen_compile {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            luaujava_h.C_INT,
+            luaujava_h.C_POINTER,
+            luaujava_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = luaujava_h.findOrThrow("luaW_codegen_compile");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaW_codegen_compile(lua_State *L, int idx)
+     * }
+     */
+    public static FunctionDescriptor luaW_codegen_compile$descriptor() {
+        return luaW_codegen_compile.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaW_codegen_compile(lua_State *L, int idx)
+     * }
+     */
+    public static MethodHandle luaW_codegen_compile$handle() {
+        return luaW_codegen_compile.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaW_codegen_compile(lua_State *L, int idx)
+     * }
+     */
+    public static MemorySegment luaW_codegen_compile$address() {
+        return luaW_codegen_compile.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaW_codegen_compile(lua_State *L, int idx)
+     * }
+     */
+    public static int luaW_codegen_compile(MemorySegment L, int idx) {
+        var mh$ = luaW_codegen_compile.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaW_codegen_compile", L, idx);
+            }
+            return (int)mh$.invokeExact(L, idx);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaW_newstate {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             luaujava_h.C_POINTER,

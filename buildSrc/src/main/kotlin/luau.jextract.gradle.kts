@@ -88,8 +88,11 @@ tasks.named<JextractTask>("jextract") {
         )
     }
 
-    // Note: no luacodegen.h. Luau.CodeGen cannot link in a shared build (it reaches into
-    // hidden-visibility VM internals), and nothing binds it, so it is not built or shipped.
+    header("$nativeBuild/CodeGen/include/luacodegen.h") {
+        targetPackage = "net.hollowcube.luau.internal.vm"
+
+        functions.addAll("luau_codegen_supported", "luau_codegen_create")
+    }
 
     header("$bridgeInclude/luaujava.h") {
         targetPackage = "net.hollowcube.luau.internal.vm"
@@ -98,6 +101,7 @@ tasks.named<JextractTask>("jextract") {
         structs.addAll("luaW_userdata")
         functions.addAll(
             "luaW_getstatus", "luaW_setflagsdefault", "luaW_isjavaframe",
+            "luaW_codegen_compile",
 
             "luaW_newstate", "luaW_newthread", "luaW_resetthread",
             "lua_xmove", "lua_xpush", "luaW_equal",

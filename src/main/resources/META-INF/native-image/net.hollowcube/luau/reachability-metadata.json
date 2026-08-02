@@ -284,6 +284,10 @@
         "parameterTypes": []
       },
       {
+        "returnType": "jint",
+        "parameterTypes": []
+      },
+      {
         "returnType": "jdouble",
         "parameterTypes": [
           "void*",

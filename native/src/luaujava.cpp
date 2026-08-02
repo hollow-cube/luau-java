@@ -6,6 +6,7 @@
 
 #include "luaujava.h"
 
+#include "Luau/CodeGen.h"
 #include "Luau/Common.h"
 #include "Luau/ExperimentalFlags.h"
 
@@ -83,6 +84,16 @@ LUA_API void luaW_assertconf_dump(void)
 
         return 1;
     };
+}
+
+LUA_API int luaW_codegen_compile(lua_State* L, int idx)
+{
+    // Not wrapped: codegen reports failure through its return value, it never raises.
+    if (!lua_isLfunction(L, idx))
+        return int(Luau::CodeGen::CodeGenCompilationResult::Count);
+
+    Luau::CodeGen::CompilationOptions options;
+    return int(Luau::CodeGen::compile(L, idx, options).result);
 }
 
 //

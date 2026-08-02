@@ -1173,6 +1173,25 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         luaL_sandboxthread(L);
     }
 
+    static boolean codegenSupported() {
+        return luacodegen_h.luau_codegen_supported() != 0;
+    }
+
+    @Override
+    public void codegenCreate() {
+        luacodegen_h.luau_codegen_create(L);
+    }
+
+    @Override
+    public LuaCodegenResult codegenCompile(int index) {
+        // Luau only asserts on this, so it is undefined behaviour in a release build.
+        if (!isLuaFunction(index)) {
+            throw new IllegalArgumentException(
+                    "value at index " + index + " is not a Lua function: " + typeName(index));
+        }
+        return LuaCodegenResult.byId(luaW_codegen_compile(L, index));
+    }
+
     @Override
     public void openLibs(BuilinLibrary... libraries) {
         // Load all libraries if none are specified
