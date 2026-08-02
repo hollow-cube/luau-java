@@ -63,5 +63,4 @@ class TestLuaStringAtoms {
         state.pop(1);
     }
 
-    // TODO: namecall atom test
 }

@@ -420,17 +420,26 @@ class TestLuaState {
         }
 
         @Test
+        void tagIsReadBack(LuaState state) {
+            state.pushLightUserDataTagged(12345, 123);
+            assertEquals(123, state.lightUserDataTag(-1));
+
+            // An untagged push is tag 0, the default.
+            state.pushLightUserData(12345);
+            assertEquals(0, state.lightUserDataTag(-1));
+        }
+
+        /// The tag of something which is not light userdata at all.
+        @Test
+        void tagOfNonLightUserData(LuaState state) {
+            state.pushBoolean(true);
+            assertEquals(-1, state.lightUserDataTag(-1));
+        }
+
+        @Test
         void readNonLightUserData(LuaState state) {
             state.pushBoolean(true);
             assertEquals(0, state.toLightUserData(-1));
-        }
-    }
-
-    @Nested
-    class ThreadValues {
-
-        @Test
-        void abc() {
         }
     }
 
@@ -462,8 +471,6 @@ class TestLuaState {
         state.setThreadData(null);
         assertNull(state.getThreadData());
     }
-
-    //TODO test all the check and opt methods
 
     @Test
     void regressionCloseWithThreadsDestroyingCallbacksEarly() {

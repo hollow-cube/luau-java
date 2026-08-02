@@ -63,7 +63,7 @@ final class Navigator {
                     yield error;
                 }
 
-                error = navigateToAlias(path, aliases, new AliasCycleTracker());
+                error = navigateToAlias(alias, aliases, new AliasCycleTracker());
                 if (error != null) yield error;
                 error = navigateThroughPath(path);
                 yield error;
@@ -124,8 +124,11 @@ final class Navigator {
                     error = navigateToAndPopulateConfig(nextAlias, parentAliases);
                     if (error != null) yield error;
 
+                    // The existing tracker has to carry across configs: starting a fresh one
+                    // here means a cycle spanning two configs is never detected and this
+                    // recurses until the stack overflows.
                     yield parentAliases.containsKey(nextAlias)
-                        ? navigateToAlias(nextAlias, parentAliases, new AliasCycleTracker())
+                        ? navigateToAlias(nextAlias, parentAliases, cycleTracker)
                         : "@" + nextAlias + " is not a valid alias";
                 }
 
@@ -148,7 +151,11 @@ final class Navigator {
             if (status == Result.AMBIGUOUS)
                 return "could not resolve alias \"" + desiredAlias + "\" (ambiguous configuration file)";
 
-            aliases.put(desiredAlias, lrc.resolveAlias(state, desiredAlias));
+            // An unresolved alias must not be recorded: callers test membership with
+            // containsKey, so a null value would read as "found" and NPE downstream
+            // instead of reporting that the alias is not valid.
+            final String resolved = lrc.resolveAlias(state, desiredAlias);
+            if (resolved != null) aliases.put(desiredAlias, resolved);
             break;
         }
 
@@ -204,7 +211,7 @@ final class Navigator {
         if (aliasLength != -1) aliasLength -= aliasStartPos;
         if (aliasLength == -1) aliasLength = path.length() - aliasStartPos;
 
-        return path.substring(aliasStartPos, aliasLength);
+        return path.substring(aliasStartPos, aliasStartPos + aliasLength);
     }
 
 }

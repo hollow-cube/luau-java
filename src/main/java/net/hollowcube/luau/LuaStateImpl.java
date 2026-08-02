@@ -149,7 +149,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         bridgeArena.close();
     }
 
-    //TODO: test me
     @Override
     public LuaState newThread() {
         final MemorySegment thread = luaW_newthread(L);
@@ -157,20 +156,17 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return new LuaStateImpl(thread);
     }
 
-    //TODO: test me
     @Override
     public LuaState mainThread() {
         return new LuaStateImpl(lua_mainthread(L));
     }
 
-    //TODO: test me
     @Override
     public void resetThread() {
         luaW_resetthread(L);
         propagateException();
     }
 
-    //TODO: test me
     @Override
     public boolean isThreadReset() {
         return lua_isthreadreset(L) != 0;
@@ -218,13 +214,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         lua_replace(L, index);
     }
 
-    //TODO: test me
     @Override
     public void xmove(LuaState to, int n) {
         lua_xmove(L, ((LuaStateImpl) to).L, n);
     }
 
-    //TODO: test me
     @Override
     public void xpush(LuaState to, int index) {
         lua_xpush(L, ((LuaStateImpl) to).L, index);
@@ -312,7 +306,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return type(index) == LuaType.LIGHTUSERDATA;
     }
 
-    //TODO: test me
     @Override
     public boolean isThread(int index) {
         return type(index) == LuaType.THREAD;
@@ -324,7 +317,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return type(index) == LuaType.INTEGER;
     }
 
-    //TODO: test me
     @Override
     public boolean equal(int index1, int index2) {
         final boolean result = luaW_equal(L, index1, index2) != 0;
@@ -332,13 +324,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return result;
     }
 
-    //TODO: test me
     @Override
     public boolean rawEqual(int index1, int index2) {
         return lua_rawequal(L, index1, index2) != 0;
     }
 
-    //TODO: test me
     @Override
     public boolean lessThan(int index1, int index2) {
         int res = luaW_lessthan(L, index1, index2);
@@ -460,6 +450,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
             final long msgLen = len.get(ValueLayout.JAVA_LONG, 0);
             final byte[] msg = raw.asSlice(0, msgLen).toArray(ValueLayout.JAVA_BYTE);
+            // luaL_tolstring leaves its result on the stack; the bytes are copied out above,
+            // so drop it rather than growing the stack by one on every call.
+            pop(1);
             return new String(msg, StandardCharsets.UTF_8);
         }
     }
@@ -491,7 +484,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         }
     }
 
-    //TODO: test me
     @Override
     public short nameCallAtomRaw() {
         try (Arena arena = Arena.ofConfined()) {
@@ -502,7 +494,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         }
     }
 
-    //TODO: test me
     @Override
     public LuaString nameCallAtom() {
         try (Arena arena = Arena.ofConfined()) {
@@ -529,7 +520,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return lua_tolightuserdatatagged(L, index, tag).address();
     }
 
-    //TODO: test me
     @Override
     public int lightUserDataTag(int index) {
         return lua_lightuserdatatag(L, index);
@@ -664,10 +654,14 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         ud.set(ValueLayout.JAVA_LONG, 0, GlobalRef.newref(value));
     }
 
-    //TODO: test me
     @Override
     public boolean pushThread(LuaState thread) {
-        return lua_pushthread(((LuaStateImpl) thread).L) != 0;
+        final MemorySegment threadL = ((LuaStateImpl) thread).L;
+        // lua_pushthread can only push a thread onto its own stack, so when pushing some
+        // other thread it has to be moved across afterwards.
+        final boolean isMain = lua_pushthread(threadL) != 0;
+        if (!threadL.equals(L)) lua_xmove(threadL, L, 1);
+        return isMain;
     }
 
     @Override
@@ -739,26 +733,22 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         createTable(0, 0);
     }
 
-    //TODO: test me
     @Override
     public void setReadOnly(int index, boolean enabled) {
         lua_setreadonly(L, index, enabled ? 1 : 0);
     }
 
-    //TODO: test me
     @Override
     public boolean getReadOnly(int index) {
         return lua_getreadonly(L, index) != 0;
     }
 
-    //TODO: test me
     @Override
     public void setTable(int index) {
         luaW_settable(L, index);
         propagateException();
     }
 
-    //TODO: test me
     @Override
     public void setField(int index, String key) {
         try (Arena arena = Arena.ofConfined()) {
@@ -767,7 +757,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         }
     }
 
-    //TODO: test me
     @Override
     public void rawSetField(int index, String key) {
         try (Arena arena = Arena.ofConfined()) {
@@ -776,14 +765,12 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         }
     }
 
-    //TODO: test me
     @Override
     public void rawSet(int index) {
         luaW_rawset(L, index);
         propagateException();
     }
 
-    //TODO: test me
     @Override
     public void rawSetI(int index, int n) {
         luaW_rawseti(L, index, n);
@@ -796,13 +783,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         propagateException();
     }
 
-    //TODO: test me
     @Override
     public boolean getMetaTable(int index) {
         return lua_getmetatable(L, index) != 0;
     }
 
-    //TODO: test me
     @Override
     public void setMetaTable(int index) {
         luaW_setmetatable(L, index); // always returns 1
@@ -838,7 +823,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         if (status != LuaStatus.OK) propagateExceptionInner(status);
     }
 
-    //TODO: test me
     @Override
     public int yield(int nresults) {
         int result = luaW_yield(L, nresults);
@@ -855,19 +839,16 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return status;
     }
 
-    //TODO: test me
     @Override
     public LuaStatus status() {
         return LuaStatus.byId(lua_status(L));
     }
 
-    //TODO: test me
     @Override
     public boolean isYieldable() {
         return lua_isyieldable(L) != 0;
     }
 
-    //TODO: test me
     @Override
     public LuaCoStatus costatus(LuaState co) {
         return LuaCoStatus.byId(lua_costatus(L, ((LuaStateImpl) co).L));
@@ -891,7 +872,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
                 : MemorySegment.NULL);
     }
 
-    //TODO: test me
     @Override
     public int gc(LuaGcOp op, int data) {
         return lua_gc(L, op.ordinal(), data);
@@ -956,7 +936,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         }
     }
 
-    //TODO: test me
     @Override
     public boolean next(int index) {
         int result = luaW_next(L, index);
@@ -964,7 +943,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return result != 0;
     }
 
-    //TODO: test me
     @Override
     public int rawIter(int index, int iter) {
         return lua_rawiter(L, index, iter);
@@ -1007,7 +985,6 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         }
     }
 
-    //TODO: test me
     @Override
     public void cloneFunction(int index) {
         luaW_clonefunction(L, index);
@@ -1019,33 +996,28 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         return lua_usesexport(L, index) != 0;
     }
 
-    //TODO: test me
     @Override
     public void clearTable(int index) {
         luaW_cleartable(L, index);
         propagateException();
     }
 
-    //TODO: test me
     @Override
     public void cloneTable(int index) {
         luaW_clonetable(L, index);
         propagateException();
     }
 
-    //TODO: test me
     @Override
     public @CheckReturnValue int ref(int index) {
         return lua_ref(L, index);
     }
 
-    //TODO: test me
     @Override
     public void unref(int ref) {
         lua_unref(L, ref);
     }
 
-    //TODO: test me
     @Override
     public LuaType getRef(int ref) {
         return rawGetI(LUA_REGISTRYINDEX(), ref);
@@ -1086,8 +1058,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     @Override
     public void checkAny(int argNum) {
-        if (lua_type(L, argNum) == LuaType.NONE.id()) return;
-        error("missing argument #%d", argNum);
+        if (lua_type(L, argNum) != LuaType.NONE.id()) return;
+        throw error("missing argument #%d", argNum);
     }
 
     @Override
@@ -1105,7 +1077,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     @Override
     public boolean optBoolean(int argNum, boolean def) {
-        return luaL_optboolean(L, argNum, def ? 1 : 0) != 0;
+        // Not luaL_optboolean: it calls luaL_checkboolean internally, which longjmps out of
+        // an unprotected frame and aborts. Going through checkBoolean keeps the error inside
+        // the luaLW_ wrapper so it surfaces as a LuaError like the rest of the family.
+        if (isNoneOrNil(argNum)) return def;
+        return checkBoolean(argNum);
     }
 
     @Override
@@ -1256,7 +1232,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
             final MemorySegment result = luaLW_findtable(L, index, fname, sizeHint);
             propagateException();
 
-            if (result.equals(MemorySegment.NULL)) return fieldName;
+            // luaL_findtable returns NULL on success, otherwise a pointer into fieldName at
+            // the component which was already taken by a non-table value.
+            if (result.equals(MemorySegment.NULL)) return null;
             return result.getString(0, StandardCharsets.UTF_8);
         }
     }

@@ -366,6 +366,9 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     //    LUALIB_API const char* luaL_findtable(lua_State* L, int index, const char* fname, int szhint);
     //    LUALIB_API int luaL_callyieldable(lua_State* L, int nargs, int nresults);
 
+    /// Finds or creates the chain of tables named by the dot separated `fname`, pushing the
+    /// innermost one. Returns null on success, or the component of `fname` which is already
+    /// taken by a non-table value, in which case nothing is pushed.
     @Nullable String findTable(int index, String fname, int sizeHint);
 
     void sandbox();
