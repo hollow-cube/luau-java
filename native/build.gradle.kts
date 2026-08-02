@@ -7,7 +7,7 @@ version = rootProject.version
 description = rootProject.description
 
 val artifactName = "luau-natives-${platformOs}-${platformArch}"
-val buildType: String by project.extra { "Debug" }
+val buildType = providers.gradleProperty("buildType").getOrElse("Debug")
 
 tasks.register<Exec>("cmakeConfigure") {
     workingDir = file(layout.buildDirectory).resolve("cmake-build")
@@ -39,6 +39,7 @@ tasks.register<Exec>("cmakeConfigure") {
     )
     if (platformOs == "windows") args += listOf(
         "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE",
+        "-DLUAU_STATIC_CRT=ON",
     )
     commandLine(args)
 }
@@ -47,6 +48,8 @@ tasks.register<Exec>("cmakeBuild") {
     dependsOn("cmakeConfigure")
     workingDir = file(layout.buildDirectory).resolve("cmake-build")
     standardOutput = System.out
+
+    inputs.property("buildType", buildType)
 
     // CMake build files input
     inputs.dir(workingDir.resolve("CMakeFiles"))
@@ -66,7 +69,7 @@ tasks.register<Exec>("cmakeBuild") {
 
     commandLine(
         cmakeExecutable ?: throw IllegalStateException("cmake not found on path"),
-        "--build", "."
+        "--build", ".", "--config", buildType
     )
 }
 
