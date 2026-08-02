@@ -4694,6 +4694,66 @@ public class lua_h {
         }
     }
 
+    private static class lua_getcoverage {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
+            lua_h.C_POINTER,
+            lua_h.C_INT,
+            lua_h.C_POINTER,
+            lua_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_getcoverage");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern void lua_getcoverage(lua_State *L, int funcindex, void *context, lua_Coverage callback)
+     * }
+     */
+    public static FunctionDescriptor lua_getcoverage$descriptor() {
+        return lua_getcoverage.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern void lua_getcoverage(lua_State *L, int funcindex, void *context, lua_Coverage callback)
+     * }
+     */
+    public static MethodHandle lua_getcoverage$handle() {
+        return lua_getcoverage.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern void lua_getcoverage(lua_State *L, int funcindex, void *context, lua_Coverage callback)
+     * }
+     */
+    public static MemorySegment lua_getcoverage$address() {
+        return lua_getcoverage.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern void lua_getcoverage(lua_State *L, int funcindex, void *context, lua_Coverage callback)
+     * }
+     */
+    public static void lua_getcoverage(MemorySegment L, int funcindex, MemorySegment context, MemorySegment callback) {
+        var mh$ = lua_getcoverage.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_getcoverage", L, funcindex, context, callback);
+            }
+            mh$.invokeExact(L, funcindex, context, callback);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class lua_callbacks {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             lua_h.C_POINTER,

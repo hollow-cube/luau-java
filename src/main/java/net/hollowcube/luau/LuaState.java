@@ -352,6 +352,21 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void sandbox();
     void sandboxThread();
 
+    /// Reads back the execution counts recorded by the Lua function at index.
+    ///
+    /// Coverage is collected by the compiler, not the VM: a chunk only records anything if
+    /// it was compiled with a [net.hollowcube.luau.compiler.CoverageLevel] above
+    /// [net.hollowcube.luau.compiler.CoverageLevel#NONE], which makes the compiler emit a
+    /// counting instruction per statement (or per expression, at
+    /// [net.hollowcube.luau.compiler.CoverageLevel#STATEMENT_AND_EXPRESSION]). Counts accumulate in the
+    /// bytecode itself and are never reset, so this reports totals since the chunk was loaded.
+    ///
+    /// The result covers the given function and, recursively, every function nested inside
+    /// it - one entry each, outermost first.
+    ///
+    /// @throws IllegalArgumentException if the value at index is not a Lua function
+    List<LuaCoverage> getCoverage(int index);
+
     //region Codegen
 
     /// Whether native code generation is available for the current platform and build.

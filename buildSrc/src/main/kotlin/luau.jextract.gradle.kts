@@ -71,9 +71,9 @@ tasks.named<JextractTask>("jextract") {
             "lua_rawgetfield", "lua_rawget", "lua_rawgeti", "lua_getinfo",
             "lua_setuserdatametatable", "lua_pcall", "lua_call",
             "lua_tolstringatom", "lua_namecallatom",
-            "lua_debugtrace"
+            "lua_debugtrace", "lua_getcoverage"
         )
-        typedefs.addAll("lua_Alloc", "lua_CFunction", "lua_Destructor", "lua_Continuation")
+        typedefs.addAll("lua_Alloc", "lua_CFunction", "lua_Destructor", "lua_Continuation", "lua_Coverage")
         structs.addAll("lua_Callbacks", "lua_Debug")
     }
 

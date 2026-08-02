@@ -158,6 +158,22 @@
       ]
     },
     {
+      "type": "net.hollowcube.luau.internal.vm.lua_Coverage$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "int",
+            "int",
+            "java.lang.foreign.MemorySegment",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
       "type": "net.hollowcube.luau.internal.vm.luaW_userdata$preempt$Function",
       "methods": [
         {
@@ -232,6 +248,17 @@
           "void*",
           "void*",
           "jlong",
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint",
+          "jint",
+          "void*",
           "jlong"
         ]
       }
@@ -551,6 +578,15 @@
         "parameterTypes": [
           "void*",
           "jlong"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint",
+          "void*",
+          "void*"
         ]
       }
     ]

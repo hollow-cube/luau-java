@@ -1225,6 +1225,29 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         luaL_sandboxthread(L);
     }
 
+    @Override
+    public List<LuaCoverage> getCoverage(int index) {
+        // Luau only asserts on this, so it is undefined behaviour in a release build.
+        if (!isLuaFunction(index)) {
+            throw new IllegalArgumentException(
+                "value at index " + index + " is not a Lua function: " + typeName(index));
+        }
+
+        final List<LuaCoverage> result = new ArrayList<>();
+        try (Arena arena = Arena.ofConfined()) {
+            // The hits buffer is owned by lua_getcoverage and reused across the walk, so each
+            // callback has to copy it out before returning.
+            final MemorySegment callback = lua_Coverage.allocate(
+                (_, function, lineDefined, depth, hits, size) -> result.add(new LuaCoverage(
+                    function.equals(MemorySegment.NULL) ? null : function.getString(0, StandardCharsets.UTF_8),
+                    lineDefined, depth,
+                    hits.reinterpret(size * ValueLayout.JAVA_INT.byteSize()).toArray(ValueLayout.JAVA_INT))),
+                arena);
+            lua_getcoverage(L, index, MemorySegment.NULL, callback);
+        }
+        return result;
+    }
+
     static boolean codegenSupported() {
         return luacodegen_h.luau_codegen_supported() != 0;
     }
