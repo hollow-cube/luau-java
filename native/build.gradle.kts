@@ -32,13 +32,13 @@ tasks.register<Exec>("cmakeConfigure") {
         "-DCMAKE_CXX_FLAGS=-w", "-DCMAKE_C_FLAGS=-w",
         // Just need the libraries themselves, not the extras.
         "-DLUAU_BUILD_CLI=OFF", "-DLUAU_BUILD_TESTS=OFF",
-        "-DLUAU_EXTERN_C=ON",
+        // LUAU_BUILD_SHARED requires LUAU_EXTERN_C, and implies LUA_USE_LONGJMP.
+        "-DLUAU_EXTERN_C=ON", "-DLUAU_BUILD_SHARED=ON",
         "-B", ".",
         "-S", layout.projectDirectory.asFile.absolutePath
     )
     if (platformOs == "windows") args += listOf(
         "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE",
-        "-DBUILD_SHARED_LIBS=TRUE",
     )
     commandLine(args)
 }
@@ -52,8 +52,9 @@ tasks.register<Exec>("cmakeBuild") {
     inputs.dir(workingDir.resolve("CMakeFiles"))
     inputs.dir(workingDir.resolve("luau/CMakeFiles"))
 
-    // GlobalRef & Luau source inputs
+    // Bridge, GlobalRef & Luau source inputs
     inputs.dir(layout.projectDirectory.dir("src"))
+    inputs.dir(layout.projectDirectory.dir("include"))
     inputs.dir(layout.projectDirectory.dir("luau"))
 
     outputs.dir(

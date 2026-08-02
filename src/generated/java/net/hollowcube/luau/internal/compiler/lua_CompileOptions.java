@@ -22,6 +22,7 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  *     const char *vectorLib;
  *     const char *vectorCtor;
  *     const char *vectorType;
+ *     int vectorPrecision;
  *     const char *const *mutableGlobals;
  *     const char *const *userdataTypes;
  *     const char *const *librariesWithKnownMembers;
@@ -45,6 +46,8 @@ public class lua_CompileOptions {
         luacode_h.C_POINTER.withName("vectorLib"),
         luacode_h.C_POINTER.withName("vectorCtor"),
         luacode_h.C_POINTER.withName("vectorType"),
+        luacode_h.C_INT.withName("vectorPrecision"),
+        MemoryLayout.paddingLayout(4),
         luacode_h.C_POINTER.withName("mutableGlobals"),
         luacode_h.C_POINTER.withName("userdataTypes"),
         luacode_h.C_POINTER.withName("librariesWithKnownMembers"),
@@ -72,7 +75,7 @@ public class lua_CompileOptions {
         return optimizationLevel$LAYOUT;
     }
 
-    private static final long optimizationLevel$OFFSET = $LAYOUT.byteOffset(groupElement("optimizationLevel"));
+    private static final long optimizationLevel$OFFSET = 0;
 
     /**
      * Offset for field:
@@ -116,7 +119,7 @@ public class lua_CompileOptions {
         return debugLevel$LAYOUT;
     }
 
-    private static final long debugLevel$OFFSET = $LAYOUT.byteOffset(groupElement("debugLevel"));
+    private static final long debugLevel$OFFSET = 4;
 
     /**
      * Offset for field:
@@ -160,7 +163,7 @@ public class lua_CompileOptions {
         return typeInfoLevel$LAYOUT;
     }
 
-    private static final long typeInfoLevel$OFFSET = $LAYOUT.byteOffset(groupElement("typeInfoLevel"));
+    private static final long typeInfoLevel$OFFSET = 8;
 
     /**
      * Offset for field:
@@ -204,7 +207,7 @@ public class lua_CompileOptions {
         return coverageLevel$LAYOUT;
     }
 
-    private static final long coverageLevel$OFFSET = $LAYOUT.byteOffset(groupElement("coverageLevel"));
+    private static final long coverageLevel$OFFSET = 12;
 
     /**
      * Offset for field:
@@ -248,7 +251,7 @@ public class lua_CompileOptions {
         return vectorLib$LAYOUT;
     }
 
-    private static final long vectorLib$OFFSET = $LAYOUT.byteOffset(groupElement("vectorLib"));
+    private static final long vectorLib$OFFSET = 16;
 
     /**
      * Offset for field:
@@ -292,7 +295,7 @@ public class lua_CompileOptions {
         return vectorCtor$LAYOUT;
     }
 
-    private static final long vectorCtor$OFFSET = $LAYOUT.byteOffset(groupElement("vectorCtor"));
+    private static final long vectorCtor$OFFSET = 24;
 
     /**
      * Offset for field:
@@ -336,7 +339,7 @@ public class lua_CompileOptions {
         return vectorType$LAYOUT;
     }
 
-    private static final long vectorType$OFFSET = $LAYOUT.byteOffset(groupElement("vectorType"));
+    private static final long vectorType$OFFSET = 32;
 
     /**
      * Offset for field:
@@ -368,6 +371,50 @@ public class lua_CompileOptions {
         struct.set(vectorType$LAYOUT, vectorType$OFFSET, fieldValue);
     }
 
+    private static final OfInt vectorPrecision$LAYOUT = (OfInt)$LAYOUT.select(groupElement("vectorPrecision"));
+
+    /**
+     * Layout for field:
+     * {@snippet lang=c :
+     * int vectorPrecision
+     * }
+     */
+    public static final OfInt vectorPrecision$layout() {
+        return vectorPrecision$LAYOUT;
+    }
+
+    private static final long vectorPrecision$OFFSET = 40;
+
+    /**
+     * Offset for field:
+     * {@snippet lang=c :
+     * int vectorPrecision
+     * }
+     */
+    public static final long vectorPrecision$offset() {
+        return vectorPrecision$OFFSET;
+    }
+
+    /**
+     * Getter for field:
+     * {@snippet lang=c :
+     * int vectorPrecision
+     * }
+     */
+    public static int vectorPrecision(MemorySegment struct) {
+        return struct.get(vectorPrecision$LAYOUT, vectorPrecision$OFFSET);
+    }
+
+    /**
+     * Setter for field:
+     * {@snippet lang=c :
+     * int vectorPrecision
+     * }
+     */
+    public static void vectorPrecision(MemorySegment struct, int fieldValue) {
+        struct.set(vectorPrecision$LAYOUT, vectorPrecision$OFFSET, fieldValue);
+    }
+
     private static final AddressLayout mutableGlobals$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("mutableGlobals"));
 
     /**
@@ -380,7 +427,7 @@ public class lua_CompileOptions {
         return mutableGlobals$LAYOUT;
     }
 
-    private static final long mutableGlobals$OFFSET = $LAYOUT.byteOffset(groupElement("mutableGlobals"));
+    private static final long mutableGlobals$OFFSET = 48;
 
     /**
      * Offset for field:
@@ -424,7 +471,7 @@ public class lua_CompileOptions {
         return userdataTypes$LAYOUT;
     }
 
-    private static final long userdataTypes$OFFSET = $LAYOUT.byteOffset(groupElement("userdataTypes"));
+    private static final long userdataTypes$OFFSET = 56;
 
     /**
      * Offset for field:
@@ -468,7 +515,7 @@ public class lua_CompileOptions {
         return librariesWithKnownMembers$LAYOUT;
     }
 
-    private static final long librariesWithKnownMembers$OFFSET = $LAYOUT.byteOffset(groupElement("librariesWithKnownMembers"));
+    private static final long librariesWithKnownMembers$OFFSET = 64;
 
     /**
      * Offset for field:
@@ -512,7 +559,7 @@ public class lua_CompileOptions {
         return libraryMemberTypeCb$LAYOUT;
     }
 
-    private static final long libraryMemberTypeCb$OFFSET = $LAYOUT.byteOffset(groupElement("libraryMemberTypeCb"));
+    private static final long libraryMemberTypeCb$OFFSET = 72;
 
     /**
      * Offset for field:
@@ -556,7 +603,7 @@ public class lua_CompileOptions {
         return libraryMemberConstantCb$LAYOUT;
     }
 
-    private static final long libraryMemberConstantCb$OFFSET = $LAYOUT.byteOffset(groupElement("libraryMemberConstantCb"));
+    private static final long libraryMemberConstantCb$OFFSET = 80;
 
     /**
      * Offset for field:
@@ -600,7 +647,7 @@ public class lua_CompileOptions {
         return disabledBuiltins$LAYOUT;
     }
 
-    private static final long disabledBuiltins$OFFSET = $LAYOUT.byteOffset(groupElement("disabledBuiltins"));
+    private static final long disabledBuiltins$OFFSET = 88;
 
     /**
      * Offset for field:

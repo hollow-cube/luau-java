@@ -40,4 +40,7 @@ public enum LuaGcOp {
     SET_GOAL,
     SET_STEP_MUL,
     SET_STEP_SIZE,
+
+    /// return 1 if GC is running but currently paused (waiting for the allocation threshold)
+    IS_PAUSED,
 }

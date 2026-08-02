@@ -1,7 +1,8 @@
 package net.hollowcube.luau;
 
+import net.hollowcube.luau.internal.vm.luaW_userdata;
 import net.hollowcube.luau.internal.vm.lua_Callbacks;
-import net.hollowcube.luau.internal.vm.luawrap_h;
+import net.hollowcube.luau.internal.vm.luaujava_h;
 import net.hollowcube.luau.util.GlobalRef;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +35,7 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
 
     record PreemptImpl(MemorySegment handle) implements Preempt {
         public PreemptImpl(Handler handler, Arena arena) {
-            final lua_Callbacks.preempt.Function f = (L, gc) -> {
+            final luaW_userdata.preempt.Function f = (L, gc) -> {
                 var state = new LuaStateImpl(L);
                 try{
                     var shouldYield = handler.preempt(state, gc);
@@ -44,14 +45,14 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
                 }
             };
 
-            this(lua_Callbacks.preempt.allocate(f, arena));
+            this(luaW_userdata.preempt.allocate(f, arena));
         }
     }
 
     @Override
     public void preempt(MemorySegment functionAddress) {
-        lua_Callbacks.interrupt(callbacks, luawrap_h.luaW_interrupt_preempt_handler$address());
-        lua_Callbacks.preempt(callbacks, functionAddress);
+        lua_Callbacks.interrupt(callbacks, luaujava_h.luaW_interrupt_preempt_handler$address());
+        luaW_userdata.preempt(lua_Callbacks.userdata(callbacks), functionAddress);
     }
 
     @Override
@@ -65,11 +66,12 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
 
     record UserAtomImpl(MemorySegment handle) implements UserAtom {
         public UserAtomImpl(Handler handler, Arena arena) {
-            final lua_Callbacks.useratom.Function f = (str, len) -> {
+            final lua_Callbacks.useratom.Function f = (L, str, len) -> {
                 byte[] raw = str
                         .reinterpret(len)
                         .toArray(ValueLayout.JAVA_BYTE);
                 return handler.userAtom(
+                        new LuaStateImpl(L),
                         new String(raw, StandardCharsets.UTF_8)
                 );
             };
@@ -117,11 +119,17 @@ record LuaCallbacksImpl(MemorySegment callbacks) implements LuaCallbacks {
     }
 
     static final class JavaCallbacks {
+        /// Owns the native luaW_userdata pointed at by lua_Callbacks::userdata.
+        final Arena arena;
         @Nullable UserThread userThread = null;
 
+        JavaCallbacks(Arena arena) {
+            this.arena = arena;
+        }
+
         static JavaCallbacks fromCallbacks(MemorySegment callbacks) {
-            final MemorySegment javaCallbacks = lua_Callbacks.userdata(callbacks);
-            return (JavaCallbacks) GlobalRef.get(javaCallbacks.address());
+            final MemorySegment bridgeData = lua_Callbacks.userdata(callbacks);
+            return (JavaCallbacks) GlobalRef.get(luaW_userdata.javadata(bridgeData).address());
         }
     }
 }

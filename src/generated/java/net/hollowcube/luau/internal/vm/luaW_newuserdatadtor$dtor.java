@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * void (*dtor)(void *)
  * }
  */
-public final class luaW_newuserdatadtor$dtor {
+public class luaW_newuserdatadtor$dtor {
 
-    private luaW_newuserdatadtor$dtor() {
+    luaW_newuserdatadtor$dtor() {
         // Should not be called directly
     }
 
@@ -31,7 +31,7 @@ public final class luaW_newuserdatadtor$dtor {
     }
 
     private static final FunctionDescriptor $DESC = FunctionDescriptor.ofVoid(
-        luawrap_h.C_POINTER
+        luaujava_h.C_POINTER
     );
 
     /**
@@ -41,7 +41,7 @@ public final class luaW_newuserdatadtor$dtor {
         return $DESC;
     }
 
-    private static final MethodHandle UP$MH = luawrap_h.upcallHandle(luaW_newuserdatadtor$dtor.Function.class, "apply", $DESC);
+    private static final MethodHandle UP$MH = luaujava_h.upcallHandle(luaW_newuserdatadtor$dtor.Function.class, "apply", $DESC);
 
     /**
      * Allocates a new upcall stub, whose implementation is defined by {@code fi}.
@@ -56,11 +56,9 @@ public final class luaW_newuserdatadtor$dtor {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static void invoke(MemorySegment funcPtr, MemorySegment _x0) {
+    public static void invoke(MemorySegment funcPtr,MemorySegment _x0) {
         try {
              DOWN$MH.invokeExact(funcPtr, _x0);
-        } catch (Error | RuntimeException ex) {
-            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

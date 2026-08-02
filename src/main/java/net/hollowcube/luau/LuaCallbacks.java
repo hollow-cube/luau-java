@@ -74,13 +74,16 @@ public sealed interface LuaCallbacks permits LuaCallbacksImpl {
      * subtle and highly specific in what it is and is not allowed to do with the Lua state. Furthermore,
      * it must generally be native code due to how Lua propagates errors. If you are using preemption,
      * virtually all of what interrupt() can do is already exposed via the preemption yield/error API.
+     * <p>
+     * The handler is stored in luau-java's own luaW_userdata (reachable through
+     * lua_Callbacks::userdata), not on lua_Callbacks itself.
      */
     void preempt(MemorySegment functionAddress);
 
     sealed interface UserAtom permits LuaCallbacksImpl.UserAtomImpl {
         @FunctionalInterface
         interface Handler {
-            short userAtom(String string);
+            short userAtom(LuaState state, String string);
         }
 
         static UserAtom allocate(Handler handler, Arena arena) {

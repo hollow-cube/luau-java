@@ -1,6 +1,7 @@
 package net.hollowcube.luau.compiler;
 
-import static net.hollowcube.luau.internal.compiler.luacode_h.luau_ext_free;
+import static net.hollowcube.luau.internal.compiler.luaujavac_h.luau_ext_free;
+import static net.hollowcube.luau.internal.compiler.luaujavac_h.luauC_setflagsdefault;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -24,7 +25,10 @@ record LuauCompilerImpl(
     List<String> userdataTypes
 ) implements LuauCompiler {
     static {
-        NativeLibraryLoader.loadLibrary("compiler");
+        // libcompiler links libvm: Luau.Bytecode reads two fast flags the VM defines.
+        NativeLibraryLoader.loadLibrary("vm", "compiler");
+        // The compiler library owns its own fast flag list, separate from the VM's.
+        luauC_setflagsdefault();
     }
 
     @Override
@@ -85,6 +89,9 @@ record LuauCompilerImpl(
             opts,
             arena.allocateFrom(vectorType)
         );
+        // 0 = 32-bit float components, matching the shipped VM build (LUA_VECTOR_DOUBLE=0)
+        // and the float-based vector API on LuaState.
+        lua_CompileOptions.vectorPrecision(opts, 0);
         if (!mutableGlobals.isEmpty()) {
             // size + 1 because the array is null terminated.
             final MemorySegment mutableGlobals = arena.allocate(

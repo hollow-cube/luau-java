@@ -31,7 +31,7 @@ class TestLuaStringAtoms {
             .callbacks()
             .userAtom(
                 LuaCallbacks.UserAtom.allocate(
-                    str ->
+                    (_, str) ->
                         switch (str) {
                             case "one" -> 1;
                             case "two" -> 2;

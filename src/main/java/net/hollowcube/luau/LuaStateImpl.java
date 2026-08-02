@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 import static net.hollowcube.luau.LuaCallbacksImpl.JavaCallbacks.fromCallbacks;
 import static net.hollowcube.luau.internal.vm.lua_h.*;
 import static net.hollowcube.luau.internal.vm.lualib_h.*;
-import static net.hollowcube.luau.internal.vm.luawrap_h.*;
+import static net.hollowcube.luau.internal.vm.luaujava_h.*;
 
 /// LuaStateImpl is a thin wrapper around a LuaState*, and must hold no extra state on the java
 /// side.
@@ -47,10 +47,15 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     static {
         NativeLibraryLoader.loadLibrary("vm");
 
+        // Luau ships most functionality behind fast flags which default to off in the
+        // library build; its own CLI turns the stable ones on at startup, so do the same.
+        // Must happen before any state is created.
+        luaW_setflagsdefault();
+
         if ("dump".equals(ASSERT_HANDLER)) {
-            luaW_assertconf_dump.makeInvoker().apply();
+            luaW_assertconf_dump();
         } else if ("log".equals(ASSERT_HANDLER)) {
-            luaW_assertconf_log.makeInvoker().apply();
+            luaW_assertconf_log();
         }
     }
 
@@ -60,6 +65,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
     static final int REGISTRY_INDEX = LUA_REGISTRYINDEX();
     static final int GLOBALS_INDEX = LUA_GLOBALSINDEX();
+
+    /// Upvalue slots reserved by luaW_pushcclosurek for the Java function and continuation.
+    static final int DISPATCH_UPVALUES = 2;
 
     private static final Pattern DEFAULT_ERROR_TRACE_REGEX = Pattern.compile("^\\[string \"" +
                                                                                      ".*?\"]:\\d+:\\s");
@@ -90,8 +98,14 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         final MemorySegment callbacks = lua_callbacks(L);
         lua_Callbacks.userthread(callbacks, USERTHREAD_CALLBACK);
 
-        final var javaCallbacks = GlobalRef.newref(new JavaCallbacks());
-        lua_Callbacks.userdata(callbacks, MemorySegment.ofAddress(javaCallbacks));
+        // lua_Callbacks.userdata points at a luaW_userdata we own for the life of the
+        // state. It holds our JavaCallbacks ref plus the preempt handler, which used to
+        // be a fork-only field on lua_Callbacks itself.
+        final Arena bridgeArena = Arena.ofShared();
+        final MemorySegment bridgeData = bridgeArena.allocate(luaW_userdata.layout());
+        final long javaCallbacks = GlobalRef.newref(new JavaCallbacks(bridgeArena));
+        luaW_userdata.javadata(bridgeData, MemorySegment.ofAddress(javaCallbacks));
+        lua_Callbacks.userdata(callbacks, bridgeData);
 
         // We use userdata destructors to remove the java object ref (so it may be GC'd).
         // So we must add a destructor for every tag immediately.
@@ -109,13 +123,16 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
 
         // Get our reference to the JavaCallbacks object, but keep it so closing threads have it.
         final MemorySegment callbacks = lua_callbacks(L);
-        final MemorySegment javaCallbacks = lua_Callbacks.userdata(callbacks);
+        final MemorySegment bridgeData = lua_Callbacks.userdata(callbacks);
+        final long javaCallbacks = luaW_userdata.javadata(bridgeData).address();
+        final Arena bridgeArena = ((JavaCallbacks) GlobalRef.get(javaCallbacks)).arena;
 
         // Finally, close the lua state itself.
         lua_close(L);
 
-        // Destroy the ref
-        GlobalRef.unref(javaCallbacks.address());
+        // Destroy the ref and the native bridge state
+        GlobalRef.unref(javaCallbacks);
+        bridgeArena.close();
     }
 
     //TODO: test me
@@ -1174,8 +1191,11 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
                 case BIT32 -> luaopen_bit32(L);
                 case BUFFER -> luaopen_buffer(L);
                 case UTF8 -> luaopen_utf8(L);
+                case CLASS -> luaopen_class(L);
                 case MATH -> luaopen_math(L);
                 case DEBUG -> luaopen_debug(L);
+                case VECTOR -> luaopen_vector(L);
+                case INTEGER -> luaopen_integer(L);
             }
         }
     }
@@ -1353,7 +1373,10 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     ) {
         while (lua_getinfo(L, index++, LUA_DEBUG_WHAT, luaElem) != 0) {
             char what = (char) lua_Debug.what(luaElem).get(ValueLayout.JAVA_BYTE, 0);
-            if (what == 'J') return index;
+            // A Java closure ends this segment of the trace; the Java frames which
+            // implement it come next. Every Java closure shares the native dispatch
+            // trampoline, which is what luaW_isjavaframe tests for.
+            if (what == 'C' && luaW_isjavaframe(L, index - 1) != 0) return index;
 
             boolean isLua = what == 'L';
             String source = null, name = "<anonymous>";

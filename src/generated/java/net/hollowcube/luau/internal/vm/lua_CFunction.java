@@ -17,9 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * typedef int (*lua_CFunction)(lua_State *)
  * }
  */
-public final class lua_CFunction {
+public class lua_CFunction {
 
-    private lua_CFunction() {
+    lua_CFunction() {
         // Should not be called directly
     }
 
@@ -57,11 +57,9 @@ public final class lua_CFunction {
     /**
      * Invoke the upcall stub {@code funcPtr}, with given parameters
      */
-    public static int invoke(MemorySegment funcPtr, MemorySegment L) {
+    public static int invoke(MemorySegment funcPtr,MemorySegment L) {
         try {
             return (int) DOWN$MH.invokeExact(funcPtr, L);
-        } catch (Error | RuntimeException ex) {
-            throw ex;
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

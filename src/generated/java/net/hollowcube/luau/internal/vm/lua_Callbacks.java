@@ -17,10 +17,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * struct lua_Callbacks {
  *     void *userdata;
  *     void (*interrupt)(lua_State *, int);
- *     int (*preempt)(lua_State *, int);
  *     void (*panic)(lua_State *, int);
  *     void (*userthread)(lua_State *, lua_State *);
- *     int16_t (*useratom)(const char *, size_t);
+ *     int16_t (*useratom)(lua_State *, const char *, size_t);
  *     void (*debugbreak)(lua_State *, lua_Debug *);
  *     void (*debugstep)(lua_State *, lua_Debug *);
  *     void (*debuginterrupt)(lua_State *, lua_Debug *);
@@ -38,7 +37,6 @@ public class lua_Callbacks {
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
         lua_h.C_POINTER.withName("userdata"),
         lua_h.C_POINTER.withName("interrupt"),
-        lua_h.C_POINTER.withName("preempt"),
         lua_h.C_POINTER.withName("panic"),
         lua_h.C_POINTER.withName("userthread"),
         lua_h.C_POINTER.withName("useratom"),
@@ -68,7 +66,7 @@ public class lua_Callbacks {
         return userdata$LAYOUT;
     }
 
-    private static final long userdata$OFFSET = $LAYOUT.byteOffset(groupElement("userdata"));
+    private static final long userdata$OFFSET = 0;
 
     /**
      * Offset for field:
@@ -105,9 +103,9 @@ public class lua_Callbacks {
      * void (*interrupt)(lua_State *, int)
      * }
      */
-    public final static class interrupt {
+    public static class interrupt {
 
-        private interrupt() {
+        interrupt() {
             // Should not be called directly
         }
 
@@ -145,11 +143,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, int _x1) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, int _x1) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -168,7 +164,7 @@ public class lua_Callbacks {
         return interrupt$LAYOUT;
     }
 
-    private static final long interrupt$OFFSET = $LAYOUT.byteOffset(groupElement("interrupt"));
+    private static final long interrupt$OFFSET = 8;
 
     /**
      * Offset for field:
@@ -202,113 +198,12 @@ public class lua_Callbacks {
 
     /**
      * {@snippet lang=c :
-     * int (*preempt)(lua_State *, int)
-     * }
-     */
-    public final static class preempt {
-
-        private preempt() {
-            // Should not be called directly
-        }
-
-        /**
-         * The function pointer signature, expressed as a functional interface
-         */
-        public interface Function {
-            int apply(MemorySegment _x0, int _x1);
-        }
-
-        private static final FunctionDescriptor $DESC = FunctionDescriptor.of(
-            lua_h.C_INT,
-            lua_h.C_POINTER,
-            lua_h.C_INT
-        );
-
-        /**
-         * The descriptor of this function pointer
-         */
-        public static FunctionDescriptor descriptor() {
-            return $DESC;
-        }
-
-        private static final MethodHandle UP$MH = lua_h.upcallHandle(preempt.Function.class, "apply", $DESC);
-
-        /**
-         * Allocates a new upcall stub, whose implementation is defined by {@code fi}.
-         * The lifetime of the returned segment is managed by {@code arena}
-         */
-        public static MemorySegment allocate(preempt.Function fi, Arena arena) {
-            return Linker.nativeLinker().upcallStub(UP$MH.bindTo(fi), $DESC, arena);
-        }
-
-        private static final MethodHandle DOWN$MH = Linker.nativeLinker().downcallHandle($DESC);
-
-        /**
-         * Invoke the upcall stub {@code funcPtr}, with given parameters
-         */
-        public static int invoke(MemorySegment funcPtr, MemorySegment _x0, int _x1) {
-            try {
-                return (int) DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
-            } catch (Throwable ex$) {
-                throw new AssertionError("should not reach here", ex$);
-            }
-        }
-    }
-
-    private static final AddressLayout preempt$LAYOUT = (AddressLayout)$LAYOUT.select(groupElement("preempt"));
-
-    /**
-     * Layout for field:
-     * {@snippet lang=c :
-     * int (*preempt)(lua_State *, int)
-     * }
-     */
-    public static final AddressLayout preempt$layout() {
-        return preempt$LAYOUT;
-    }
-
-    private static final long preempt$OFFSET = $LAYOUT.byteOffset(groupElement("preempt"));
-
-    /**
-     * Offset for field:
-     * {@snippet lang=c :
-     * int (*preempt)(lua_State *, int)
-     * }
-     */
-    public static final long preempt$offset() {
-        return preempt$OFFSET;
-    }
-
-    /**
-     * Getter for field:
-     * {@snippet lang=c :
-     * int (*preempt)(lua_State *, int)
-     * }
-     */
-    public static MemorySegment preempt(MemorySegment struct) {
-        return struct.get(preempt$LAYOUT, preempt$OFFSET);
-    }
-
-    /**
-     * Setter for field:
-     * {@snippet lang=c :
-     * int (*preempt)(lua_State *, int)
-     * }
-     */
-    public static void preempt(MemorySegment struct, MemorySegment fieldValue) {
-        struct.set(preempt$LAYOUT, preempt$OFFSET, fieldValue);
-    }
-
-    /**
-     * {@snippet lang=c :
      * void (*panic)(lua_State *, int)
      * }
      */
-    public final static class panic {
+    public static class panic {
 
-        private panic() {
+        panic() {
             // Should not be called directly
         }
 
@@ -346,11 +241,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, int _x1) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, int _x1) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -369,7 +262,7 @@ public class lua_Callbacks {
         return panic$LAYOUT;
     }
 
-    private static final long panic$OFFSET = $LAYOUT.byteOffset(groupElement("panic"));
+    private static final long panic$OFFSET = 16;
 
     /**
      * Offset for field:
@@ -406,9 +299,9 @@ public class lua_Callbacks {
      * void (*userthread)(lua_State *, lua_State *)
      * }
      */
-    public final static class userthread {
+    public static class userthread {
 
-        private userthread() {
+        userthread() {
             // Should not be called directly
         }
 
@@ -446,11 +339,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, MemorySegment _x1) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, MemorySegment _x1) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -469,7 +360,7 @@ public class lua_Callbacks {
         return userthread$LAYOUT;
     }
 
-    private static final long userthread$OFFSET = $LAYOUT.byteOffset(groupElement("userthread"));
+    private static final long userthread$OFFSET = 24;
 
     /**
      * Offset for field:
@@ -503,12 +394,12 @@ public class lua_Callbacks {
 
     /**
      * {@snippet lang=c :
-     * int16_t (*useratom)(const char *, size_t)
+     * int16_t (*useratom)(lua_State *, const char *, size_t)
      * }
      */
-    public final static class useratom {
+    public static class useratom {
 
-        private useratom() {
+        useratom() {
             // Should not be called directly
         }
 
@@ -516,11 +407,12 @@ public class lua_Callbacks {
          * The function pointer signature, expressed as a functional interface
          */
         public interface Function {
-            short apply(MemorySegment _x0, long _x1);
+            short apply(MemorySegment _x0, MemorySegment _x1, long _x2);
         }
 
         private static final FunctionDescriptor $DESC = FunctionDescriptor.of(
             lua_h.C_SHORT,
+            lua_h.C_POINTER,
             lua_h.C_POINTER,
             lua_h.C_LONG
         );
@@ -547,11 +439,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static short invoke(MemorySegment funcPtr, MemorySegment _x0, long _x1) {
+        public static short invoke(MemorySegment funcPtr,MemorySegment _x0, MemorySegment _x1, long _x2) {
             try {
-                return (short) DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
+                return (short) DOWN$MH.invokeExact(funcPtr, _x0, _x1, _x2);
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -563,19 +453,19 @@ public class lua_Callbacks {
     /**
      * Layout for field:
      * {@snippet lang=c :
-     * int16_t (*useratom)(const char *, size_t)
+     * int16_t (*useratom)(lua_State *, const char *, size_t)
      * }
      */
     public static final AddressLayout useratom$layout() {
         return useratom$LAYOUT;
     }
 
-    private static final long useratom$OFFSET = $LAYOUT.byteOffset(groupElement("useratom"));
+    private static final long useratom$OFFSET = 32;
 
     /**
      * Offset for field:
      * {@snippet lang=c :
-     * int16_t (*useratom)(const char *, size_t)
+     * int16_t (*useratom)(lua_State *, const char *, size_t)
      * }
      */
     public static final long useratom$offset() {
@@ -585,7 +475,7 @@ public class lua_Callbacks {
     /**
      * Getter for field:
      * {@snippet lang=c :
-     * int16_t (*useratom)(const char *, size_t)
+     * int16_t (*useratom)(lua_State *, const char *, size_t)
      * }
      */
     public static MemorySegment useratom(MemorySegment struct) {
@@ -595,7 +485,7 @@ public class lua_Callbacks {
     /**
      * Setter for field:
      * {@snippet lang=c :
-     * int16_t (*useratom)(const char *, size_t)
+     * int16_t (*useratom)(lua_State *, const char *, size_t)
      * }
      */
     public static void useratom(MemorySegment struct, MemorySegment fieldValue) {
@@ -607,9 +497,9 @@ public class lua_Callbacks {
      * void (*debugbreak)(lua_State *, lua_Debug *)
      * }
      */
-    public final static class debugbreak {
+    public static class debugbreak {
 
-        private debugbreak() {
+        debugbreak() {
             // Should not be called directly
         }
 
@@ -647,11 +537,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, MemorySegment _x1) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, MemorySegment _x1) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -670,7 +558,7 @@ public class lua_Callbacks {
         return debugbreak$LAYOUT;
     }
 
-    private static final long debugbreak$OFFSET = $LAYOUT.byteOffset(groupElement("debugbreak"));
+    private static final long debugbreak$OFFSET = 40;
 
     /**
      * Offset for field:
@@ -707,9 +595,9 @@ public class lua_Callbacks {
      * void (*debugstep)(lua_State *, lua_Debug *)
      * }
      */
-    public final static class debugstep {
+    public static class debugstep {
 
-        private debugstep() {
+        debugstep() {
             // Should not be called directly
         }
 
@@ -747,11 +635,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, MemorySegment _x1) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, MemorySegment _x1) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -770,7 +656,7 @@ public class lua_Callbacks {
         return debugstep$LAYOUT;
     }
 
-    private static final long debugstep$OFFSET = $LAYOUT.byteOffset(groupElement("debugstep"));
+    private static final long debugstep$OFFSET = 48;
 
     /**
      * Offset for field:
@@ -807,9 +693,9 @@ public class lua_Callbacks {
      * void (*debuginterrupt)(lua_State *, lua_Debug *)
      * }
      */
-    public final static class debuginterrupt {
+    public static class debuginterrupt {
 
-        private debuginterrupt() {
+        debuginterrupt() {
             // Should not be called directly
         }
 
@@ -847,11 +733,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, MemorySegment _x1) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, MemorySegment _x1) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -870,7 +754,7 @@ public class lua_Callbacks {
         return debuginterrupt$LAYOUT;
     }
 
-    private static final long debuginterrupt$OFFSET = $LAYOUT.byteOffset(groupElement("debuginterrupt"));
+    private static final long debuginterrupt$OFFSET = 56;
 
     /**
      * Offset for field:
@@ -907,9 +791,9 @@ public class lua_Callbacks {
      * void (*debugprotectederror)(lua_State *)
      * }
      */
-    public final static class debugprotectederror {
+    public static class debugprotectederror {
 
-        private debugprotectederror() {
+        debugprotectederror() {
             // Should not be called directly
         }
 
@@ -946,11 +830,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -969,7 +851,7 @@ public class lua_Callbacks {
         return debugprotectederror$LAYOUT;
     }
 
-    private static final long debugprotectederror$OFFSET = $LAYOUT.byteOffset(groupElement("debugprotectederror"));
+    private static final long debugprotectederror$OFFSET = 64;
 
     /**
      * Offset for field:
@@ -1006,9 +888,9 @@ public class lua_Callbacks {
      * void (*onallocate)(lua_State *, size_t, size_t)
      * }
      */
-    public final static class onallocate {
+    public static class onallocate {
 
-        private onallocate() {
+        onallocate() {
             // Should not be called directly
         }
 
@@ -1047,11 +929,9 @@ public class lua_Callbacks {
         /**
          * Invoke the upcall stub {@code funcPtr}, with given parameters
          */
-        public static void invoke(MemorySegment funcPtr, MemorySegment _x0, long _x1, long _x2) {
+        public static void invoke(MemorySegment funcPtr,MemorySegment _x0, long _x1, long _x2) {
             try {
                  DOWN$MH.invokeExact(funcPtr, _x0, _x1, _x2);
-            } catch (Error | RuntimeException ex) {
-                throw ex;
             } catch (Throwable ex$) {
                 throw new AssertionError("should not reach here", ex$);
             }
@@ -1070,7 +950,7 @@ public class lua_Callbacks {
         return onallocate$LAYOUT;
     }
 
-    private static final long onallocate$OFFSET = $LAYOUT.byteOffset(groupElement("onallocate"));
+    private static final long onallocate$OFFSET = 72;
 
     /**
      * Offset for field:

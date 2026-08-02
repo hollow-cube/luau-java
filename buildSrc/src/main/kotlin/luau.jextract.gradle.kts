@@ -7,14 +7,23 @@ plugins {
 tasks.named<JextractTask>("jextract") {
     outputDir.set(project.layout.projectDirectory.dir("src/generated/java"))
 
-    // Note: we use the header from the build directory here because
-    // we need to catch "luau_ext_free" which is added by native/build.gradle.kts
-    val nativeBuild = project(":native").projectDir.resolve("luau")
+    val nativeDir = project(":native").projectDir
+    val nativeBuild = nativeDir.resolve("luau")
+    // luau-java's own bridge headers, compiled into the upstream targets. See native/CMakeLists.txt.
+    val bridgeInclude = nativeDir.resolve("include")
+
+    header("$bridgeInclude/luaujavac.h") {
+        targetPackage = "net.hollowcube.luau.internal.compiler"
+        includes.add("$nativeBuild/Compiler/include")
+
+        functions.addAll("luau_ext_free", "luauC_setflagsdefault")
+    }
+
     header("$nativeBuild/Compiler/include/luacode.h") {
         targetPackage = "net.hollowcube.luau.internal.compiler";
 
         functions.addAll(
-            "luau_compile", "luau_ext_free",
+            "luau_compile",
             "luau_set_compile_constant_nil",
             "luau_set_compile_constant_boolean",
             "luau_set_compile_constant_number",
@@ -72,27 +81,23 @@ tasks.named<JextractTask>("jextract") {
             "luaopen_table", "luaopen_os", "luaopen_string",
             "luaopen_string", "luaopen_bit32", "luaopen_buffer",
             "luaopen_utf8", "luaopen_math", "luaopen_debug",
-            "luaopen_vector", "luaL_openlibs", "luaL_optboolean",
+            "luaopen_vector", "luaopen_class", "luaopen_integer",
+            "luaL_openlibs", "luaL_optboolean",
 
             "luaL_sandbox", "luaL_sandboxthread"
         )
     }
 
-    header("$nativeBuild/CodeGen/include/luacodegen.h") {
+    // Note: no luacodegen.h. Luau.CodeGen cannot link in a shared build (it reaches into
+    // hidden-visibility VM internals), and nothing binds it, so it is not built or shipped.
+
+    header("$bridgeInclude/luaujava.h") {
         targetPackage = "net.hollowcube.luau.internal.vm"
+        includes.add("$nativeBuild/VM/include")
 
+        structs.addAll("luaW_userdata")
         functions.addAll(
-            "luau_codegen_supported",
-            "luau_codegen_create",
-            "luau_codegen_compile",
-        )
-    }
-
-    header("$nativeBuild/VM/include/luawrap.h") {
-        targetPackage = "net.hollowcube.luau.internal.vm"
-
-        functions.addAll(
-            "luaW_getstatus",
+            "luaW_getstatus", "luaW_setflagsdefault", "luaW_isjavaframe",
 
             "luaW_newstate", "luaW_newthread", "luaW_resetthread",
             "lua_xmove", "lua_xpush", "luaW_equal",

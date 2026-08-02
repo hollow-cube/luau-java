@@ -25,8 +25,13 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
 
     int REGISTRY_INDEX = LuaStateImpl.REGISTRY_INDEX;
 
+    /// Pseudo-index of the `i`th (1-based) upvalue of the running Java closure.
+    ///
+    /// Java closures are pushed as a native dispatch trampoline which reserves the first
+    /// two upvalue slots for the Java function and continuation, so this is offset from
+    /// the raw `lua_upvalueindex`.
     static int upvalueIndex(int i) {
-        return LuaStateImpl.GLOBALS_INDEX - i;
+        return LuaStateImpl.GLOBALS_INDEX - (i + LuaStateImpl.DISPATCH_UPVALUES);
     }
 
     /// Create a new lua state (main thread).

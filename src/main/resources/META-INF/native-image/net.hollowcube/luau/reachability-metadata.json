@@ -116,6 +116,7 @@
           "name": "apply",
           "parameterTypes": [
             "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
             "long"
           ]
         }
@@ -134,12 +135,36 @@
       ]
     },
     {
-      "type": "net.hollowcube.luau.internal.vm.lua_newuserdatadtor$dtor$Function",
+      "type": "net.hollowcube.luau.internal.vm.luaW_newuserdatadtor$dtor$Function",
       "methods": [
         {
           "name": "apply",
           "parameterTypes": [
             "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.lua_Continuation$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "net.hollowcube.luau.internal.vm.luaW_userdata$preempt$Function",
+      "methods": [
+        {
+          "name": "apply",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "int"
           ]
         }
       ]
@@ -177,11 +202,19 @@
         "returnType": "jshort",
         "parameterTypes": [
           "void*",
+          "void*",
           "jlong"
         ]
       },
       {
         "returnType": "void",
+        "parameterTypes": [
+          "void*",
+          "jint"
+        ]
+      },
+      {
+        "returnType": "jint",
         "parameterTypes": [
           "void*",
           "jint"
@@ -244,6 +277,10 @@
       },
       {
         "returnType": "void*",
+        "parameterTypes": []
+      },
+      {
+        "returnType": "void",
         "parameterTypes": []
       },
       {

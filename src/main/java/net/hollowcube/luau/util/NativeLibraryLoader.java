@@ -5,16 +5,27 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public final class NativeLibraryLoader {
 
-    public static void loadLibrary(String name) {
-        if (!loadEmbeddedLibrary(name)) {
-            System.loadLibrary(name);
+    /// Loads each library in order, skipping any already loaded. Dependencies must be
+    /// listed before their dependents: every library is extracted into the same
+    /// directory and resolved through an `@loader_path`/`$ORIGIN` rpath, so a
+    /// dependency must be on disk before its dependent is loaded.
+    public static synchronized void loadLibrary(String... names) {
+        for (final String name : names) {
+            if (!LOADED.add(name)) continue;
+            if (!loadEmbeddedLibrary(name)) {
+                System.loadLibrary(name);
+            }
         }
     }
+
+    private static final Set<String> LOADED = new HashSet<>();
 
     private static final Path NATIVES_DIR;
 

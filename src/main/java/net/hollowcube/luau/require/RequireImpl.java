@@ -15,7 +15,7 @@ import java.util.Locale;
 import static net.hollowcube.luau.LuaState.REGISTRY_INDEX;
 import static net.hollowcube.luau.LuaState.upvalueIndex;
 import static net.hollowcube.luau.internal.vm.lua_h.lua_getinfo;
-import static net.hollowcube.luau.internal.vm.luawrap_h.luaW_pushcclosurek;
+import static net.hollowcube.luau.internal.vm.luaujava_h.luaW_pushcclosurek;
 
 @ApiStatus.Internal
 public final class RequireImpl {

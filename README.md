@@ -118,6 +118,22 @@ git clone git@github.com:hollow-cube/luau-java.git --recurse-submodules && cd lu
 ./gradlew build
 ```
 
+### Native layer
+
+`native/luau` tracks [upstream Luau](https://github.com/luau-lang/luau) unmodified, built with
+`LUAU_EXTERN_C` and `LUAU_BUILD_SHARED`. Everything luau-java needs on top of the public C API lives
+in `native/include` and `native/src`, and is compiled into the Luau VM and compiler targets by
+`native/CMakeLists.txt` (it needs VM internals, which are hidden-visibility in a shared build):
+
+* `luaW_*` barrier wrappers, so an error raised inside a Lua API called from Java does not longjmp
+  over the FFM downcall stub.
+* `luaW_dispatch`, the native trampoline every Java closure is registered as, which raises errors
+  once the Java frame is off the stack.
+* `luau_ext_free`, freeing bytecode inside the compiler library rather than across the CRT boundary.
+
+The build ships three libraries: `vm`, `compiler` and `globalref`. Upstream's `Luau.CodeGen` is not
+built or bound - it cannot link in a shared build.
+
 ### Updating Bindings
 
 Bindings are generated using [JExtract](https://jdk.java.net/jextract/). They are already included in the repository

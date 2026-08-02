@@ -9,6 +9,9 @@ public enum BuilinLibrary {
     BIT32,
     BUFFER,
     UTF8,
+    CLASS,
     MATH,
     DEBUG,
+    VECTOR,
+    INTEGER,
 }
