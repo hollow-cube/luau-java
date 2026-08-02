@@ -1013,6 +1013,22 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     }
 
     @Override
+    public @CheckReturnValue int weakRef(int index) {
+        return lua_weakref(L, index);
+    }
+
+    @Override
+    public void weakUnref(int ref) {
+        lua_weakunref(L, ref);
+    }
+
+    @Override
+    public LuaType getWeakRef(int ref) {
+        // The weak registry is not a table we can reach by index, unlike getRef.
+        return LuaType.byId(lua_getweakref(L, ref));
+    }
+
+    @Override
     public void setGlobal(String s) {
         setField(LUA_GLOBALSINDEX(), s);
     }

@@ -287,8 +287,27 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     void cloneTable(int index);
 
     int ref(int index);
+    /// Releases a reference. The id must not be used again: releasing recycles the slot
+    /// into a free list rather than clearing it, so [#getRef(int)] on a released id pushes
+    /// an internal link value rather than nil.
     void unref(int ref);
     LuaType getRef(int ref);
+
+    /// Creates a weak reference to the value at index, which does not keep it alive.
+    ///
+    /// Unlike [#ref(int)], the referent may be collected at any point; [#getWeakRef(int)]
+    /// then pushes nil. Use this for non-owning associations - a Java side identity cache
+    /// for Lua tables, or a listener registry which should drop entries whose callback is
+    /// no longer reachable from Lua. Reaching for it to break a Java/Lua reference cycle
+    /// only works when the Lua value should not outlive its Java owner.
+    ///
+    /// Weak references live in a registry separate from [#ref(int)], so the returned id
+    /// may only be passed to [#getWeakRef(int)] and [#weakUnref(int)].
+    int weakRef(int index);
+    /// Releases a weak reference. As with [#unref(int)], the id must not be used again.
+    void weakUnref(int ref);
+    /// Pushes the referent of a weak reference, or nil if it has been collected.
+    LuaType getWeakRef(int ref);
 
     void setGlobal(String s);
     void getGlobal(String s);

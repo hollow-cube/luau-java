@@ -4105,6 +4105,183 @@ public class lua_h {
         }
     }
 
+    private static class lua_weakref {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_INT,
+            lua_h.C_POINTER,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_weakref");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int lua_weakref(lua_State *L, int idx)
+     * }
+     */
+    public static FunctionDescriptor lua_weakref$descriptor() {
+        return lua_weakref.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int lua_weakref(lua_State *L, int idx)
+     * }
+     */
+    public static MethodHandle lua_weakref$handle() {
+        return lua_weakref.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int lua_weakref(lua_State *L, int idx)
+     * }
+     */
+    public static MemorySegment lua_weakref$address() {
+        return lua_weakref.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int lua_weakref(lua_State *L, int idx)
+     * }
+     */
+    public static int lua_weakref(MemorySegment L, int idx) {
+        var mh$ = lua_weakref.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_weakref", L, idx);
+            }
+            return (int)mh$.invokeExact(L, idx);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_weakunref {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_INT,
+            lua_h.C_POINTER,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_weakunref");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int lua_weakunref(lua_State *L, int ref)
+     * }
+     */
+    public static FunctionDescriptor lua_weakunref$descriptor() {
+        return lua_weakunref.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int lua_weakunref(lua_State *L, int ref)
+     * }
+     */
+    public static MethodHandle lua_weakunref$handle() {
+        return lua_weakunref.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int lua_weakunref(lua_State *L, int ref)
+     * }
+     */
+    public static MemorySegment lua_weakunref$address() {
+        return lua_weakunref.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int lua_weakunref(lua_State *L, int ref)
+     * }
+     */
+    public static int lua_weakunref(MemorySegment L, int ref) {
+        var mh$ = lua_weakunref.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_weakunref", L, ref);
+            }
+            return (int)mh$.invokeExact(L, ref);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class lua_getweakref {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            lua_h.C_INT,
+            lua_h.C_POINTER,
+            lua_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = lua_h.findOrThrow("lua_getweakref");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int lua_getweakref(lua_State *L, int ref)
+     * }
+     */
+    public static FunctionDescriptor lua_getweakref$descriptor() {
+        return lua_getweakref.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int lua_getweakref(lua_State *L, int ref)
+     * }
+     */
+    public static MethodHandle lua_getweakref$handle() {
+        return lua_getweakref.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int lua_getweakref(lua_State *L, int ref)
+     * }
+     */
+    public static MemorySegment lua_getweakref$address() {
+        return lua_getweakref.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int lua_getweakref(lua_State *L, int ref)
+     * }
+     */
+    public static int lua_getweakref(MemorySegment L, int ref) {
+        var mh$ = lua_getweakref.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("lua_getweakref", L, ref);
+            }
+            return (int)mh$.invokeExact(L, ref);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class lua_setuserdatametatable {
         public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(
             lua_h.C_POINTER,
