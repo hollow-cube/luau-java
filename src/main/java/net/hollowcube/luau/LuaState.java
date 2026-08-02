@@ -383,6 +383,24 @@ public sealed interface LuaState extends AutoCloseable permits LuaStateImpl {
     /// stringify to the same address.
     void setPointerEncodeKey(long a, long b, long c, long d);
 
+    /// Calls the function on the stack under protection, permitting it to yield.
+    ///
+    /// Only legal from inside a [LuaFunc#yieldable] function, and the value returned must be
+    /// returned from that function unchanged - it is either a result count or the VM's
+    /// signal that the call yielded, and only the caller's `return` can convey the latter.
+    /// Nothing after this call in the Java function may be relied upon to run; the work
+    /// that follows belongs in the [LuaFunc.Continuation].
+    ///
+    /// Errors from the callee are not thrown here, they are reported to the continuation as
+    /// its [LuaStatus]. This does throw if the continuation itself fails.
+    ///
+    /// Unlike [#call(int, int)] there is no error handler installed, so a Lua error which
+    /// crosses this call will not have a merged Java backtrace attached.
+    ///
+    /// @throws IllegalStateException if the running function has no continuation
+    @ApiStatus.Experimental
+    int pcallYieldable(int nargs, int nresults);
+
     //region Debug introspection
 
     /// Number of call frames on this thread's stack. Frames are addressed by *level*, where

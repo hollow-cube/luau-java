@@ -2892,6 +2892,67 @@ public class luaujava_h {
         }
     }
 
+    private static class luaW_pcallyieldable {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            luaujava_h.C_INT,
+            luaujava_h.C_POINTER,
+            luaujava_h.C_INT,
+            luaujava_h.C_INT,
+            luaujava_h.C_INT
+        );
+
+        public static final MemorySegment ADDR = luaujava_h.findOrThrow("luaW_pcallyieldable");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * extern int luaW_pcallyieldable(lua_State *L, int nargs, int nresults, int errfunc)
+     * }
+     */
+    public static FunctionDescriptor luaW_pcallyieldable$descriptor() {
+        return luaW_pcallyieldable.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * extern int luaW_pcallyieldable(lua_State *L, int nargs, int nresults, int errfunc)
+     * }
+     */
+    public static MethodHandle luaW_pcallyieldable$handle() {
+        return luaW_pcallyieldable.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * extern int luaW_pcallyieldable(lua_State *L, int nargs, int nresults, int errfunc)
+     * }
+     */
+    public static MemorySegment luaW_pcallyieldable$address() {
+        return luaW_pcallyieldable.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * extern int luaW_pcallyieldable(lua_State *L, int nargs, int nresults, int errfunc)
+     * }
+     */
+    public static int luaW_pcallyieldable(MemorySegment L, int nargs, int nresults, int errfunc) {
+        var mh$ = luaW_pcallyieldable.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("luaW_pcallyieldable", L, nargs, nresults, errfunc);
+            }
+            return (int)mh$.invokeExact(L, nargs, nresults, errfunc);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class luaW_isjavaframe {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             luaujava_h.C_INT,

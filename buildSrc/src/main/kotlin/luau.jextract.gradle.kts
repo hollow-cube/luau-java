@@ -126,6 +126,7 @@ tasks.named<JextractTask>("jextract") {
             "luaW_getfield", "luaW_createtable", "luaW_settable",
             "luaW_setfield", "luaW_rawsetfield", "luaW_rawset",
             "luaW_rawseti", "luaW_rawsetptagged", "luaW_setmetatable",
+            "luaW_pcallyieldable",
             "luaW_yield", "luaW_break", "luaW_next",
             "luaW_concat", "luaW_setlightuserdataname",
             "luaW_clonefunction", "luaW_cleartable", "luaW_clonetable",

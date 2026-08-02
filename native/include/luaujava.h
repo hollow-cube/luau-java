@@ -198,6 +198,15 @@ LUA_API int luaLW_checkboolean(lua_State* L, int narg);
 LUA_API void* luaLW_checkudata(lua_State* L, int ud, const char* tname);
 LUA_API void* luaLW_checkudatatagged(lua_State* L, int ud, int tag);
 
+// Returned by luaW_pcallyieldable when the running closure has no continuation to resume
+// through, which makes the call impossible. Distinct from C_CALL_YIELD (-1).
+#define LUAW_PCALLYIELDABLE_NOCONT -2
+
+// Protected call which lets the callee yield. Only valid from within a Java closure which
+// was pushed with a continuation; the result must be returned from that closure unchanged,
+// since C_CALL_YIELD (-1) is how the VM is told the call yielded.
+LUA_API int luaW_pcallyieldable(lua_State* L, int nargs, int nresults, int errfunc);
+
 // luaL_sandbox is not wrapped (should not fail in practical conditions)
 // luaL_sandboxthread is not wrapped (should not fail in practical conditions)
 

@@ -595,3 +595,21 @@ LUA_API void* luaLW_checkudatatagged(lua_State* L, int ud, int tag)
     return ret;
 }
 
+LUA_API int luaW_pcallyieldable(lua_State* L, int nargs, int nresults, int errfunc)
+{
+    // luaL_pcallyieldable only asserts that the running closure has a continuation, and
+    // would call through a null pointer in a release build, so check it for real.
+    if (!iscfunction(L->ci->func) || !clvalue(L->ci->func)->c.cont)
+        return LUAW_PCALLYIELDABLE_NOCONT;
+
+    // Barriered like everything else, but for a subtler reason than usual: the callee
+    // running to completion means luaL_pcallyieldable invokes our continuation before
+    // returning, and a Java continuation which fails raises from luaW_dispatchcont.
+    lua_jmpbuf jb;
+    int ret = 0;
+    luaW_enter(L, &jb);
+    if (LUAU_SETJMP(jb.buf) == 0)
+        ret = luaL_pcallyieldable(L, nargs, nresults, errfunc);
+    luaW_exit(L, &jb);
+    return ret;
+}

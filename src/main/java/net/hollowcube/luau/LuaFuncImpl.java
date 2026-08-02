@@ -1,6 +1,7 @@
 package net.hollowcube.luau;
 
 import net.hollowcube.luau.internal.vm.lua_CFunction;
+import net.hollowcube.luau.internal.vm.lua_Continuation;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
@@ -8,15 +9,15 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.ToIntFunction;
 
-import static net.hollowcube.luau.LuaStateImpl.mergeBacktrace;
-
 record LuaFuncImpl(
     MemorySegment funcRef,
+    MemorySegment contRef,
     MemorySegment debugNameRef,
     @Nullable Arena closeableArena
 ) implements LuaFunc {
     LuaFuncImpl(
         ToIntFunction<LuaState> impl,
+        LuaFunc.@Nullable Continuation continuation,
         String debugName,
         @Nullable Arena arena
     ) {
@@ -28,8 +29,14 @@ record LuaFuncImpl(
             new CFunctionWrapper(impl),
             actualArena
         );
+        final MemorySegment contRef = continuation == null
+            ? MemorySegment.NULL
+            : lua_Continuation.allocate(
+                new ContinuationWrapper(continuation),
+                actualArena
+            );
         final MemorySegment debugNameRef = actualArena.allocateFrom(debugName);
-        this(funcRef, debugNameRef, arena == null ? actualArena : null);
+        this(funcRef, contRef, debugNameRef, arena == null ? actualArena : null);
     }
 
     @Override
@@ -53,6 +60,19 @@ record LuaFuncImpl(
             try {
                 return impl.applyAsInt(state);
             }catch (Throwable t){
+                return ErrorHelper.handleError(state, t);
+            }
+        }
+    }
+
+    record ContinuationWrapper(LuaFunc.Continuation impl) implements
+        lua_Continuation.Function {
+        @Override
+        public int apply(MemorySegment L, int status) {
+            final LuaState state = new LuaStateImpl(L);
+            try {
+                return impl.resume(state, LuaStatus.byId(status));
+            } catch (Throwable t) {
                 return ErrorHelper.handleError(state, t);
             }
         }

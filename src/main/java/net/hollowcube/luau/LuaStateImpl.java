@@ -69,6 +69,9 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     static final int REGISTRY_INDEX = LUA_REGISTRYINDEX();
     static final int GLOBALS_INDEX = LUA_GLOBALSINDEX();
 
+    /// LUAW_PCALLYIELDABLE_NOCONT; see luaujava.h.
+    private static final int PCALLYIELDABLE_NOCONT = -2;
+
     /// Upvalue slots reserved by luaW_pushcclosurek for the Java function and continuation.
     static final int DISPATCH_UPVALUES = 2;
 
@@ -679,8 +682,8 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
         // The switch is here as an exhaustivity check :)
         switch (func) {
             case LuaFuncImpl(
-                    MemorySegment funcRef, MemorySegment debugNameRef, _
-            ) -> luaW_pushcclosurek(L, funcRef, debugNameRef, 0, MemorySegment.NULL);
+                    MemorySegment funcRef, MemorySegment contRef, MemorySegment debugNameRef, _
+            ) -> luaW_pushcclosurek(L, funcRef, debugNameRef, 0, contRef);
         }
     }
 
@@ -1271,6 +1274,17 @@ record LuaStateImpl(MemorySegment L) implements LuaState {
     @Override
     public void setPointerEncodeKey(long a, long b, long c, long d) {
         lua_setpointerencodekey(L, a, b, c, d);
+    }
+
+    @Override
+    public int pcallYieldable(int nargs, int nresults) {
+        final int result = luaW_pcallyieldable(L, nargs, nresults, 0);
+        if (result == PCALLYIELDABLE_NOCONT) {
+            throw new IllegalStateException(
+                "pcallYieldable is only valid inside a LuaFunc.yieldable function");
+        }
+        propagateException();
+        return result;
     }
 
     @Override
